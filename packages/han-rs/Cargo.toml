@@ -4,6 +4,7 @@ members = [
     "crates/han-db",
     "crates/han-indexer",
     "crates/han-api",
+    "crates/han-graphql-derive",
     "crates/han-proto",
     "crates/han-coordinator",
     "crates/han-server",

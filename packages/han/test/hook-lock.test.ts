@@ -327,5 +327,4 @@ describe('hook-lock.ts', () => {
       rmSync(join(manager.lockDir, 'slot-2.lock'), { force: true });
     });
   });
-
 });

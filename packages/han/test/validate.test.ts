@@ -473,12 +473,18 @@ describe('validate.ts', () => {
 
       // Use isolated temp dir to avoid race conditions with parallel tests
       const random = Math.random().toString(36).substring(2, 9);
-      const localDir = join(tmpdir(), `han-validate-do-${Date.now()}-${random}`);
+      const localDir = join(
+        tmpdir(),
+        `han-validate-do-${Date.now()}-${random}`
+      );
       const doDir = join(localDir, 'do', 'do-frontend-development');
       mkdirSync(doDir, { recursive: true });
 
       try {
-        const result = findPluginInMarketplace(localDir, 'do-frontend-development');
+        const result = findPluginInMarketplace(
+          localDir,
+          'do-frontend-development'
+        );
         expect(result).toBe(doDir);
       } finally {
         rmSync(localDir, { recursive: true, force: true });
@@ -508,7 +514,10 @@ describe('validate.ts', () => {
 
       // Use isolated temp dir to avoid race conditions with parallel tests
       const random = Math.random().toString(36).substring(2, 9);
-      const localDir = join(tmpdir(), `han-validate-hashi-${Date.now()}-${random}`);
+      const localDir = join(
+        tmpdir(),
+        `han-validate-hashi-${Date.now()}-${random}`
+      );
       const hashiDir = join(localDir, 'hashi', 'hashi-github');
       mkdirSync(hashiDir, { recursive: true });
 
@@ -543,7 +552,10 @@ describe('validate.ts', () => {
 
       // Use isolated temp dir to avoid race conditions with parallel tests
       const random = Math.random().toString(36).substring(2, 9);
-      const localDir = join(tmpdir(), `han-validate-root-${Date.now()}-${random}`);
+      const localDir = join(
+        tmpdir(),
+        `han-validate-root-${Date.now()}-${random}`
+      );
       const pluginDir = join(localDir, 'bushido');
       mkdirSync(pluginDir, { recursive: true });
 
@@ -578,7 +590,10 @@ describe('validate.ts', () => {
 
       // Use isolated temp dir to avoid race conditions with parallel tests
       const random = Math.random().toString(36).substring(2, 9);
-      const localDir = join(tmpdir(), `han-validate-null-${Date.now()}-${random}`);
+      const localDir = join(
+        tmpdir(),
+        `han-validate-null-${Date.now()}-${random}`
+      );
       mkdirSync(localDir, { recursive: true });
 
       try {

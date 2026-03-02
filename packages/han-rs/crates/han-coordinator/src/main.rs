@@ -186,21 +186,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (event_tx, _) = broadcast::channel::<DbChangeEvent>(1024);
     let schema = han_api::build_schema(db.clone(), event_tx.clone());
 
-    // Initial scan
-    if cli.scan_on_start {
-        tracing::info!("Running initial full scan...");
-        match han_indexer::full_scan_and_index(&db).await {
-            Ok(results) => {
-                let total: u32 = results.iter().map(|r| r.messages_indexed).sum();
-                tracing::info!(
-                    "Initial scan: {} sessions, {} messages",
-                    results.len(),
-                    total
-                );
-            }
-            Err(e) => tracing::warn!("Initial scan failed: {}", e),
-        }
-    }
+    // Defer initial scan to after server starts (runs in background)
+    let scan_on_start = cli.scan_on_start;
+    let scan_db = db.clone();
 
     // Start file watcher bridge
     let watcher_handle = if !cli.no_watcher {
@@ -293,6 +281,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             cli.grpc_port.to_string()
         },
     );
+
+    // Run initial full scan in background (after server is listening)
+    if scan_on_start {
+        tokio::spawn(async move {
+            tracing::info!("Running initial full scan in background...");
+            match han_indexer::full_scan_and_index(&scan_db).await {
+                Ok(results) => {
+                    let total: u32 = results.iter().map(|r| r.messages_indexed).sum();
+                    tracing::info!(
+                        "Initial scan complete: {} sessions, {} messages indexed",
+                        results.len(),
+                        total
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!("Initial scan failed: {}", e);
+                }
+            }
+        });
+    }
 
     // Setup signal handling
     let shutdown = tokio::signal::ctrl_c();

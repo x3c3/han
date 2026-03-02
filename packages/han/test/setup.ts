@@ -16,7 +16,7 @@ const testConfigDir = mkdtempSync(join(tmpdir(), 'han-test-'));
 // SKIP_NATIVE is always true now.
 export const NATIVE_AVAILABLE = false;
 if (!process.env.SKIP_NATIVE) {
-	process.env.SKIP_NATIVE = "true";
+  process.env.SKIP_NATIVE = 'true';
 }
 
 beforeAll(() => {

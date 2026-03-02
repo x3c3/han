@@ -3,11 +3,27 @@
 use async_graphql::*;
 use crate::node::encode_global_id;
 use crate::connection::PageInfo;
+use han_graphql_derive::GraphQLEntity;
+
+/// Transform: i32 → bool (nonzero is true).
+fn nonzero_i32_to_bool(v: i32) -> bool {
+    v != 0
+}
 
 /// Hook execution data.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, SimpleObject, GraphQLEntity)]
+#[graphql(complex, name = "HookExecution")]
+#[graphql_entity(
+    model = "han_db::entities::hook_executions::Model",
+    entity = "han_db::entities::hook_executions::Entity",
+    columns = "han_db::entities::hook_executions::Column",
+    type_name = "HookExecution",
+)]
 pub struct HookExecution {
+    #[graphql(skip)]
+    #[graphql_entity(skip, source_field = "id")]
     pub raw_id: String,
+
     pub orchestration_id: Option<String>,
     pub session_id: Option<String>,
     pub task_id: Option<String>,
@@ -17,7 +33,10 @@ pub struct HookExecution {
     pub directory: Option<String>,
     pub duration_ms: i32,
     pub exit_code: i32,
+
+    #[graphql_entity(transform = "nonzero_i32_to_bool")]
     pub passed: bool,
+
     pub output: Option<String>,
     pub error: Option<String>,
     pub command: Option<String>,
@@ -25,46 +44,12 @@ pub struct HookExecution {
     pub status: Option<String>,
 }
 
-#[Object]
+#[ComplexObject]
 impl HookExecution {
-    async fn id(&self) -> ID { encode_global_id("HookExecution", &self.raw_id) }
-    async fn hook_type(&self) -> &str { &self.hook_type }
-    async fn hook_name(&self) -> &str { &self.hook_name }
-    async fn hook_source(&self) -> Option<&str> { self.hook_source.as_deref() }
-    async fn directory(&self) -> Option<&str> { self.directory.as_deref() }
-    async fn duration_ms(&self) -> i32 { self.duration_ms }
-    async fn exit_code(&self) -> i32 { self.exit_code }
-    async fn passed(&self) -> bool { self.passed }
-    async fn output(&self) -> Option<&str> { self.output.as_deref() }
-    async fn error(&self) -> Option<&str> { self.error.as_deref() }
-    async fn command(&self) -> Option<&str> { self.command.as_deref() }
-    async fn executed_at(&self) -> &str { &self.executed_at }
-    async fn status(&self) -> Option<&str> { self.status.as_deref() }
+    /// Global ID.
+    pub async fn id(&self) -> ID { encode_global_id("HookExecution", &self.raw_id) }
     /// Timestamp alias for executed_at (browse-client compat).
     async fn timestamp(&self) -> &str { &self.executed_at }
-}
-
-impl From<han_db::entities::hook_executions::Model> for HookExecution {
-    fn from(m: han_db::entities::hook_executions::Model) -> Self {
-        Self {
-            raw_id: m.id,
-            orchestration_id: m.orchestration_id,
-            session_id: m.session_id,
-            task_id: m.task_id,
-            hook_type: m.hook_type,
-            hook_name: m.hook_name,
-            hook_source: m.hook_source,
-            directory: m.directory,
-            duration_ms: m.duration_ms,
-            exit_code: m.exit_code,
-            passed: m.passed != 0,
-            output: m.output,
-            error: m.error,
-            command: m.command,
-            executed_at: m.executed_at,
-            status: m.status,
-        }
-    }
 }
 
 /// Hook execution edge.
@@ -218,5 +203,40 @@ mod tests {
         assert_eq!(stats.total_hooks, Some(10));
         assert_eq!(stats.passed_hooks, Some(8));
         assert_eq!(stats.failed_hooks, Some(2));
+    }
+
+    #[test]
+    fn filter_default_is_empty() {
+        let f = HookExecutionFilter::default();
+        assert!(f.hook_type.is_none());
+        assert!(f.hook_name.is_none());
+        assert!(f.passed.is_none());
+        assert!(f.and.is_none());
+        assert!(f.or.is_none());
+        assert!(f.not.is_none());
+    }
+
+    #[test]
+    fn order_by_default_is_empty() {
+        let o = HookExecutionOrderBy::default();
+        assert!(o.hook_type.is_none());
+        assert!(o.hook_name.is_none());
+        assert!(o.duration_ms.is_none());
+    }
+
+    #[test]
+    fn filter_to_condition_no_panic() {
+        let f = HookExecutionFilter {
+            hook_type: Some(crate::filters::types::StringFilter {
+                eq: Some("Stop".into()),
+                ..Default::default()
+            }),
+            passed: Some(crate::filters::types::BoolFilter {
+                eq: Some(true),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
     }
 }

@@ -11,8 +11,8 @@
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { ensureMemoryDirs, getHanEventsFilePath } from '../memory/paths.ts';
 import { getGitBranch as nativeGetGitBranch } from '../bun-utils.ts';
+import { ensureMemoryDirs, getHanEventsFilePath } from '../memory/paths.ts';
 import { isDebugMode } from '../shared.ts';
 import type {
   EventLogConfig,
@@ -333,7 +333,11 @@ export class EventLogger {
       this.flush();
     }, 100);
     // Don't let the flush timer keep the process alive
-    if (this.flushTimer && typeof this.flushTimer === 'object' && 'unref' in this.flushTimer) {
+    if (
+      this.flushTimer &&
+      typeof this.flushTimer === 'object' &&
+      'unref' in this.flushTimer
+    ) {
       (this.flushTimer as NodeJS.Timeout).unref();
     }
   }

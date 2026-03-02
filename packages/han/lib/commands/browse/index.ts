@@ -10,13 +10,7 @@
  */
 
 import { type ChildProcess, spawn } from 'node:child_process';
-import {
-  cpSync,
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-} from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { platform, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';

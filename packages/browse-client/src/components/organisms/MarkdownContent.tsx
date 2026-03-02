@@ -424,7 +424,10 @@ export function MarkdownContent({
 			case "markdown": {
 				// Strip ANSI codes if present, then collapse excessive newlines (3+) to double
 				// Note: double newlines are meaningful in markdown (paragraph breaks)
-				const cleanContent = stripAnsi(displayContent).replace(/\n{3,}/g, "\n\n");
+				const cleanContent = stripAnsi(displayContent).replace(
+					/\n{3,}/g,
+					"\n\n",
+				);
 				const html = marked.parse(cleanContent) as string;
 
 				// Post-process to handle ANSI code blocks

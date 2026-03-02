@@ -10,8 +10,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // Skip tests that require native module when SKIP_NATIVE is set
-const SKIP_NATIVE = process.env.SKIP_NATIVE === "true";
-const describeWithNative = SKIP_NATIVE ? describe.skip : describe;
+const SKIP_NATIVE = process.env.SKIP_NATIVE === 'true';
+const _describeWithNative = SKIP_NATIVE ? describe.skip : describe;
 
 // Store original environment
 const originalEnv = { ...process.env };

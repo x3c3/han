@@ -24,7 +24,7 @@ pub struct NativeTask {
 
 #[Object]
 impl NativeTask {
-    async fn id(&self) -> ID { encode_global_id("NativeTask", &self.raw_id) }
+    pub async fn id(&self) -> ID { encode_global_id("NativeTask", &self.raw_id) }
     async fn subject(&self) -> &str { &self.subject }
     async fn description(&self) -> Option<&str> { self.description.as_deref() }
     async fn status(&self) -> &str { &self.status }
@@ -64,6 +64,26 @@ impl From<han_db::entities::native_tasks::Model> for NativeTask {
             line_number: m.line_number,
         }
     }
+}
+
+// -- Auto-generated filters via EntityFilter derive --
+
+/// Source struct for NativeTaskFilter/NativeTaskOrderBy generation.
+#[derive(han_graphql_derive::EntityFilter)]
+#[entity_filter(
+    entity = "han_db::entities::native_tasks::Entity",
+    columns = "han_db::entities::native_tasks::Column",
+)]
+struct NativeTaskFilterSource {
+    id: String,
+    session_id: String,
+    subject: String,
+    status: String,
+    owner: Option<String>,
+    created_at: String,
+    updated_at: String,
+    completed_at: Option<String>,
+    line_number: i32,
 }
 
 #[cfg(test)]
@@ -160,5 +180,36 @@ mod tests {
         m.completed_at = Some("2025-01-03".into());
         let nt = NativeTask::from(m);
         assert_eq!(nt.completed_at, Some("2025-01-03".into()));
+    }
+
+    #[test]
+    fn native_task_filter_default_is_empty() {
+        let f = NativeTaskFilter::default();
+        assert!(f.subject.is_none());
+        assert!(f.status.is_none());
+        assert!(f.owner.is_none());
+        assert!(f.and.is_none());
+        assert!(f.or.is_none());
+        assert!(f.not.is_none());
+    }
+
+    #[test]
+    fn native_task_order_by_default_is_empty() {
+        let o = NativeTaskOrderBy::default();
+        assert!(o.subject.is_none());
+        assert!(o.status.is_none());
+        assert!(o.created_at.is_none());
+    }
+
+    #[test]
+    fn native_task_filter_to_condition_no_panic() {
+        let f = NativeTaskFilter {
+            status: Some(crate::filters::types::StringFilter {
+                eq: Some("completed".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
     }
 }

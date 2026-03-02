@@ -12,28 +12,50 @@ import { getPluginNameFromRoot } from '../shared/index.ts';
 import { findDirectoriesWithMarkers } from './hook-cache.ts';
 
 /**
- * Claude Code hook event types that can trigger han hooks
+ * Claude Code hook event types that can trigger han hooks.
+ * Complete as of Claude Code 2.1.63.
  */
 export type HookEventType =
-  | 'Stop'
-  | 'SubagentStop'
-  | 'PreToolUse'
-  | 'PostToolUse'
   | 'SessionStart'
   | 'UserPromptSubmit'
-  | 'SubagentStart';
+  | 'PreToolUse'
+  | 'PermissionRequest'
+  | 'PostToolUse'
+  | 'PostToolUseFailure'
+  | 'Notification'
+  | 'SubagentStart'
+  | 'SubagentStop'
+  | 'Stop'
+  | 'TeammateIdle'
+  | 'TaskCompleted'
+  | 'ConfigChange'
+  | 'WorktreeCreate'
+  | 'WorktreeRemove'
+  | 'PreCompact'
+  | 'SessionEnd';
 
 /**
- * Valid base event types for shorthand parsing validation
+ * Valid base event types for shorthand parsing validation.
+ * Complete as of Claude Code 2.1.63.
  */
 const VALID_EVENT_TYPES = new Set<string>([
-  'Stop',
-  'SubagentStop',
-  'PreToolUse',
-  'PostToolUse',
   'SessionStart',
   'UserPromptSubmit',
+  'PreToolUse',
+  'PermissionRequest',
+  'PostToolUse',
+  'PostToolUseFailure',
+  'Notification',
   'SubagentStart',
+  'SubagentStop',
+  'Stop',
+  'TeammateIdle',
+  'TaskCompleted',
+  'ConfigChange',
+  'WorktreeCreate',
+  'WorktreeRemove',
+  'PreCompact',
+  'SessionEnd',
 ]);
 
 /**

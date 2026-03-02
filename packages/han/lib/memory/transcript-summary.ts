@@ -158,19 +158,40 @@ function extractFileOperations(messages: TranscriptMessage[]): FileOperation[] {
 
     const content = message.content;
     // Match Write/Create tool invocations
-    const writeMatches = content.matchAll(/(?:Writing|Wrote|Creating|Created)\s+(?:to\s+)?['"`]?([^\s'"`]+\.\w+)/gi);
+    const writeMatches = content.matchAll(
+      /(?:Writing|Wrote|Creating|Created)\s+(?:to\s+)?['"`]?([^\s'"`]+\.\w+)/gi
+    );
     for (const m of writeMatches) {
-      if (m[1]) operations.push({ path: m[1], operation: 'write', timestamp: message.timestamp });
+      if (m[1])
+        operations.push({
+          path: m[1],
+          operation: 'write',
+          timestamp: message.timestamp,
+        });
     }
     // Match Edit/Modify tool invocations
-    const editMatches = content.matchAll(/(?:Editing|Edited|Modifying|Modified)\s+['"`]?([^\s'"`]+\.\w+)/gi);
+    const editMatches = content.matchAll(
+      /(?:Editing|Edited|Modifying|Modified)\s+['"`]?([^\s'"`]+\.\w+)/gi
+    );
     for (const m of editMatches) {
-      if (m[1]) operations.push({ path: m[1], operation: 'edit', timestamp: message.timestamp });
+      if (m[1])
+        operations.push({
+          path: m[1],
+          operation: 'edit',
+          timestamp: message.timestamp,
+        });
     }
     // Match Read tool invocations
-    const readMatches = content.matchAll(/(?:Reading|Read)\s+['"`]?([^\s'"`]+\.\w+)/gi);
+    const readMatches = content.matchAll(
+      /(?:Reading|Read)\s+['"`]?([^\s'"`]+\.\w+)/gi
+    );
     for (const m of readMatches) {
-      if (m[1]) operations.push({ path: m[1], operation: 'read', timestamp: message.timestamp });
+      if (m[1])
+        operations.push({
+          path: m[1],
+          operation: 'read',
+          timestamp: message.timestamp,
+        });
     }
   }
 

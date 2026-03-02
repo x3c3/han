@@ -182,10 +182,13 @@ export async function startCoordinatorService(): Promise<void> {
 
   try {
     // Spawn Rust coordinator binary (daemonizes by default, no --daemon flag)
-    state.process = Bun.spawn([binaryPath, '--port', String(port)], {
-      stdout: 'ignore',
-      stderr: 'ignore',
-    });
+    state.process = Bun.spawn(
+      [binaryPath, '--port', String(port), '--scan-on-start'],
+      {
+        stdout: 'ignore',
+        stderr: 'ignore',
+      }
+    );
     // Don't keep parent alive
     state.process.unref();
 

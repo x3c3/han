@@ -104,8 +104,19 @@ async fn graphql_ws_handler(
                                         .unwrap_or("")
                                         .to_string();
 
-                                    let request =
+                                    let variables = payload
+                                        .get("variables")
+                                        .cloned()
+                                        .unwrap_or(serde_json::Value::Null);
+                                    let mut request =
                                         async_graphql::Request::new(&query);
+                                    if let serde_json::Value::Object(vars) = variables {
+                                        request = request.variables(
+                                            async_graphql::Variables::from_json(
+                                                serde_json::Value::Object(vars),
+                                            ),
+                                        );
+                                    }
                                     let mut subscription_stream =
                                         schema.execute_stream(request);
 

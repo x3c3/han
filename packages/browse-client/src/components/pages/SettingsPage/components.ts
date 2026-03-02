@@ -4,12 +4,10 @@
  * Extracted components for the settings page.
  */
 
-export { FeatureBadge } from "./FeatureBadge.tsx";
+export { FeatureBadge, StatItem, TabButton } from "@/components/molecules";
 export { McpServerCard } from "./McpServerCard.tsx";
 export { SettingsFileCard } from "./SettingsFileCard.tsx";
-export { StatItem } from "./StatItem.tsx";
 export { StatusIndicator } from "./StatusIndicator.tsx";
-export { TabButton } from "./TabButton.tsx";
 export type {
 	ClaudeSettingsSummary,
 	HanConfigSummary,

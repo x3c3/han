@@ -338,7 +338,6 @@ export async function parseTranscript(
   return withFreshData(async () => {
     const msgs = await dbMessages.list({
       sessionId,
-
     });
 
     const transcriptMessages: TranscriptMessage[] = [];

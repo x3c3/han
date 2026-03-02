@@ -122,7 +122,7 @@ export async function completeGitLabOAuth(
     throw new Error(`GitLab token exchange failed: ${error}`);
   }
 
-  const tokenData = await tokenResponse.json() as Record<string, unknown>;
+  const tokenData = (await tokenResponse.json()) as Record<string, unknown>;
 
   if (tokenData.error) {
     throw new Error(
@@ -131,9 +131,12 @@ export async function completeGitLabOAuth(
   }
 
   const accessToken = tokenData.access_token as string;
-  const refreshToken = (tokenData.refresh_token as string | null | undefined) || null;
+  const refreshToken =
+    (tokenData.refresh_token as string | null | undefined) || null;
   const expiresIn = tokenData.expires_in as number | undefined;
-  const scopes = ((tokenData.scope as string | undefined) || '').split(' ').filter(Boolean);
+  const scopes = ((tokenData.scope as string | undefined) || '')
+    .split(' ')
+    .filter(Boolean);
 
   // Fetch user info
   const userResponse = await fetch(`${gitlabUrl}/api/v4/user`, {
@@ -147,7 +150,7 @@ export async function completeGitLabOAuth(
     throw new Error('Failed to fetch GitLab user info');
   }
 
-  const user = await userResponse.json() as GitLabUser;
+  const user = (await userResponse.json()) as GitLabUser;
 
   return {
     provider: 'gitlab',
@@ -201,7 +204,7 @@ export async function refreshGitLabToken(
       return null;
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = (await response.json()) as Record<string, unknown>;
 
     if (data.error) {
       return null;

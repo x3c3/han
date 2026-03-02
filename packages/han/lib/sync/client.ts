@@ -97,7 +97,9 @@ async function sendSyncRequest(
   }
 
   // Use Uint8Array for compressed body (compatible with fetch), string for JSON
-  const body = useCompression ? new Uint8Array(compressedBody!) : jsonBody!;
+  const body = useCompression
+    ? new Uint8Array(compressedBody as Buffer)
+    : (jsonBody as string);
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -124,8 +126,8 @@ async function sendSyncRequest(
   }
 
   const bytesTransferred = useCompression
-    ? compressedBody!.length
-    : Buffer.from(jsonBody!, 'utf-8').length;
+    ? compressedBody?.length
+    : Buffer.from(jsonBody as string, 'utf-8').length;
 
   return {
     response: syncResponse,

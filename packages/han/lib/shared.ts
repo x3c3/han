@@ -4,6 +4,7 @@ import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { DETECT_PLUGINS_PROMPT } from './build-info.generated.ts';
+import { getGitRemoteUrl as nativeGetGitRemoteUrl } from './bun-utils.ts';
 import {
   analyzeCodebase,
   type CodebaseStats,
@@ -11,7 +12,6 @@ import {
 } from './codebase-analyzer.ts';
 import { getHanBinary } from './config/han-settings.ts';
 import { getMarketplacePlugins } from './marketplace-cache.ts';
-import { getGitRemoteUrl as nativeGetGitRemoteUrl } from './bun-utils.ts';
 import { resolvePluginNames } from './plugin-aliases.ts';
 
 const __filename = fileURLToPath(import.meta.url);

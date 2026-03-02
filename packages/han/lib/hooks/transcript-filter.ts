@@ -124,12 +124,16 @@ async function extractModifiedFilesFromTranscript(
     // Simple regex extraction (replaces native Rust extraction)
     const content = message.content;
     // Match Write tool invocations
-    const writeMatches = content.matchAll(/(?:Writing|Wrote|Creating|Created)\s+(?:to\s+)?['"`]?([^\s'"`]+\.\w+)/gi);
+    const writeMatches = content.matchAll(
+      /(?:Writing|Wrote|Creating|Created)\s+(?:to\s+)?['"`]?([^\s'"`]+\.\w+)/gi
+    );
     for (const m of writeMatches) {
       if (m[1]) written.add(m[1]);
     }
     // Match Edit tool invocations
-    const editMatches = content.matchAll(/(?:Editing|Edited|Modifying|Modified)\s+['"`]?([^\s'"`]+\.\w+)/gi);
+    const editMatches = content.matchAll(
+      /(?:Editing|Edited|Modifying|Modified)\s+['"`]?([^\s'"`]+\.\w+)/gi
+    );
     for (const m of editMatches) {
       if (m[1]) edited.add(m[1]);
     }

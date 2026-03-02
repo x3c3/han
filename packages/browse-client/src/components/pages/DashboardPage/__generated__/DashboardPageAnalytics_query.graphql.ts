@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<58c5f6b354b695452994e5c33ff6ca86>>
+ * @generated SignedSource<<09dd3565938c49ab82f55f23c8fb3be4>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -470,7 +470,18 @@ v18 = {
   "storageKey": null
 };
 return {
-  "argumentDefinitions": [],
+  "argumentDefinitions": [
+    {
+      "defaultValue": null,
+      "kind": "LocalArgument",
+      "name": "projectId"
+    },
+    {
+      "defaultValue": null,
+      "kind": "LocalArgument",
+      "name": "repoId"
+    }
+  ],
   "kind": "Fragment",
   "metadata": null,
   "name": "DashboardPageAnalytics_query",
@@ -482,6 +493,16 @@ return {
           "kind": "Literal",
           "name": "days",
           "value": 30
+        },
+        {
+          "kind": "Variable",
+          "name": "projectId",
+          "variableName": "projectId"
+        },
+        {
+          "kind": "Variable",
+          "name": "repoId",
+          "variableName": "repoId"
         }
       ],
       "concreteType": "DashboardAnalytics",
@@ -763,7 +784,7 @@ return {
           "storageKey": null
         }
       ],
-      "storageKey": "dashboardAnalytics(days:30)"
+      "storageKey": null
     }
   ],
   "type": "Query",
@@ -771,6 +792,6 @@ return {
 };
 })();
 
-(node as any).hash = "981b21ffdaf9ba0aea6fe524f9673f82";
+(node as any).hash = "0100df0baeb67dbcb7017ac009b81f09";
 
 export default node;

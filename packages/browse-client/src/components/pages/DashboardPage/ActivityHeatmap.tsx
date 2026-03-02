@@ -52,10 +52,12 @@ function getActivityColor(messageCount: number, maxMessages: number): string {
 }
 
 /**
- * Format date for tooltip
+ * Format date for tooltip. Returns empty string for pad/invalid dates.
  */
 function formatDate(dateStr: string): string {
+	if (dateStr.startsWith("pad-")) return "";
 	const date = new Date(dateStr);
+	if (Number.isNaN(date.getTime())) return "";
 	return date.toLocaleDateString("en-US", {
 		weekday: "short",
 		month: "short",
@@ -285,24 +287,27 @@ export function ActivityHeatmap({
 								flexShrink: 0,
 							}}
 						>
-							{week.map((day) => (
-								<div
-									key={day.date}
-									role="img"
-									aria-label={`${formatDate(day.date)}: ${day.messageCount} messages, ${day.sessionCount} sessions`}
-									title={`${formatDate(day.date)}: ${day.messageCount} messages, ${day.sessionCount} sessions`}
-									style={{
-										width: `${cellSize}px`,
-										height: `${cellSize}px`,
-										borderRadius: "2px",
-										backgroundColor: getActivityColor(
-											day.messageCount,
-											maxMessages,
-										),
-										cursor: "default",
-									}}
-								/>
-							))}
+							{week.map((day) => {
+								const isPad = day.date.startsWith("pad-");
+								const label = isPad
+									? undefined
+									: `${formatDate(day.date)}: ${day.messageCount} messages, ${day.sessionCount} sessions`;
+								return (
+									<Box
+										key={day.date}
+										style={{
+											width: cellSize,
+											height: cellSize,
+											borderRadius: 2,
+											backgroundColor: getActivityColor(
+												day.messageCount,
+												maxMessages,
+											),
+											cursor: "default",
+										}}
+									/>
+								);
+							})}
 						</Box>
 					))}
 				</Box>

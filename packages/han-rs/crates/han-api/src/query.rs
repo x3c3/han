@@ -3,14 +3,22 @@
 //! All top-level queries. Uses Relay Node interface - no viewer pattern.
 
 use std::collections::HashMap;
+use std::sync::Mutex;
+use std::time::Instant;
 
 use async_graphql::*;
 use sea_orm::{
     ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, FromQueryResult,
-    QueryOrder, ColumnTrait, QueryFilter, Statement,
+    PaginatorTrait, QueryOrder, QuerySelect, ColumnTrait, QueryFilter, Statement,
 };
 
-use han_db::entities::{config_dirs, projects, repos, sessions};
+// TTL cache for expensive dashboard analytics queries.
+// Keyed by (days, project_id, repo_id), cached for 30 seconds.
+static ANALYTICS_CACHE: std::sync::LazyLock<
+    Mutex<Option<(Instant, String, crate::types::dashboard::DashboardAnalytics)>>,
+> = std::sync::LazyLock::new(|| Mutex::new(None));
+
+use han_db::entities::{config_dirs, hook_executions, native_tasks, projects, repos, sessions};
 
 use crate::node::decode_global_id;
 use crate::types::config_dir::ConfigDir;
@@ -22,7 +30,7 @@ use crate::types::dashboard::{
     model_display_name,
 };
 use crate::types::enums::MetricsPeriod;
-use crate::types::metrics::MetricsData;
+use crate::types::metrics::{MetricsData, TaskTypeCount, TaskOutcomeCount};
 use crate::types::plugin::{Plugin, PluginCategory, PluginStats};
 use crate::types::project::Project;
 use crate::types::repo::Repo;
@@ -64,20 +72,6 @@ struct HourlyActivityRow {
     hour: i32,
     session_count: i64,
     message_count: i64,
-}
-
-#[derive(Debug, FromQueryResult)]
-struct TokenStatsRow {
-    message_count: i64,
-    session_count: i64,
-    total_input_tokens: i64,
-    total_output_tokens: i64,
-    total_cached_tokens: i64,
-}
-
-#[derive(Debug, FromQueryResult)]
-struct CountRow {
-    count: i64,
 }
 
 /// Enrich session data with message counts, timestamps, project info, and summaries.
@@ -166,7 +160,17 @@ pub async fn enrich_sessions(db: &DatabaseConnection, sessions: &mut [SessionDat
             .as_ref()
             .and_then(|pid| project_map.get(pid))
         {
-            session.project_name.clone_from(&project.name);
+            // Use human-readable name, falling back to last path component if name is a slug
+            if project.name.starts_with('-') || project.name.is_empty() {
+                let display = std::path::Path::new(&project.path)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(&project.name)
+                    .to_string();
+                session.project_name = display;
+            } else {
+                session.project_name.clone_from(&project.name);
+            }
             session.project_path.clone_from(&project.path);
             session.project_dir.clone_from(&project.path);
         }
@@ -185,6 +189,51 @@ pub async fn enrich_sessions(db: &DatabaseConnection, sessions: &mut [SessionDat
 /// Enrich a single session with project info, message stats, and summary.
 pub async fn enrich_single_session(db: &DatabaseConnection, session: &mut SessionData) -> Result<()> {
     enrich_sessions(db, std::slice::from_mut(session)).await
+}
+
+/// Strip a Relay global ID prefix (e.g. "Repo:uuid" → "uuid", "Project:uuid" → "uuid").
+/// If no colon is found, returns the original string.
+fn strip_global_id_prefix(id: &str) -> &str {
+    id.rsplit_once(':').map(|(_, raw)| raw).unwrap_or(id)
+}
+
+/// Returns an optional session scope SQL filter and its bind value.
+/// When scoped by `repo_id`, includes all sessions belonging to projects in that repo.
+/// When scoped by `project_id`, includes all sessions in that project.
+/// Returns `None` when unscoped (use fast aggregate tables).
+///
+/// `col` is the column expression to filter (e.g., `"session_id"`, `"m.session_id"`, `"s.id"`).
+/// Handles both raw UUIDs and Relay global IDs (`Repo:uuid`, `Project:uuid`).
+fn session_scope_filter(
+    col: &str,
+    project_id: &Option<String>,
+    repo_id: &Option<String>,
+) -> Option<(String, sea_orm::Value)> {
+    if let Some(rid) = repo_id {
+        let raw = strip_global_id_prefix(rid);
+        if !raw.is_empty() {
+            return Some((
+                format!(
+                    "{col} IN (SELECT ss.id FROM sessions ss \
+                     JOIN projects pp ON ss.project_id = pp.id \
+                     WHERE pp.repo_id = ?)"
+                ),
+                raw.to_string().into(),
+            ));
+        }
+    }
+    if let Some(pid) = project_id {
+        let raw = strip_global_id_prefix(pid);
+        if !raw.is_empty() {
+            return Some((
+                format!(
+                    "{col} IN (SELECT ss.id FROM sessions ss WHERE ss.project_id = ?)"
+                ),
+                raw.to_string().into(),
+            ));
+        }
+    }
+    None
 }
 
 /// Query root type.
@@ -241,14 +290,37 @@ impl QueryRoot {
                     .map_err(|e| Error::new(e.to_string()))?;
                 Ok(model.map(|m| crate::types::node::Node::Project(Project::from(m))))
             }
+            "ConfigDir" => {
+                let model = config_dirs::Entity::find_by_id(&raw_id).one(db).await
+                    .map_err(|e| Error::new(e.to_string()))?;
+                Ok(model.map(|m| crate::types::node::Node::ConfigDir(ConfigDir::from(m))))
+            }
+            "NativeTask" => {
+                let model = native_tasks::Entity::find_by_id(&raw_id).one(db).await
+                    .map_err(|e| Error::new(e.to_string()))?;
+                Ok(model.map(|m| crate::types::node::Node::NativeTask(crate::types::native_task::NativeTask::from(m))))
+            }
+            "HookExecution" => {
+                let model = hook_executions::Entity::find_by_id(&raw_id).one(db).await
+                    .map_err(|e| Error::new(e.to_string()))?;
+                Ok(model.map(|m| crate::types::node::Node::HookExecution(crate::types::hook_execution::HookExecution::from(m))))
+            }
             _ => Ok(None)
         }
     }
 
-    /// Fetch a single message by ID (browse-client compat).
-    async fn message(&self, _id: String) -> Option<crate::types::messages::Message> {
-        // Stub: message lookup by ID not yet implemented
-        None
+    /// Fetch a single message by its UUID.
+    async fn message(&self, ctx: &Context<'_>, id: String) -> Result<Option<crate::types::messages::Message>> {
+        let db = ctx.data::<DatabaseConnection>()?;
+        let msg_model = han_db::crud::messages::get(db, &id)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+        let msg_model = match msg_model {
+            Some(m) => m,
+            None => return Ok(None),
+        };
+        let data = crate::types::messages::MessageData::from_model(&msg_model, "");
+        Ok(Some(crate::types::messages::discriminate_message(data)))
     }
 
     /// Memory query interface (stub for browse-client compat).
@@ -287,15 +359,25 @@ impl QueryRoot {
     }
 
     /// All projects with sessions.
-    async fn projects(&self, ctx: &Context<'_>, first: Option<i32>) -> Result<Vec<Project>> {
+    async fn projects(
+        &self,
+        ctx: &Context<'_>,
+        first: Option<i32>,
+        filter: Option<crate::types::project::ProjectFilter>,
+        order_by: Option<crate::types::project::ProjectOrderBy>,
+    ) -> Result<Vec<Project>> {
         let db = ctx.data::<DatabaseConnection>()?;
         let limit = first.unwrap_or(20) as u64;
-        let models = projects::Entity::find()
-            .order_by_desc(projects::Column::UpdatedAt)
-            .all(db)
-            .await
-            .map_err(|e| Error::new(e.to_string()))?;
-
+        let mut query = projects::Entity::find();
+        if let Some(ref f) = filter {
+            query = query.filter(f.to_condition());
+        }
+        if let Some(ref o) = order_by {
+            query = o.apply(query);
+        } else {
+            query = query.order_by_desc(projects::Column::UpdatedAt);
+        }
+        let models = query.all(db).await.map_err(|e| Error::new(e.to_string()))?;
         Ok(models.into_iter().take(limit as usize).map(Project::from).collect())
     }
 
@@ -310,15 +392,25 @@ impl QueryRoot {
     }
 
     /// All git repositories with sessions.
-    async fn repos(&self, ctx: &Context<'_>, first: Option<i32>) -> Result<Vec<Repo>> {
+    async fn repos(
+        &self,
+        ctx: &Context<'_>,
+        first: Option<i32>,
+        filter: Option<crate::types::repo::RepoFilter>,
+        order_by: Option<crate::types::repo::RepoOrderBy>,
+    ) -> Result<Vec<Repo>> {
         let db = ctx.data::<DatabaseConnection>()?;
         let limit = first.unwrap_or(20) as u64;
-        let models = repos::Entity::find()
-            .order_by_desc(repos::Column::UpdatedAt)
-            .all(db)
-            .await
-            .map_err(|e| Error::new(e.to_string()))?;
-
+        let mut query = repos::Entity::find();
+        if let Some(ref f) = filter {
+            query = query.filter(f.to_condition());
+        }
+        if let Some(ref o) = order_by {
+            query = o.apply(query);
+        } else {
+            query = query.order_by_desc(repos::Column::UpdatedAt);
+        }
+        let models = query.all(db).await.map_err(|e| Error::new(e.to_string()))?;
         Ok(models.into_iter().take(limit as usize).map(Repo::from).collect())
     }
 
@@ -360,6 +452,9 @@ impl QueryRoot {
     }
 
     /// Get sessions with cursor-based pagination.
+    ///
+    /// Filtering is done via the GreenFairy-style `filter` input type.
+    /// Supports association filtering (e.g., `filter: { project: { repoId: { _eq: "..." } } }`).
     async fn sessions(
         &self,
         ctx: &Context<'_>,
@@ -367,65 +462,120 @@ impl QueryRoot {
         after: Option<String>,
         last: Option<i32>,
         before: Option<String>,
-        project_id: Option<String>,
-        _worktree_name: Option<String>,
-        _user_id: Option<String>,
+        filter: Option<crate::types::sessions::SessionFilter>,
+        order_by: Option<crate::types::sessions::SessionOrderBy>,
     ) -> Result<SessionConnection> {
         let db = ctx.data::<DatabaseConnection>()?;
 
-        // Get total count efficiently
-        let count_sql = if let Some(ref pid) = project_id {
-            format!("SELECT COUNT(*) as count FROM sessions WHERE project_id = '{}'", pid.replace('\'', "''"))
-        } else {
-            "SELECT COUNT(*) as count FROM sessions".to_string()
-        };
-        let total_count = CountRow::find_by_statement(Statement::from_string(
-            DbBackend::Sqlite, count_sql,
-        ))
-        .one(db)
-        .await
-        .map(|r| r.map(|r| r.count as i32).unwrap_or(0))
-        .unwrap_or(0);
-
-        // Fetch only the page we need, sorted by most recent message timestamp
-        let page_size = first.or(last).unwrap_or(20) as i64;
-        let (page_sql, values) = if let Some(ref pid) = project_id {
-            (
-                "SELECT s.* FROM sessions s \
-                 LEFT JOIN (SELECT session_id, MAX(timestamp) as last_msg FROM messages GROUP BY session_id) m \
-                 ON s.id = m.session_id \
-                 WHERE s.project_id = ? \
-                 ORDER BY COALESCE(m.last_msg, '') DESC \
-                 LIMIT ?".to_string(),
-                vec![pid.clone().into(), page_size.into()],
-            )
-        } else {
-            (
-                "SELECT s.* FROM sessions s \
-                 LEFT JOIN (SELECT session_id, MAX(timestamp) as last_msg FROM messages GROUP BY session_id) m \
-                 ON s.id = m.session_id \
-                 ORDER BY COALESCE(m.last_msg, '') DESC \
-                 LIMIT ?".to_string(),
-                vec![page_size.into()],
-            )
-        };
-
-        let models = sessions::Entity::find()
-            .from_raw_sql(Statement::from_sql_and_values(DbBackend::Sqlite, page_sql, values))
-            .all(db)
+        // Use SeaORM query builder with filter conditions
+        let mut count_query = sessions::Entity::find();
+        if let Some(ref f) = filter {
+            count_query = count_query.filter(f.to_condition());
+        }
+        let total_count = count_query
+            .clone()
+            .count(db)
             .await
-            .map_err(|e| Error::new(e.to_string()))?;
+            .map(|c| c as i32)
+            .unwrap_or(0);
 
-        let mut session_data: Vec<SessionData> =
-            models.into_iter().map(session_model_to_data).collect();
-        enrich_sessions(db, &mut session_data).await?;
+        let page_size = first.or(last).unwrap_or(20) as i64;
 
-        // Sort by most recent activity (updated_at DESC), sessions without messages last
-        session_data.sort_by(|a, b| {
-            let a_ts = a.updated_at.as_deref().unwrap_or("");
-            let b_ts = b.updated_at.as_deref().unwrap_or("");
-            b_ts.cmp(a_ts)
-        });
+        // When no explicit orderBy, use SQL-level sorting by last message timestamp
+        // to avoid loading ALL sessions just to sort by activity.
+        let mut session_data: Vec<SessionData> = if order_by.is_none() {
+            // Fast path: get top N sessions ordered by latest message timestamp.
+            // Uses idx_messages_session_ts_desc for efficient MAX(timestamp) per session.
+            let mut page_query = sessions::Entity::find();
+            if let Some(ref f) = filter {
+                page_query = page_query.filter(f.to_condition());
+            }
+
+            // Get filtered session IDs, limited to a reasonable working set
+            // that we can sort by activity. Cap at 200 to avoid loading thousands.
+            let models = page_query
+                .limit(Some(200))
+                .all(db)
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+
+            if models.is_empty() {
+                vec![]
+            } else {
+                // Get last activity timestamps for these sessions in a single query
+                let session_ids: Vec<String> = models.iter().map(|m| m.id.clone()).collect();
+                let placeholders = vec!["?"; session_ids.len()].join(",");
+                let values: Vec<sea_orm::Value> =
+                    session_ids.iter().map(|id| id.clone().into()).collect();
+
+                #[derive(Debug, FromQueryResult)]
+                struct SessionActivity {
+                    session_id: String,
+                    last_ts: Option<String>,
+                }
+
+                let activities = SessionActivity::find_by_statement(
+                    Statement::from_sql_and_values(
+                        DbBackend::Sqlite,
+                        format!(
+                            "SELECT session_id, MAX(timestamp) as last_ts \
+                             FROM messages WHERE session_id IN ({placeholders}) \
+                             GROUP BY session_id"
+                        ),
+                        values,
+                    ),
+                )
+                .all(db)
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+
+                let activity_map: HashMap<String, String> = activities
+                    .into_iter()
+                    .filter_map(|a| a.last_ts.map(|ts| (a.session_id, ts)))
+                    .collect();
+
+                // Sort models by last activity, then take page_size
+                let mut model_with_ts: Vec<(sessions::Model, String)> = models
+                    .into_iter()
+                    .map(|m| {
+                        let ts = activity_map
+                            .get(&m.id)
+                            .cloned()
+                            .unwrap_or_default();
+                        (m, ts)
+                    })
+                    .collect();
+                model_with_ts.sort_by(|a, b| b.1.cmp(&a.1));
+                model_with_ts.truncate(page_size as usize);
+
+                let mut data: Vec<SessionData> = model_with_ts
+                    .into_iter()
+                    .map(|(m, _)| session_model_to_data(m))
+                    .collect();
+                enrich_sessions(db, &mut data).await?;
+                data
+            }
+        } else {
+            // Explicit orderBy: use SeaORM ordering with SQL-level LIMIT
+            let mut page_query = sessions::Entity::find();
+            if let Some(ref f) = filter {
+                page_query = page_query.filter(f.to_condition());
+            }
+            if let Some(ref o) = order_by {
+                page_query = o.apply(page_query);
+            }
+
+            let models = page_query
+                .limit(Some(page_size as u64))
+                .all(db)
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+
+            let mut data: Vec<SessionData> =
+                models.into_iter().map(session_model_to_data).collect();
+            enrich_sessions(db, &mut data).await?;
+            data
+        };
 
         // Build connection with the real total count
         let mut conn = build_session_connection(session_data, None, after, last, before);
@@ -452,24 +602,74 @@ impl QueryRoot {
         _end_date: Option<String>,
         _granularity: Option<crate::types::enums::Granularity>,
         _project_ids: Option<Vec<String>>,
+        project_id: Option<String>,
+        repo_id: Option<String>,
     ) -> Result<Option<crate::types::team::TeamMetrics>> {
         let db = ctx.data::<DatabaseConnection>()?;
+        let scope = session_scope_filter("session_id", &project_id, &repo_id);
 
-        // Use pre-aggregated global_aggregates (instant vs scanning 1M+ messages)
-        let row = db
-            .query_one(Statement::from_string(
-                DbBackend::Sqlite,
-                "SELECT total_sessions, total_tasks, \
-                 total_input_tokens, total_output_tokens, total_cache_read_tokens, \
-                 (total_input_tokens + total_output_tokens + total_cache_read_tokens) as total_tokens \
-                 FROM global_aggregates WHERE id = 1"
-                    .to_string(),
-            ))
-            .await
-            .map_err(|e| Error::new(e.to_string()))?;
+        let (total_sessions, total_tasks, total_tokens, cost) = if let Some((ref scope_clause, ref scope_val)) = scope {
+            // Scoped: count sessions from sessions table (complete data),
+            // token totals from messages table (indexed data).
+            let sess_scope = session_scope_filter("s.id", &project_id, &repo_id);
+            let (sess_clause, _) = sess_scope.unwrap();
 
-        let (total_sessions, total_tasks, total_tokens, cost) = row
-            .map(|r| {
+            let token_row = db
+                .query_one(Statement::from_sql_and_values(
+                    DbBackend::Sqlite,
+                    format!(
+                        "SELECT \
+                         (SELECT COUNT(*) FROM sessions s WHERE {sess_clause}) as total_sessions, \
+                         COALESCE(SUM(input_tokens), 0) as total_input_tokens, \
+                         COALESCE(SUM(output_tokens), 0) as total_output_tokens, \
+                         COALESCE(SUM(cache_read_tokens), 0) as total_cache_read_tokens \
+                         FROM messages WHERE {scope_clause}"
+                    ),
+                    vec![scope_val.clone(), scope_val.clone()],
+                ))
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+
+            let (sess, inp, out, cache) = token_row
+                .map(|r| {
+                    let s: i64 = r.try_get("", "total_sessions").unwrap_or(0);
+                    let i: i64 = r.try_get("", "total_input_tokens").unwrap_or(0);
+                    let o: i64 = r.try_get("", "total_output_tokens").unwrap_or(0);
+                    let c: i64 = r.try_get("", "total_cache_read_tokens").unwrap_or(0);
+                    (s, i, o, c)
+                })
+                .unwrap_or((0, 0, 0, 0));
+
+            let task_row = db
+                .query_one(Statement::from_sql_and_values(
+                    DbBackend::Sqlite,
+                    format!("SELECT COUNT(*) as total_tasks FROM native_tasks WHERE {scope_clause}"),
+                    vec![scope_val.clone()],
+                ))
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+
+            let tasks = task_row
+                .map(|r| r.try_get::<i64>("", "total_tasks").unwrap_or(0))
+                .unwrap_or(0);
+
+            let tok = inp + out + cache;
+            (sess as i32, tasks as i32, tok, estimate_cost_usd(inp, out, cache))
+        } else {
+            // Unscoped: use pre-aggregated global_aggregates (instant vs scanning 1M+ messages)
+            let row = db
+                .query_one(Statement::from_string(
+                    DbBackend::Sqlite,
+                    "SELECT total_sessions, total_tasks, \
+                     total_input_tokens, total_output_tokens, total_cache_read_tokens, \
+                     (total_input_tokens + total_output_tokens + total_cache_read_tokens) as total_tokens \
+                     FROM global_aggregates WHERE id = 1"
+                        .to_string(),
+                ))
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+
+            row.map(|r| {
                 let s: i64 = r.try_get("", "total_sessions").unwrap_or(0);
                 let t: i64 = r.try_get("", "total_tasks").unwrap_or(0);
                 let tok: i64 = r.try_get("", "total_tokens").unwrap_or(0);
@@ -478,19 +678,162 @@ impl QueryRoot {
                 let cache: i64 = r.try_get("", "total_cache_read_tokens").unwrap_or(0);
                 (s as i32, t as i32, tok, estimate_cost_usd(inp, out, cache))
             })
-            .unwrap_or((0, 0, 0, 0.0));
+            .unwrap_or((0, 0, 0, 0.0))
+        };
+
+        // Sessions by project (top 20)
+        let sbp_rows = db
+            .query_all(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT p.id as pid, p.name as pname, p.path as ppath, COUNT(DISTINCT s.id) as sess_cnt, \
+                 (SELECT COUNT(*) FROM native_tasks nt WHERE nt.session_id IN \
+                   (SELECT s2.id FROM sessions s2 WHERE s2.project_id = p.id)) as task_cnt \
+                 FROM sessions s \
+                 JOIN projects p ON s.project_id = p.id \
+                 GROUP BY p.id \
+                 ORDER BY sess_cnt DESC LIMIT 20"
+                    .to_string(),
+            ))
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        let sessions_by_project: Vec<crate::types::team::ProjectSessionCount> = sbp_rows
+            .iter()
+            .filter_map(|r| {
+                let pid: String = r.try_get("", "pid").ok()?;
+                let pname: String = r.try_get("", "pname").unwrap_or_default();
+                let ppath: String = r.try_get("", "ppath").unwrap_or_default();
+                let sess: i64 = r.try_get("", "sess_cnt").unwrap_or(0);
+                let tasks: i64 = r.try_get("", "task_cnt").unwrap_or(0);
+                // Use name from DB, falling back to last path component
+                let display_name = if pname.starts_with('-') || pname.is_empty() {
+                    // Name is still a slug — derive from path
+                    std::path::Path::new(&ppath)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or(&pname)
+                        .to_string()
+                } else {
+                    pname
+                };
+                Some(crate::types::team::ProjectSessionCount {
+                    project_id: Some(pid),
+                    project_name: Some(display_name),
+                    count: Some(sess as i32),
+                    session_count: Some(sess as i32),
+                    task_count: Some(tasks as i32),
+                    success_rate: None,
+                })
+            })
+            .collect();
+
+        // Activity timeline: sessions per day (last 90 days)
+        // sessions table has no started_at — derive from first message timestamp
+        let timeline_rows = db
+            .query_all(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT dt, COUNT(*) as sess_cnt, SUM(msg_cnt) as msg_cnt FROM (\
+                   SELECT s.id, date(MIN(m.timestamp), 'localtime') as dt, COUNT(m.id) as msg_cnt \
+                   FROM sessions s \
+                   JOIN messages m ON m.session_id = s.id \
+                   GROUP BY s.id \
+                   HAVING dt >= date('now', 'localtime', '-90 days') \
+                 ) GROUP BY dt ORDER BY dt ASC"
+                    .to_string(),
+            ))
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        let activity_timeline: Vec<crate::types::team::ActivityTimelineEntry> = timeline_rows
+            .iter()
+            .filter_map(|r| {
+                let dt: String = r.try_get("", "dt").ok()?;
+                let sess: i64 = r.try_get("", "sess_cnt").unwrap_or(0);
+                let msgs: i64 = r.try_get("", "msg_cnt").unwrap_or(0);
+                Some(crate::types::team::ActivityTimelineEntry {
+                    date: Some(dt.clone()),
+                    period: Some(dt),
+                    sessions: Some(sess as i32),
+                    session_count: Some(sess as i32),
+                    tasks: None,
+                    task_count: None,
+                    tokens: None,
+                    message_count: Some(msgs as i32),
+                })
+            })
+            .collect();
+
+        // Task completion metrics
+        let tcm_row = db
+            .query_one(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT COUNT(*) as total, \
+                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed, \
+                 SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_prog, \
+                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending \
+                 FROM native_tasks"
+                    .to_string(),
+            ))
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        let task_completion_metrics = tcm_row.map(|r| {
+            let total: i64 = r.try_get("", "total").unwrap_or(0);
+            let completed: i64 = r.try_get("", "completed").unwrap_or(0);
+            let in_prog: i64 = r.try_get("", "in_prog").unwrap_or(0);
+            let pending: i64 = r.try_get("", "pending").unwrap_or(0);
+            let sr = if total > 0 { completed as f64 / total as f64 } else { 0.0 };
+            crate::types::team::TaskCompletionMetrics {
+                total_tasks: Some(total as i32),
+                total_created: Some(total as i32),
+                total_completed: Some(completed as i32),
+                completed_tasks: Some(completed as i32),
+                success_count: Some(completed as i32),
+                partial_count: Some(in_prog as i32),
+                failure_count: Some(pending as i32),
+                success_rate: Some(sr),
+                average_confidence: None,
+            }
+        });
+
+        // Top contributors (projects as proxy — local mode is single-user)
+        let top_contributors: Vec<crate::types::team::ContributorMetrics> = sessions_by_project
+            .iter()
+            .take(10)
+            .map(|p| crate::types::team::ContributorMetrics {
+                user_id: p.project_id.clone(),
+                contributor_id: p.project_id.clone(),
+                display_name: p.project_name.clone(),
+                session_count: p.session_count,
+                task_count: p.task_count,
+                token_count: None,
+                success_rate: p.success_rate,
+            })
+            .collect();
+
+        // Convert activity timeline to period session counts for sessions_by_period
+        let sessions_by_period: Vec<crate::types::team::PeriodSessionCount> = activity_timeline
+            .iter()
+            .map(|e| crate::types::team::PeriodSessionCount {
+                period: e.period.clone(),
+                count: e.session_count,
+                session_count: e.session_count,
+                task_count: e.task_count,
+                token_usage: None,
+            })
+            .collect();
 
         Ok(Some(crate::types::team::TeamMetrics {
             total_sessions: Some(total_sessions),
             total_tasks: Some(total_tasks),
             total_tokens: Some(total_tokens),
             estimated_cost_usd: Some(cost),
-            sessions_by_period: Some(vec![]),
-            sessions_by_project: Some(vec![]),
-            top_contributors: Some(vec![]),
-            activity_timeline: Some(vec![]),
+            sessions_by_period: Some(sessions_by_period),
+            sessions_by_project: Some(sessions_by_project),
+            top_contributors: Some(top_contributors),
+            activity_timeline: Some(activity_timeline),
             token_usage_aggregation: None,
-            task_completion_metrics: None,
+            task_completion_metrics,
         }))
     }
 
@@ -499,27 +842,57 @@ impl QueryRoot {
     // ========================================================================
 
     /// Task metrics for a time period.
-    async fn metrics(&self, ctx: &Context<'_>, _period: Option<MetricsPeriod>) -> Result<Option<MetricsData>> {
+    async fn metrics(
+        &self,
+        ctx: &Context<'_>,
+        _period: Option<MetricsPeriod>,
+        project_id: Option<String>,
+        repo_id: Option<String>,
+    ) -> Result<Option<MetricsData>> {
         let db = ctx.data::<DatabaseConnection>()?;
+        let scope = session_scope_filter("session_id", &project_id, &repo_id);
 
-        // Use pre-aggregated global_aggregates
-        let task_counts = db
-            .query_one(Statement::from_string(
-                DbBackend::Sqlite,
-                "SELECT total_tasks as total, total_completed_tasks as completed \
-                 FROM global_aggregates WHERE id = 1"
-                    .to_string(),
-            ))
-            .await
-            .map_err(|e| Error::new(e.to_string()))?;
-
-        let (total, completed) = task_counts
-            .map(|r| {
+        // Task counts
+        let (total, completed) = if let Some((ref scope_clause, ref scope_val)) = scope {
+            // Scoped: query native_tasks directly
+            let row = db
+                .query_one(Statement::from_sql_and_values(
+                    DbBackend::Sqlite,
+                    format!(
+                        "SELECT COUNT(*) as total, \
+                         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed \
+                         FROM native_tasks WHERE {scope_clause}"
+                    ),
+                    vec![scope_val.clone()],
+                ))
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+            row.map(|r| {
                 let t: i64 = r.try_get("", "total").unwrap_or(0);
                 let c: i64 = r.try_get("", "completed").unwrap_or(0);
                 (t as i32, c as i32)
             })
-            .unwrap_or((0, 0));
+            .unwrap_or((0, 0))
+        } else {
+            // Unscoped: query native_tasks directly for accurate counts
+            let task_counts = db
+                .query_one(Statement::from_string(
+                    DbBackend::Sqlite,
+                    "SELECT COUNT(*) as total, \
+                     SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed \
+                     FROM native_tasks"
+                        .to_string(),
+                ))
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+            task_counts
+                .map(|r| {
+                    let t: i64 = r.try_get("", "total").unwrap_or(0);
+                    let c: i64 = r.try_get("", "completed").unwrap_or(0);
+                    (t as i32, c as i32)
+                })
+                .unwrap_or((0, 0))
+        };
 
         let success_rate = if total > 0 {
             completed as f64 / total as f64
@@ -527,17 +900,38 @@ impl QueryRoot {
             0.0
         };
 
-        // Phase 5: Sentiment aggregation for agent health
+        // Sentiment aggregation for agent health
+        let (sentiment_sql, sentiment_values): (String, Vec<sea_orm::Value>) =
+            if let Some((ref scope_clause, ref scope_val)) = scope {
+                (
+                    format!(
+                        "SELECT \
+                         AVG(sentiment_score) as avg_sentiment, \
+                         COUNT(CASE WHEN frustration_level IN ('high', 'critical') THEN 1 END) as significant_frustrations, \
+                         COUNT(CASE WHEN frustration_level IS NOT NULL THEN 1 END) as total_frustration_events \
+                         FROM messages \
+                         WHERE sentiment_score IS NOT NULL AND {scope_clause}"
+                    ),
+                    vec![scope_val.clone()],
+                )
+            } else {
+                (
+                    "SELECT \
+                     AVG(sentiment_score) as avg_sentiment, \
+                     COUNT(CASE WHEN frustration_level IN ('high', 'critical') THEN 1 END) as significant_frustrations, \
+                     COUNT(CASE WHEN frustration_level IS NOT NULL THEN 1 END) as total_frustration_events \
+                     FROM messages \
+                     WHERE sentiment_score IS NOT NULL"
+                        .to_string(),
+                    vec![],
+                )
+            };
+
         let sentiment_row = db
-            .query_one(Statement::from_string(
+            .query_one(Statement::from_sql_and_values(
                 DbBackend::Sqlite,
-                "SELECT \
-                 AVG(sentiment_score) as avg_sentiment, \
-                 COUNT(CASE WHEN frustration_level IN ('high', 'critical') THEN 1 END) as significant_frustrations, \
-                 COUNT(CASE WHEN frustration_level IS NOT NULL THEN 1 END) as total_frustration_events \
-                 FROM messages \
-                 WHERE sentiment_score IS NOT NULL"
-                    .to_string(),
+                sentiment_sql,
+                sentiment_values,
             ))
             .await
             .map_err(|e| Error::new(e.to_string()))?;
@@ -559,6 +953,116 @@ impl QueryRoot {
             0.0
         };
 
+        // Tasks by status (mapped to TaskType for chart display)
+        // native_tasks has status: pending/in_progress/completed
+        // We group by status and map to meaningful categories
+        let (type_sql, type_values): (String, Vec<sea_orm::Value>) =
+            if let Some((ref scope_clause, ref scope_val)) = scope {
+                (
+                    format!(
+                        "SELECT status, COUNT(*) as cnt FROM native_tasks \
+                         WHERE {scope_clause} GROUP BY status ORDER BY cnt DESC"
+                    ),
+                    vec![scope_val.clone()],
+                )
+            } else {
+                (
+                    "SELECT status, COUNT(*) as cnt FROM native_tasks \
+                     GROUP BY status ORDER BY cnt DESC"
+                        .to_string(),
+                    vec![],
+                )
+            };
+
+        let type_rows = db
+            .query_all(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                type_sql,
+                type_values,
+            ))
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        let tasks_by_type: Vec<TaskTypeCount> = type_rows
+            .iter()
+            .filter_map(|r| {
+                let status: String = r.try_get("", "status").ok()?;
+                let cnt: i64 = r.try_get("", "cnt").unwrap_or(0);
+                let task_type = match status.as_str() {
+                    "completed" => Some(crate::types::enums::TaskType::Implementation),
+                    "in_progress" => Some(crate::types::enums::TaskType::Research),
+                    "pending" => Some(crate::types::enums::TaskType::Fix),
+                    _ => None,
+                };
+                Some(TaskTypeCount {
+                    task_type,
+                    count: Some(cnt as i32),
+                })
+            })
+            .collect();
+
+        // Tasks by outcome: completed=SUCCESS, in_progress=PARTIAL, pending=not counted
+        let (outcome_sql, outcome_values): (String, Vec<sea_orm::Value>) =
+            if let Some((ref scope_clause, ref scope_val)) = scope {
+                (
+                    format!(
+                        "SELECT \
+                         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as success, \
+                         SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as partial, \
+                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as failure \
+                         FROM native_tasks WHERE {scope_clause}"
+                    ),
+                    vec![scope_val.clone()],
+                )
+            } else {
+                (
+                    "SELECT \
+                     SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as success, \
+                     SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as partial, \
+                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as failure \
+                     FROM native_tasks"
+                        .to_string(),
+                    vec![],
+                )
+            };
+
+        let outcome_row = db
+            .query_one(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                outcome_sql,
+                outcome_values,
+            ))
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        let tasks_by_outcome: Vec<TaskOutcomeCount> = if let Some(r) = outcome_row {
+            let success: i64 = r.try_get("", "success").unwrap_or(0);
+            let partial: i64 = r.try_get("", "partial").unwrap_or(0);
+            let failure: i64 = r.try_get("", "failure").unwrap_or(0);
+            let mut v = vec![];
+            if success > 0 {
+                v.push(TaskOutcomeCount {
+                    outcome: Some(crate::types::enums::TaskOutcome::Success),
+                    count: Some(success as i32),
+                });
+            }
+            if partial > 0 {
+                v.push(TaskOutcomeCount {
+                    outcome: Some(crate::types::enums::TaskOutcome::Partial),
+                    count: Some(partial as i32),
+                });
+            }
+            if failure > 0 {
+                v.push(TaskOutcomeCount {
+                    outcome: Some(crate::types::enums::TaskOutcome::Failure),
+                    count: Some(failure as i32),
+                });
+            }
+            v
+        } else {
+            vec![]
+        };
+
         Ok(Some(MetricsData {
             total_tasks: Some(total),
             completed_tasks: Some(completed),
@@ -568,8 +1072,8 @@ impl QueryRoot {
             calibration_score: None,
             significant_frustrations: Some(significant_frustrations),
             significant_frustration_rate: Some(frustration_rate),
-            tasks_by_type: Some(vec![]),
-            tasks_by_outcome: Some(vec![]),
+            tasks_by_type: Some(tasks_by_type),
+            tasks_by_outcome: Some(tasks_by_outcome),
         }))
     }
 
@@ -580,12 +1084,40 @@ impl QueryRoot {
 
     /// Aggregate plugin statistics.
     async fn plugin_stats(&self) -> Option<PluginStats> {
+        // Read installed_plugins.json from ~/.claude/plugins/
+        let plugins_path = dirs::home_dir()
+            .map(|h| h.join(".claude").join("plugins").join("installed_plugins.json"));
+
+        let (mut user, mut project, mut local, mut total_unique) = (0i32, 0i32, 0i32, 0i32);
+
+        if let Some(path) = plugins_path {
+            if let Ok(data) = std::fs::read_to_string(&path) {
+                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&data) {
+                    if let Some(plugins) = parsed.get("plugins").and_then(|p| p.as_object()) {
+                        total_unique = plugins.len() as i32;
+                        for (_name, installations) in plugins {
+                            if let Some(installs) = installations.as_array() {
+                                for install in installs {
+                                    match install.get("scope").and_then(|s| s.as_str()) {
+                                        Some("user") => user += 1,
+                                        Some("project") => project += 1,
+                                        Some("local") => local += 1,
+                                        _ => project += 1, // default scope
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Some(PluginStats {
-            total_plugins: Some(0),
-            user_plugins: Some(0),
-            project_plugins: Some(0),
-            local_plugins: Some(0),
-            enabled_plugins: Some(0),
+            total_plugins: Some(total_unique),
+            user_plugins: Some(user),
+            project_plugins: Some(project),
+            local_plugins: Some(local),
+            enabled_plugins: Some(total_unique),
         })
     }
 
@@ -595,23 +1127,57 @@ impl QueryRoot {
     }
 
     /// Activity data for dashboard visualizations.
-    async fn activity(&self, ctx: &Context<'_>, days: Option<i32>) -> Result<Option<ActivityData>> {
+    async fn activity(
+        &self,
+        ctx: &Context<'_>,
+        days: Option<i32>,
+        project_id: Option<String>,
+        repo_id: Option<String>,
+    ) -> Result<Option<ActivityData>> {
         let db = ctx.data::<DatabaseConnection>()?;
         let days = days.unwrap_or(30);
+        let scope = session_scope_filter("session_id", &project_id, &repo_id);
 
-        // Use pre-aggregated daily_aggregates table (instant reads vs scanning 1M+ messages)
-        let daily_rows = DailyActivityRow::find_by_statement(Statement::from_sql_and_values(
-            DbBackend::Sqlite,
-            "SELECT date, session_count, message_count, input_tokens, output_tokens, \
-             cache_read_tokens as cached_tokens, lines_added, lines_removed, files_changed \
-             FROM daily_aggregates \
-             WHERE date >= date('now', ? || ' days') \
-             ORDER BY date ASC",
-            vec![format!("-{days}").into()],
-        ))
-        .all(db)
-        .await
-        .map_err(|e| Error::new(e.to_string()))?;
+        // === Daily activity ===
+        let daily_rows = if let Some((ref scope_clause, ref scope_val)) = scope {
+            // Scoped: compute from raw messages table
+            DailyActivityRow::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                format!(
+                    "SELECT date(timestamp, 'localtime') as date, \
+                     COUNT(DISTINCT session_id) as session_count, \
+                     COUNT(*) as message_count, \
+                     COALESCE(SUM(input_tokens), 0) as input_tokens, \
+                     COALESCE(SUM(output_tokens), 0) as output_tokens, \
+                     COALESCE(SUM(cache_read_tokens), 0) as cached_tokens, \
+                     COALESCE(SUM(lines_added), 0) as lines_added, \
+                     COALESCE(SUM(lines_removed), 0) as lines_removed, \
+                     COALESCE(SUM(files_changed), 0) as files_changed \
+                     FROM messages \
+                     WHERE timestamp >= date('now', ? || ' days') AND {scope_clause} \
+                     GROUP BY date(timestamp, 'localtime') \
+                     ORDER BY date ASC"
+                ),
+                vec![format!("-{days}").into(), scope_val.clone()],
+            ))
+            .all(db)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?
+        } else {
+            // Unscoped: use pre-aggregated daily_aggregates table
+            DailyActivityRow::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                "SELECT date, session_count, message_count, input_tokens, output_tokens, \
+                 cache_read_tokens as cached_tokens, lines_added, lines_removed, files_changed \
+                 FROM daily_aggregates \
+                 WHERE date >= date('now', 'localtime', ? || ' days') \
+                 ORDER BY date ASC",
+                vec![format!("-{days}").into()],
+            ))
+            .all(db)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?
+        };
 
         let daily_activity: Vec<DailyActivity> = daily_rows
             .iter()
@@ -628,15 +1194,36 @@ impl QueryRoot {
             })
             .collect();
 
-        // Use pre-aggregated hourly_aggregates table
-        let hourly_rows = HourlyActivityRow::find_by_statement(Statement::from_string(
-            DbBackend::Sqlite,
-            "SELECT hour, session_count, message_count FROM hourly_aggregates ORDER BY hour"
-                .to_string(),
-        ))
-        .all(db)
-        .await
-        .map_err(|e| Error::new(e.to_string()))?;
+        // === Hourly activity ===
+        let hourly_rows = if let Some((ref scope_clause, ref scope_val)) = scope {
+            // Scoped: compute from raw messages
+            HourlyActivityRow::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                format!(
+                    "SELECT CAST(strftime('%H', timestamp, 'localtime') AS INTEGER) as hour, \
+                     COUNT(DISTINCT session_id) as session_count, \
+                     COUNT(*) as message_count \
+                     FROM messages \
+                     WHERE {scope_clause} \
+                     GROUP BY CAST(strftime('%H', timestamp, 'localtime') AS INTEGER) \
+                     ORDER BY hour"
+                ),
+                vec![scope_val.clone()],
+            ))
+            .all(db)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?
+        } else {
+            // Unscoped: use pre-aggregated hourly_aggregates table
+            HourlyActivityRow::find_by_statement(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT hour, session_count, message_count FROM hourly_aggregates ORDER BY hour"
+                    .to_string(),
+            ))
+            .all(db)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?
+        };
 
         let mut hourly_map: HashMap<i32, (i64, i64)> = HashMap::new();
         for r in hourly_rows {
@@ -653,7 +1240,7 @@ impl QueryRoot {
             })
             .collect();
 
-        // Use pre-aggregated global_aggregates for token totals
+        // === Token totals ===
         #[derive(Debug, FromQueryResult)]
         struct GlobalAgg {
             total_sessions: i64,
@@ -662,16 +1249,43 @@ impl QueryRoot {
             total_output_tokens: i64,
             total_cache_read_tokens: i64,
         }
-        let globals = GlobalAgg::find_by_statement(Statement::from_string(
-            DbBackend::Sqlite,
-            "SELECT total_sessions, total_messages, total_input_tokens, \
-             total_output_tokens, total_cache_read_tokens \
-             FROM global_aggregates WHERE id = 1"
-                .to_string(),
-        ))
-        .one(db)
-        .await
-        .map_err(|e| Error::new(e.to_string()))?;
+        let globals = if let Some((ref _scope_clause, ref scope_val)) = scope {
+            // Scoped: count sessions from the sessions table (complete data),
+            // but get message/token totals from the messages table (indexed data).
+            // The sessions table has all sessions; the messages table may only have
+            // a subset indexed by the Rust indexer.
+            let session_scope = session_scope_filter("s.id", &project_id, &repo_id);
+            let msg_scope = session_scope_filter("session_id", &project_id, &repo_id);
+            let (sess_clause, _sess_val) = session_scope.unwrap();
+            let (msg_clause, _msg_val) = msg_scope.unwrap();
+            GlobalAgg::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                format!(
+                    "SELECT \
+                     (SELECT COUNT(*) FROM sessions s WHERE {sess_clause}) as total_sessions, \
+                     (SELECT COUNT(*) FROM messages WHERE {msg_clause}) as total_messages, \
+                     (SELECT COALESCE(SUM(input_tokens), 0) FROM messages WHERE {msg_clause}) as total_input_tokens, \
+                     (SELECT COALESCE(SUM(output_tokens), 0) FROM messages WHERE {msg_clause}) as total_output_tokens, \
+                     (SELECT COALESCE(SUM(cache_read_tokens), 0) FROM messages WHERE {msg_clause}) as total_cache_read_tokens"
+                ),
+                vec![scope_val.clone(), scope_val.clone(), scope_val.clone(), scope_val.clone(), scope_val.clone()],
+            ))
+            .one(db)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?
+        } else {
+            // Unscoped: use pre-aggregated global_aggregates
+            GlobalAgg::find_by_statement(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT total_sessions, total_messages, total_input_tokens, \
+                 total_output_tokens, total_cache_read_tokens \
+                 FROM global_aggregates WHERE id = 1"
+                    .to_string(),
+            ))
+            .one(db)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?
+        };
 
         let (total_sessions, total_messages, token_usage) = match globals {
             Some(g) => (
@@ -699,7 +1313,34 @@ impl QueryRoot {
         let total_active_days = daily_activity.len() as i32;
         let first_session_date = daily_activity.first().and_then(|d| d.date.clone());
 
-        // Load per-model data from Claude Code's stats-cache.json
+        // Calculate current streak: consecutive days with activity ending today or yesterday
+        let streak_days = {
+            use chrono::{NaiveDate, Utc};
+            let today = Utc::now().date_naive();
+            let mut streak = 0i32;
+            // daily_activity is sorted ASC by date — iterate in reverse
+            let mut expected = today;
+            for day in daily_activity.iter().rev() {
+                if let Some(ref date_str) = day.date {
+                    if let Ok(d) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+                        if d == expected {
+                            streak += 1;
+                            expected = d - chrono::Duration::days(1);
+                        } else if streak == 0 && d == today - chrono::Duration::days(1) {
+                            // Allow streak to start from yesterday if no activity today yet
+                            streak += 1;
+                            expected = d - chrono::Duration::days(1);
+                        } else if d < expected {
+                            break; // Gap found
+                        }
+                        // d > expected means duplicate or future date, skip
+                    }
+                }
+            }
+            streak
+        };
+
+        // Model data from stats-cache.json (global only — no per-project breakdown)
         let (model_usage, daily_model_tokens) = load_stats_cache_model_data();
 
         Ok(Some(ActivityData {
@@ -710,7 +1351,7 @@ impl QueryRoot {
             model_usage: Some(model_usage),
             total_sessions: Some(total_sessions),
             total_messages: Some(total_messages),
-            streak_days: Some(0),
+            streak_days: Some(streak_days),
             total_active_days: Some(total_active_days),
             first_session_date,
         }))
@@ -722,9 +1363,25 @@ impl QueryRoot {
         ctx: &Context<'_>,
         days: Option<i32>,
         _subscription_tier: Option<i32>,
+        project_id: Option<String>,
+        repo_id: Option<String>,
     ) -> Result<Option<DashboardAnalytics>> {
         let db = ctx.data::<DatabaseConnection>()?;
         let days = days.unwrap_or(30);
+
+        // Check TTL cache (30s) — dashboardAnalytics is expensive (~4s) and
+        // the underlying data (30-day aggregates) doesn't change between requests.
+        let cache_key = format!("{}-{:?}-{:?}", days, project_id, repo_id);
+        {
+            let guard = ANALYTICS_CACHE.lock().unwrap();
+            if let Some((cached_at, ref key, ref data)) = *guard {
+                if key == &cache_key && cached_at.elapsed().as_secs() < 30 {
+                    return Ok(Some(data.clone()));
+                }
+            }
+        }
+
+        let scope = session_scope_filter("session_id", &project_id, &repo_id);
 
         // Tool usage breakdown
         #[derive(Debug, FromQueryResult)]
@@ -733,12 +1390,31 @@ impl QueryRoot {
             count: i64,
         }
 
+        let (tool_sql, tool_values) = if let Some((ref sc, ref sv)) = scope {
+            (
+                format!(
+                    "SELECT tool_name, COUNT(*) as count FROM messages \
+                     WHERE tool_name IS NOT NULL AND message_type != 'han_event' \
+                     AND timestamp >= date('now', ? || ' days') AND {sc} \
+                     GROUP BY tool_name ORDER BY count DESC LIMIT 20"
+                ),
+                vec![format!("-{days}").into(), sv.clone()],
+            )
+        } else {
+            (
+                "SELECT tool_name, COUNT(*) as count FROM messages \
+                 WHERE tool_name IS NOT NULL AND message_type != 'han_event' \
+                 AND timestamp >= date('now', ? || ' days') \
+                 GROUP BY tool_name ORDER BY count DESC LIMIT 20"
+                    .to_string(),
+                vec![format!("-{days}").into()],
+            )
+        };
+
         let tool_rows = ToolRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
-            "SELECT tool_name, COUNT(*) as count FROM messages \
-             WHERE tool_name IS NOT NULL AND timestamp >= date('now', ? || ' days') \
-             GROUP BY tool_name ORDER BY count DESC LIMIT 20",
-            vec![format!("-{days}").into()],
+            tool_sql,
+            tool_values,
         ))
         .all(db)
         .await
@@ -762,14 +1438,34 @@ impl QueryRoot {
             avg_duration_ms: f64,
         }
 
-        let hook_rows = HookRow::find_by_statement(Statement::from_string(
+        let (hook_sql, hook_values): (String, Vec<sea_orm::Value>) = if let Some((ref sc, ref sv)) = scope {
+            (
+                format!(
+                    "SELECT hook_name, COUNT(*) as total_runs, \
+                     SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as pass_count, \
+                     SUM(CASE WHEN passed = 0 THEN 1 ELSE 0 END) as fail_count, \
+                     AVG(duration_ms) as avg_duration_ms \
+                     FROM hook_executions WHERE {sc} \
+                     GROUP BY hook_name ORDER BY total_runs DESC"
+                ),
+                vec![sv.clone()],
+            )
+        } else {
+            (
+                "SELECT hook_name, COUNT(*) as total_runs, \
+                 SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as pass_count, \
+                 SUM(CASE WHEN passed = 0 THEN 1 ELSE 0 END) as fail_count, \
+                 AVG(duration_ms) as avg_duration_ms \
+                 FROM hook_executions GROUP BY hook_name ORDER BY total_runs DESC"
+                    .to_string(),
+                vec![],
+            )
+        };
+
+        let hook_rows = HookRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
-            "SELECT hook_name, COUNT(*) as total_runs, \
-             SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as pass_count, \
-             SUM(CASE WHEN passed = 0 THEN 1 ELSE 0 END) as fail_count, \
-             AVG(duration_ms) as avg_duration_ms \
-             FROM hook_executions GROUP BY hook_name ORDER BY total_runs DESC"
-                .to_string(),
+            hook_sql,
+            hook_values,
         ))
         .all(db)
         .await
@@ -806,35 +1502,71 @@ impl QueryRoot {
             continuation_count: i64,
         }
 
-        let compaction_row = CompactionRow::find_by_statement(Statement::from_string(
+        let (compact_sql, compact_values): (String, Vec<sea_orm::Value>) = if let Some((ref sc, ref sv)) = scope {
+            (
+                format!(
+                    "SELECT \
+                     COUNT(*) as total_compactions, \
+                     COUNT(DISTINCT session_id) as sessions_with_compactions, \
+                     SUM(CASE WHEN compact_type = 'auto_compact' THEN 1 ELSE 0 END) as auto_compact_count, \
+                     SUM(CASE WHEN compact_type = 'compact' THEN 1 ELSE 0 END) as manual_compact_count, \
+                     SUM(CASE WHEN compact_type = 'continuation' THEN 1 ELSE 0 END) as continuation_count \
+                     FROM session_compacts WHERE {sc}"
+                ),
+                vec![sv.clone()],
+            )
+        } else {
+            (
+                "SELECT \
+                 COUNT(*) as total_compactions, \
+                 COUNT(DISTINCT session_id) as sessions_with_compactions, \
+                 SUM(CASE WHEN compact_type = 'auto_compact' THEN 1 ELSE 0 END) as auto_compact_count, \
+                 SUM(CASE WHEN compact_type = 'compact' THEN 1 ELSE 0 END) as manual_compact_count, \
+                 SUM(CASE WHEN compact_type = 'continuation' THEN 1 ELSE 0 END) as continuation_count \
+                 FROM session_compacts"
+                    .to_string(),
+                vec![],
+            )
+        };
+
+        let compaction_row = CompactionRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
-            "SELECT \
-             COUNT(*) as total_compactions, \
-             COUNT(DISTINCT session_id) as sessions_with_compactions, \
-             SUM(CASE WHEN compact_type = 'auto_compact' THEN 1 ELSE 0 END) as auto_compact_count, \
-             SUM(CASE WHEN compact_type = 'compact' THEN 1 ELSE 0 END) as manual_compact_count, \
-             SUM(CASE WHEN compact_type = 'continuation' THEN 1 ELSE 0 END) as continuation_count \
-             FROM session_compacts"
-                .to_string(),
+            compact_sql,
+            compact_values,
         ))
         .one(db)
         .await
         .unwrap_or(None);
 
-        // Get total sessions from global_aggregates for compaction calculations
+        // Get total sessions for compaction calculations
         #[derive(Debug, FromQueryResult)]
         struct GlobalSessionCount {
             total_sessions: i64,
         }
-        let global_sessions = GlobalSessionCount::find_by_statement(Statement::from_string(
-            DbBackend::Sqlite,
-            "SELECT total_sessions FROM global_aggregates WHERE id = 1".to_string(),
-        ))
-        .one(db)
-        .await
-        .unwrap_or(None)
-        .map(|r| r.total_sessions)
-        .unwrap_or(0);
+        let global_sessions = if let Some((ref _sc, ref sv)) = scope {
+            // Scoped: count sessions in scope
+            let id_scope = session_scope_filter("id", &project_id, &repo_id).unwrap();
+            GlobalSessionCount::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                format!("SELECT COUNT(*) as total_sessions FROM sessions WHERE {}", id_scope.0),
+                vec![sv.clone()],
+            ))
+            .one(db)
+            .await
+            .unwrap_or(None)
+            .map(|r| r.total_sessions)
+            .unwrap_or(0)
+        } else {
+            GlobalSessionCount::find_by_statement(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT total_sessions FROM global_aggregates WHERE id = 1".to_string(),
+            ))
+            .one(db)
+            .await
+            .unwrap_or(None)
+            .map(|r| r.total_sessions)
+            .unwrap_or(0)
+        };
 
         let compaction_stats = compaction_row.map(|r| {
             let sessions_without = (global_sessions - r.sessions_with_compactions).max(0);
@@ -863,18 +1595,42 @@ impl QueryRoot {
             count: i64,
         }
 
+        let (subagent_sql, subagent_values) = if let Some((ref sc, ref sv)) = scope {
+            (
+                format!(
+                    "SELECT \
+                     json_extract(tool_input, '$.subagent_type') as subagent_type, \
+                     COUNT(*) as count \
+                     FROM messages \
+                     WHERE tool_name = 'Task' \
+                     AND tool_input IS NOT NULL \
+                     AND timestamp >= date('now', ? || ' days') \
+                     AND {sc} \
+                     GROUP BY subagent_type \
+                     ORDER BY count DESC"
+                ),
+                vec![format!("-{days}").into(), sv.clone()],
+            )
+        } else {
+            (
+                "SELECT \
+                 json_extract(tool_input, '$.subagent_type') as subagent_type, \
+                 COUNT(*) as count \
+                 FROM messages \
+                 WHERE tool_name = 'Task' \
+                 AND tool_input IS NOT NULL \
+                 AND timestamp >= date('now', ? || ' days') \
+                 GROUP BY subagent_type \
+                 ORDER BY count DESC"
+                    .to_string(),
+                vec![format!("-{days}").into()],
+            )
+        };
+
         let subagent_rows = SubagentRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
-            "SELECT \
-             json_extract(tool_input, '$.subagent_type') as subagent_type, \
-             COUNT(*) as count \
-             FROM messages \
-             WHERE tool_name = 'Task' \
-             AND tool_input IS NOT NULL \
-             AND timestamp >= date('now', ? || ' days') \
-             GROUP BY subagent_type \
-             ORDER BY count DESC",
-            vec![format!("-{days}").into()],
+            subagent_sql,
+            subagent_values,
         ))
         .all(db)
         .await
@@ -905,34 +1661,75 @@ impl QueryRoot {
             compaction_count: i64,
         }
 
+        let (eff_sql, eff_values) = if let Some((_, ref sv)) = scope {
+            let s_scope = session_scope_filter("s.id", &project_id, &repo_id).unwrap();
+            (
+                format!(
+                    "SELECT \
+                     s.id as session_id, \
+                     s.slug, \
+                     (SELECT content FROM messages WHERE session_id = s.id AND role = 'user' ORDER BY timestamp ASC LIMIT 1) as summary, \
+                     MIN(m.timestamp) as started_at, \
+                     COUNT(DISTINCT CASE WHEN m.role = 'user' THEN m.id END) as turn_count, \
+                     AVG(m.sentiment_score) as avg_sentiment, \
+                     COALESCE(tc.completed_tasks, 0) as completed_tasks, \
+                     COALESCE(tc.total_tasks, 0) as total_tasks, \
+                     COALESCE(cc.compaction_count, 0) as compaction_count \
+                     FROM sessions s \
+                     JOIN messages m ON m.session_id = s.id \
+                     LEFT JOIN ( \
+                       SELECT session_id, \
+                         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks, \
+                         COUNT(*) as total_tasks \
+                       FROM native_tasks GROUP BY session_id \
+                     ) tc ON tc.session_id = s.id \
+                     LEFT JOIN ( \
+                       SELECT session_id, COUNT(*) as compaction_count \
+                       FROM session_compacts GROUP BY session_id \
+                     ) cc ON cc.session_id = s.id \
+                     WHERE m.timestamp >= date('now', ? || ' days') AND {} \
+                     GROUP BY s.id \
+                     HAVING turn_count >= 2",
+                    s_scope.0
+                ),
+                vec![format!("-{days}").into(), sv.clone()],
+            )
+        } else {
+            (
+                "SELECT \
+                 s.id as session_id, \
+                 s.slug, \
+                 (SELECT content FROM messages WHERE session_id = s.id AND role = 'user' ORDER BY timestamp ASC LIMIT 1) as summary, \
+                 MIN(m.timestamp) as started_at, \
+                 COUNT(DISTINCT CASE WHEN m.role = 'user' THEN m.id END) as turn_count, \
+                 AVG(m.sentiment_score) as avg_sentiment, \
+                 COALESCE(tc.completed_tasks, 0) as completed_tasks, \
+                 COALESCE(tc.total_tasks, 0) as total_tasks, \
+                 COALESCE(cc.compaction_count, 0) as compaction_count \
+                 FROM sessions s \
+                 JOIN messages m ON m.session_id = s.id \
+                 LEFT JOIN ( \
+                   SELECT session_id, \
+                     SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks, \
+                     COUNT(*) as total_tasks \
+                   FROM native_tasks GROUP BY session_id \
+                 ) tc ON tc.session_id = s.id \
+                 LEFT JOIN ( \
+                   SELECT session_id, COUNT(*) as compaction_count \
+                   FROM session_compacts GROUP BY session_id \
+                 ) cc ON cc.session_id = s.id \
+                 WHERE m.timestamp >= date('now', ? || ' days') \
+                 GROUP BY s.id \
+                 HAVING turn_count >= 2"
+                    .to_string(),
+                vec![format!("-{days}").into()],
+            )
+        };
+
         let effectiveness_rows = EffectivenessRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
-            "SELECT \
-             s.id as session_id, \
-             s.slug, \
-             (SELECT content FROM messages WHERE session_id = s.id AND role = 'user' ORDER BY timestamp ASC LIMIT 1) as summary, \
-             MIN(m.timestamp) as started_at, \
-             COUNT(DISTINCT CASE WHEN m.role = 'user' THEN m.id END) as turn_count, \
-             AVG(m.sentiment_score) as avg_sentiment, \
-             COALESCE(tc.completed_tasks, 0) as completed_tasks, \
-             COALESCE(tc.total_tasks, 0) as total_tasks, \
-             COALESCE(cc.compaction_count, 0) as compaction_count \
-             FROM sessions s \
-             JOIN messages m ON m.session_id = s.id \
-             LEFT JOIN ( \
-               SELECT session_id, \
-                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks, \
-                 COUNT(*) as total_tasks \
-               FROM native_tasks GROUP BY session_id \
-             ) tc ON tc.session_id = s.id \
-             LEFT JOIN ( \
-               SELECT session_id, COUNT(*) as compaction_count \
-               FROM session_compacts GROUP BY session_id \
-             ) cc ON cc.session_id = s.id \
-             WHERE m.timestamp >= date('now', ? || ' days') \
-             GROUP BY s.id \
-             HAVING turn_count >= 2",
-            vec![format!("-{days}").into()],
+            eff_sql,
+            eff_values,
         ))
         .all(db)
         .await
@@ -1008,36 +1805,110 @@ impl QueryRoot {
             total_output_tokens: i64,
             total_cache_read_tokens: i64,
         }
-        let cost_agg = CostAgg::find_by_statement(Statement::from_string(
-            DbBackend::Sqlite,
-            "SELECT total_sessions, total_completed_tasks, total_input_tokens, \
-             total_output_tokens, total_cache_read_tokens \
-             FROM global_aggregates WHERE id = 1"
-                .to_string(),
-        ))
-        .one(db)
-        .await
-        .unwrap_or(None);
+        let cost_agg = if let Some((ref _sc, ref sv)) = scope {
+            // Scoped: compute from raw tables
+            let completed_scope = session_scope_filter("session_id", &project_id, &repo_id).unwrap();
+            let msg_scope = session_scope_filter("session_id", &project_id, &repo_id).unwrap();
 
-        // Daily cost trend from daily_aggregates
-        let daily_cost_rows = DailyActivityRow::find_by_statement(Statement::from_sql_and_values(
-            DbBackend::Sqlite,
-            "SELECT date, session_count, message_count, input_tokens, output_tokens, \
-             cache_read_tokens as cached_tokens, lines_added, lines_removed, files_changed \
-             FROM daily_aggregates \
-             WHERE date >= date('now', ? || ' days') \
-             ORDER BY date ASC",
-            vec![format!("-{days}").into()],
-        ))
-        .all(db)
-        .await
-        .unwrap_or_default();
+            // Get completed tasks count
+            let completed_row = db
+                .query_one(Statement::from_sql_and_values(
+                    DbBackend::Sqlite,
+                    format!("SELECT COUNT(*) as cnt FROM native_tasks WHERE status = 'completed' AND {}", completed_scope.0),
+                    vec![sv.clone()],
+                ))
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+            let total_completed_tasks = completed_row
+                .map(|r| r.try_get::<i64>("", "cnt").unwrap_or(0))
+                .unwrap_or(0);
 
-        // Phase 4a: Use per-model pricing from stats-cache.json
+            // Get token totals from messages
+            let token_row = db
+                .query_one(Statement::from_sql_and_values(
+                    DbBackend::Sqlite,
+                    format!(
+                        "SELECT COUNT(DISTINCT session_id) as total_sessions, \
+                         COALESCE(SUM(input_tokens), 0) as total_input_tokens, \
+                         COALESCE(SUM(output_tokens), 0) as total_output_tokens, \
+                         COALESCE(SUM(cache_read_tokens), 0) as total_cache_read_tokens \
+                         FROM messages WHERE {}", msg_scope.0
+                    ),
+                    vec![sv.clone()],
+                ))
+                .await
+                .map_err(|e| Error::new(e.to_string()))?;
+
+            token_row.map(|r| CostAgg {
+                total_sessions: r.try_get("", "total_sessions").unwrap_or(0),
+                total_completed_tasks,
+                total_input_tokens: r.try_get("", "total_input_tokens").unwrap_or(0),
+                total_output_tokens: r.try_get("", "total_output_tokens").unwrap_or(0),
+                total_cache_read_tokens: r.try_get("", "total_cache_read_tokens").unwrap_or(0),
+            })
+        } else {
+            CostAgg::find_by_statement(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT total_sessions, total_completed_tasks, total_input_tokens, \
+                 total_output_tokens, total_cache_read_tokens \
+                 FROM global_aggregates WHERE id = 1"
+                    .to_string(),
+            ))
+            .one(db)
+            .await
+            .unwrap_or(None)
+        };
+
+        // Daily cost trend
+        let daily_cost_rows = if let Some((ref sc, ref sv)) = scope {
+            // Scoped: compute from raw messages
+            DailyActivityRow::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                format!(
+                    "SELECT date(timestamp, 'localtime') as date, \
+                     COUNT(DISTINCT session_id) as session_count, \
+                     COUNT(*) as message_count, \
+                     COALESCE(SUM(input_tokens), 0) as input_tokens, \
+                     COALESCE(SUM(output_tokens), 0) as output_tokens, \
+                     COALESCE(SUM(cache_read_tokens), 0) as cached_tokens, \
+                     COALESCE(SUM(lines_added), 0) as lines_added, \
+                     COALESCE(SUM(lines_removed), 0) as lines_removed, \
+                     COALESCE(SUM(files_changed), 0) as files_changed \
+                     FROM messages \
+                     WHERE timestamp >= date('now', ? || ' days') AND {sc} \
+                     GROUP BY date(timestamp, 'localtime') \
+                     ORDER BY date ASC"
+                ),
+                vec![format!("-{days}").into(), sv.clone()],
+            ))
+            .all(db)
+            .await
+            .unwrap_or_default()
+        } else {
+            DailyActivityRow::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                "SELECT date, session_count, message_count, input_tokens, output_tokens, \
+                 cache_read_tokens as cached_tokens, lines_added, lines_removed, files_changed \
+                 FROM daily_aggregates \
+                 WHERE date >= date('now', 'localtime', ? || ' days') \
+                 ORDER BY date ASC",
+                vec![format!("-{days}").into()],
+            ))
+            .all(db)
+            .await
+            .unwrap_or_default()
+        };
+
+        // Per-model pricing from stats-cache.json (global only — not scoped)
         let (model_usage, _) = load_stats_cache_model_data();
-        let total_per_model_cost: f64 = model_usage.iter().filter_map(|m| m.cost_usd).sum();
+        let total_per_model_cost: f64 = if scope.is_some() {
+            // Scoped dashboards can't use global per-model stats; use estimated pricing
+            0.0
+        } else {
+            model_usage.iter().filter_map(|m| m.cost_usd).sum()
+        };
 
-        // Phase 4b: Infer subscription from model usage
+        // Infer subscription from model usage
         let has_opus = model_usage.iter().any(|m|
             m.model.as_deref().unwrap_or("").contains("opus")
         );
@@ -1059,21 +1930,49 @@ impl QueryRoot {
             started_at: Option<String>,
         }
 
+        let (top_cost_sql, top_cost_values) = if let Some((_, ref sv)) = scope {
+            let m_scope = session_scope_filter("m.session_id", &project_id, &repo_id).unwrap();
+            (
+                format!(
+                    "SELECT m.session_id, s.slug, \
+                     SUM(m.input_tokens) as input_tokens, \
+                     SUM(m.output_tokens) as output_tokens, \
+                     SUM(m.cache_read_tokens) as cache_read_tokens, \
+                     COUNT(*) as message_count, \
+                     MIN(m.timestamp) as started_at \
+                     FROM messages m \
+                     JOIN sessions s ON s.id = m.session_id \
+                     WHERE m.timestamp >= date('now', ? || ' days') AND {} \
+                     GROUP BY m.session_id \
+                     ORDER BY (SUM(m.input_tokens) * 3.0 + SUM(m.output_tokens) * 15.0 + SUM(m.cache_read_tokens) * 0.3) DESC \
+                     LIMIT 5",
+                    m_scope.0
+                ),
+                vec![format!("-{days}").into(), sv.clone()],
+            )
+        } else {
+            (
+                "SELECT m.session_id, s.slug, \
+                 SUM(m.input_tokens) as input_tokens, \
+                 SUM(m.output_tokens) as output_tokens, \
+                 SUM(m.cache_read_tokens) as cache_read_tokens, \
+                 COUNT(*) as message_count, \
+                 MIN(m.timestamp) as started_at \
+                 FROM messages m \
+                 JOIN sessions s ON s.id = m.session_id \
+                 WHERE m.timestamp >= date('now', ? || ' days') \
+                 GROUP BY m.session_id \
+                 ORDER BY (SUM(m.input_tokens) * 3.0 + SUM(m.output_tokens) * 15.0 + SUM(m.cache_read_tokens) * 0.3) DESC \
+                 LIMIT 5"
+                    .to_string(),
+                vec![format!("-{days}").into()],
+            )
+        };
+
         let top_cost_rows = SessionCostRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
-            "SELECT m.session_id, s.slug, \
-             SUM(m.input_tokens) as input_tokens, \
-             SUM(m.output_tokens) as output_tokens, \
-             SUM(m.cache_read_tokens) as cache_read_tokens, \
-             COUNT(*) as message_count, \
-             MIN(m.timestamp) as started_at \
-             FROM messages m \
-             JOIN sessions s ON s.id = m.session_id \
-             WHERE m.timestamp >= date('now', ? || ' days') \
-             GROUP BY m.session_id \
-             ORDER BY (SUM(m.input_tokens) * 3.0 + SUM(m.output_tokens) * 15.0 + SUM(m.cache_read_tokens) * 0.3) DESC \
-             LIMIT 5",
-            vec![format!("-{days}").into()],
+            top_cost_sql,
+            top_cost_values,
         ))
         .all(db)
         .await
@@ -1186,7 +2085,7 @@ impl QueryRoot {
             }
         });
 
-        Ok(Some(DashboardAnalytics {
+        let result = DashboardAnalytics {
             top_sessions: Some(top_sessions),
             bottom_sessions: Some(bottom_sessions),
             compaction_stats,
@@ -1194,7 +2093,15 @@ impl QueryRoot {
             hook_health: Some(hook_health),
             subagent_usage: Some(subagent_usage),
             tool_usage: Some(tool_usage),
-        }))
+        };
+
+        // Cache the result for 30 seconds
+        {
+            let mut guard = ANALYTICS_CACHE.lock().unwrap();
+            *guard = Some((Instant::now(), cache_key, result.clone()));
+        }
+
+        Ok(Some(result))
     }
 }
 
@@ -1292,6 +2199,9 @@ pub fn session_model_to_data(m: sessions::Model) -> SessionData {
         worktree_name: None,
         source_config_dir: m.source_config_dir,
         status: m.status,
+        pr_number: m.pr_number,
+        pr_url: m.pr_url,
+        team_name: m.team_name,
     }
 }
 
@@ -1308,6 +2218,9 @@ mod tests {
             transcript_path: Some("/home/user/.claude/sessions/sess-abc.jsonl".into()),
             source_config_dir: Some("/home/user/.claude".into()),
             last_indexed_line: Some(100),
+            pr_number: None,
+            pr_url: None,
+            team_name: None,
         }
     }
 
@@ -1377,6 +2290,9 @@ mod tests {
             transcript_path: None,
             source_config_dir: None,
             last_indexed_line: None,
+            pr_number: None,
+            pr_url: None,
+            team_name: None,
         };
         let sd = session_model_to_data(m);
         assert!(sd.project_id.is_none());

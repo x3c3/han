@@ -11,8 +11,21 @@ import { useMemo } from "react";
 import { graphql, useFragment, useSubscription } from "react-relay";
 import { Link } from "react-router-dom";
 import type { GraphQLSubscriptionConfig } from "relay-runtime";
-import { Badge, HStack, Text, theme, VStack } from "../atoms/index.ts";
-import { formatDuration, formatWholeNumber } from "../helpers/formatters.ts";
+import {
+	Badge,
+	Box,
+	HStack,
+	Pressable,
+	Text,
+	theme,
+	VStack,
+} from "../atoms/index.ts";
+import {
+	cleanSessionSummary,
+	formatDuration,
+	formatRelativeTime,
+	formatWholeNumber,
+} from "../helpers/formatters.ts";
 import type { SessionListItem_session$key } from "./__generated__/SessionListItem_session.graphql.ts";
 import type { SessionListItemSubscription } from "./__generated__/SessionListItemSubscription.graphql.ts";
 
@@ -62,6 +75,10 @@ export const SessionListItemFragment = graphql`
       inProgress
       completed
     }
+    gitBranch
+    prNumber
+    prUrl
+    teamName
     turnCount
     compactionCount
     estimatedCostUsd
@@ -108,18 +125,6 @@ function getTaskTypeVariant(
 		default:
 			return "default";
 	}
-}
-
-function formatDate(date: string) {
-	const d = new Date(date);
-	const now = new Date();
-	const diffMs = now.getTime() - d.getTime();
-	const diffMins = Math.floor(diffMs / 60000);
-
-	if (diffMins < 1) return "Just now";
-	if (diffMins < 60) return `${diffMins}m ago`;
-	if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-	return d.toLocaleDateString();
 }
 
 export function SessionListItem({
@@ -224,80 +229,139 @@ export function SessionListItem({
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}
 		>
-			<HStack justify="space-between" align="center">
-				<VStack gap="xs" style={{ flex: 1, minWidth: 0 }}>
-					{/* Primary line: summary (or slug fallback) + project */}
-					<HStack gap="sm" align="center">
-						<Text size="md" weight="medium" truncate>
-							{session.summary || session.name}
+			<VStack gap="sm" style={{ minWidth: 0 }}>
+				{/* Row 1: Summary + timestamp */}
+				<HStack justify="space-between" align="flex-start">
+					<Text
+						size="md"
+						weight="medium"
+						truncate
+						style={{ flex: 1, minWidth: 0 }}
+					>
+						{cleanSessionSummary(session.summary) ?? session.name}
+					</Text>
+					<Text
+						size="xs"
+						color="muted"
+						style={{ flexShrink: 0, marginLeft: theme.spacing.md }}
+					>
+						{formatRelativeTime(session.updatedAt ?? session.startedAt)}
+					</Text>
+				</HStack>
+
+				{/* Row 2: Project + branch + PR + team */}
+				<HStack gap="sm" align="center" style={{ flexWrap: "wrap" }}>
+					<Text size="sm" color="secondary" truncate>
+						{session.projectName}
+					</Text>
+					{session.worktreeName && (
+						<Text size="xs" color="muted">
+							{session.worktreeName}
+						</Text>
+					)}
+					{session.prNumber != null &&
+						(session.prUrl ? (
+							<Pressable
+								onPress={() => {
+									window.open(session.prUrl!, "_blank", "noopener,noreferrer");
+								}}
+							>
+								<Badge variant="success">PR #{session.prNumber}</Badge>
+							</Pressable>
+						) : (
+							<Badge variant="success">PR #{session.prNumber}</Badge>
+						))}
+					{session.teamName && (
+						<Badge variant="purple">{session.teamName}</Badge>
+					)}
+				</HStack>
+
+				{/* Row 3: Active work indicator */}
+				{hasActiveTasks && (
+					<HStack gap="xs" align="center">
+						<Box
+							style={{
+								width: 6,
+								height: 6,
+								borderRadius: "50%",
+								backgroundColor: theme.colors.accent.primary,
+								animation: "pulse 2s infinite",
+							}}
+						/>
+						<Text size="xs" color="secondary" truncate>
+							{activeTasks[0].description ??
+								(activeTasks[0].type ?? "task").toLowerCase()}
 						</Text>
 					</HStack>
-					{/* Secondary line: slug (when summary is shown) + project info */}
-					<HStack gap="sm" align="center">
-						{session.summary && (
-							<Text size="xs" color="muted" truncate>
-								{session.name}
-							</Text>
-						)}
-						<Text size="sm" color="secondary" truncate>
-							{session.projectName}
+				)}
+				{hasActiveTodo && (
+					<HStack gap="xs" align="center">
+						<Box
+							style={{
+								width: 6,
+								height: 6,
+								borderRadius: "50%",
+								backgroundColor: theme.colors.accent.primary,
+							}}
+						/>
+						<Text size="xs" color="secondary" truncate>
+							{session.currentTodo?.activeForm ?? "Working"}
 						</Text>
-						{session.worktreeName && (
+					</HStack>
+				)}
+
+				{/* Row 4: Stats + progress */}
+				<HStack gap="sm" align="center" style={{ flexWrap: "wrap" }}>
+					{session.gitBranch && (
+						<Badge variant="info">{session.gitBranch}</Badge>
+					)}
+					{session.estimatedCostUsd != null &&
+						session.estimatedCostUsd >= 0.01 && (
 							<Text size="xs" color="muted">
-								{session.worktreeName}
+								${session.estimatedCostUsd.toFixed(2)}
 							</Text>
 						)}
-					</HStack>
-					{/* Show active tasks (subagents) if any */}
-					{hasActiveTasks && (
-						<HStack gap="sm" align="center" style={{ flexWrap: "wrap" }}>
-							{activeTasks.map((task) => (
-								<Badge
-									key={task.taskId ?? task.id ?? task.description}
-									variant={getTaskTypeVariant(task.type)}
-								>
-									{task.description ?? (task.type ?? "task").toLowerCase()}
-								</Badge>
-							))}
+					{session.turnCount != null && session.turnCount > 0 && (
+						<Text size="xs" color="muted">
+							{session.turnCount}t
+						</Text>
+					)}
+					{session.duration != null && session.duration > 0 && (
+						<Text size="xs" color="muted">
+							{formatDuration(session.duration)}
+						</Text>
+					)}
+					{/* Mini task progress bar */}
+					{todoProgress !== null && (
+						<HStack gap="xs" align="center" style={{ minWidth: 80 }}>
+							<Box
+								style={{
+									flex: 1,
+									height: 4,
+									backgroundColor: theme.colors.bg.tertiary,
+									borderRadius: theme.radii.full,
+									overflow: "hidden",
+								}}
+							>
+								<Box
+									style={{
+										width: `${todoProgress}%`,
+										height: "100%",
+										backgroundColor:
+											todoProgress === 100
+												? theme.colors.success
+												: theme.colors.accent.primary,
+										borderRadius: theme.radii.full,
+									}}
+								/>
+							</Box>
+							<Text size="xs" color="muted">
+								{completed}/{total}
+							</Text>
 						</HStack>
 					)}
-					{/* Show current todo if no active task */}
-					{hasActiveTodo && (
-						<HStack gap="sm" align="center">
-							<Badge variant="warning">
-								{session.currentTodo?.activeForm ?? "Working"}
-							</Badge>
-						</HStack>
-					)}
-					<HStack gap="sm" align="center" style={{ flexWrap: "wrap" }}>
-						<Badge variant="default">{formatWholeNumber(session.messageCount)} msgs</Badge>
-						{session.turnCount != null && session.turnCount > 0 && (
-							<Badge variant="default">{session.turnCount} turns</Badge>
-						)}
-						{session.duration != null && session.duration > 0 && (
-							<Badge variant="default">{formatDuration(session.duration)}</Badge>
-						)}
-						{session.compactionCount != null && session.compactionCount > 0 && (
-							<Badge variant="warning">{session.compactionCount} compactions</Badge>
-						)}
-						{session.estimatedCostUsd != null && session.estimatedCostUsd >= 0.01 && (
-							<Badge variant="info">${session.estimatedCostUsd.toFixed(2)}</Badge>
-						)}
-						{todoProgress !== null && (
-							<Badge variant={todoProgress === 100 ? "success" : "default"}>
-								{todoProgress}% ({completed}/{total})
-							</Badge>
-						)}
-					</HStack>
-				</VStack>
-				<Text
-					size="sm"
-					color="muted"
-					style={{ flexShrink: 0, marginLeft: theme.spacing.md }}
-				>
-					{formatDate(session.updatedAt ?? session.startedAt)}
-				</Text>
-			</HStack>
+				</HStack>
+			</VStack>
 		</Link>
 	);
 }

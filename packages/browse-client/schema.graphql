@@ -1,871 +1,1137 @@
-schema {
-  query: Query
-  mutation: MutationRoot
-  subscription: SubscriptionRoot
-}
-
 """
-Indicates that an Input Object is a OneOf Input Object (and thus requires exactly one of its field be provided)
+Complete activity data for dashboard visualizations.
 """
-directive @oneOf on INPUT_OBJECT
-
-"""
-Provides a scalar specification URL for specifying the behavior of custom scalar types.
-"""
-directive @specifiedBy(
-  """URL that specifies the behavior of this scalar."""
-  url: String!
-) on SCALAR
-
-"""Complete activity data for dashboard visualizations."""
 type ActivityData {
-  dailyActivity: [DailyActivity!]
-  hourlyActivity: [HourlyActivity!]
-  tokenUsage: TokenUsageStats
-  dailyModelTokens: [DailyModelTokens!]
-  modelUsage: [ModelUsageStats!]
-  totalSessions: Int
-  totalMessages: Int
-  streakDays: Int
-  totalActiveDays: Int
-  firstSessionDate: String
+	dailyActivity: [DailyActivity!]
+	hourlyActivity: [HourlyActivity!]
+	tokenUsage: TokenUsageStats
+	dailyModelTokens: [DailyModelTokens!]
+	modelUsage: [ModelUsageStats!]
+	totalSessions: Int
+	totalMessages: Int
+	streakDays: Int
+	totalActiveDays: Int
+	firstSessionDate: String
 }
 
-"""Activity timeline entry."""
+"""
+Activity timeline entry.
+"""
 type ActivityTimelineEntry {
-  date: String
-  period: String
-  sessions: Int
-  sessionCount: Int
-  tasks: Int
-  taskCount: Int
-  tokens: Int
-  messageCount: Int
+	date: String
+	period: String
+	sessions: Int
+	sessionCount: Int
+	tasks: Int
+	taskCount: Int
+	tokens: Int
+	messageCount: Int
 }
 
-"""Agent task stub for ToolUseBlock.agentTask field."""
+"""
+Agent task stub for ToolUseBlock.agentTask field.
+"""
 type AgentTask {
-  id: String
+	id: String
 }
 
 type AssistantMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-
-  """Text content of the message."""
-  content: String
-
-  """Parsed content blocks (text, thinking, tool_use, etc.)."""
-  contentBlocks: [ContentBlock!]
-
-  """Model ID that generated this message."""
-  model: String
-
-  """Stop reason."""
-  stopReason: String
-
-  """Whether this message contains only tool use blocks (no text)."""
-  isToolOnly: Boolean
-
-  """Whether this message contains thinking blocks."""
-  hasThinking: Boolean
-
-  """Count of thinking blocks."""
-  thinkingCount: Int
-
-  """Whether this message contains tool use blocks."""
-  hasToolUse: Boolean
-
-  """Count of tool use blocks."""
-  toolUseCount: Int
-
-  """Input tokens used."""
-  inputTokens: Int
-
-  """Output tokens used."""
-  outputTokens: Int
-
-  """Cached tokens."""
-  cachedTokens: Int
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	"""
+	Text content of the message.
+	"""
+	content: String
+	"""
+	Parsed content blocks (text, thinking, tool_use, etc.).
+	"""
+	contentBlocks: [ContentBlock!]
+	"""
+	Model ID that generated this message.
+	"""
+	model: String
+	"""
+	Stop reason.
+	"""
+	stopReason: String
+	"""
+	Whether this message contains only tool use blocks (no text).
+	"""
+	isToolOnly: Boolean
+	"""
+	Whether this message contains thinking blocks.
+	"""
+	hasThinking: Boolean
+	"""
+	Count of thinking blocks.
+	"""
+	thinkingCount: Int
+	"""
+	Whether this message contains tool use blocks.
+	"""
+	hasToolUse: Boolean
+	"""
+	Count of tool use blocks.
+	"""
+	toolUseCount: Int
+	"""
+	Input tokens used.
+	"""
+	inputTokens: Int
+	"""
+	Output tokens used.
+	"""
+	outputTokens: Int
+	"""
+	Cached tokens.
+	"""
+	cachedTokens: Int
 }
 
-"""Cached hook run entry."""
+"""
+Filter for boolean columns.
+"""
+input BoolFilter {
+	"""
+	Exact match.
+	"""
+	_eq: Boolean
+	"""
+	Whether the value is null.
+	"""
+	_isNull: Boolean
+}
+
+"""
+Cached hook run entry.
+"""
 type CacheEntry {
-  """Cache entry ID."""
-  id: ID
-
-  """Plugin name."""
-  pluginName: String
-
-  """Hook name."""
-  hookName: String
-
-  """Path to cache file."""
-  path: String
-
-  """Number of files tracked."""
-  fileCount: Int
-
-  """When the cache was last updated."""
-  lastModified: String
+	"""
+	Cache entry ID.
+	"""
+	id: ID
+	"""
+	Plugin name.
+	"""
+	pluginName: String
+	"""
+	Hook name.
+	"""
+	hookName: String
+	"""
+	Path to cache file.
+	"""
+	path: String
+	"""
+	Number of files tracked.
+	"""
+	fileCount: Int
+	"""
+	When the cache was last updated.
+	"""
+	lastModified: String
 }
 
-"""Aggregate cache statistics."""
+"""
+Aggregate cache statistics.
+"""
 type CacheStats {
-  """Total number of cache entries."""
-  totalEntries: Int
-
-  """Total number of tracked files."""
-  totalFiles: Int
-
-  """Oldest cache entry timestamp."""
-  oldestEntry: String
-
-  """Newest cache entry timestamp."""
-  newestEntry: String
+	"""
+	Total number of cache entries.
+	"""
+	totalEntries: Int
+	"""
+	Total number of tracked files.
+	"""
+	totalFiles: Int
+	"""
+	Oldest cache entry timestamp.
+	"""
+	oldestEntry: String
+	"""
+	Newest cache entry timestamp.
+	"""
+	newestEntry: String
 }
 
 """
 Citation from memory search (shared by MemorySearchResult and MemoryAgentResultPayload).
 """
 type Citation {
-  source: String
-  excerpt: String
-  author: String
-  timestamp: String
-  layer: String
-  projectName: String
-  projectPath: String
-  relevance: Float
+	source: String
+	excerpt: String
+	author: String
+	timestamp: String
+	layer: String
+	projectName: String
+	projectPath: String
+	relevance: Float
 }
 
-"""Claude settings summary (legacy)."""
+"""
+Claude settings summary (legacy).
+"""
 type ClaudeSettingsSummary {
-  userFile: String
-  projectFile: String
-  localFile: String
-  path: String
-  exists: Boolean
-  lastModified: String
-  pluginCount: Int
-  mcpServerCount: Int
-  hasPermissions: Boolean
+	userFile: String
+	projectFile: String
+	localFile: String
+	path: String
+	exists: Boolean
+	lastModified: String
+	pluginCount: Int
+	mcpServerCount: Int
+	hasPermissions: Boolean
 }
 
 type CommandUserMessage implements Message & UserMessage {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  content: String
-  contentBlocks: [ContentBlock!]
-  sentimentAnalysis: SentimentAnalysis
-
-  """The command that was invoked."""
-  commandName: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	content: String
+	contentBlocks: [ContentBlock!]
+	sentimentAnalysis: SentimentAnalysis
+	"""
+	The command that was invoked.
+	"""
+	commandName: String
 }
 
-"""Context compaction statistics."""
+"""
+Context compaction statistics.
+"""
 type CompactionStats {
-  totalCompactions: Int
-  sessionsWithCompactions: Int
-  sessionsWithoutCompactions: Int
-  avgCompactionsPerSession: Float
-  autoCompactCount: Int
-  manualCompactCount: Int
-  continuationCount: Int
+	totalCompactions: Int
+	sessionsWithCompactions: Int
+	sessionsWithoutCompactions: Int
+	avgCompactionsPerSession: Float
+	autoCompactCount: Int
+	manualCompactCount: Int
+	continuationCount: Int
 }
 
+"""
+Config directory data.
+"""
 type ConfigDir {
-  id: ID!
-  path: String!
-  name: String
-  isDefault: Boolean!
-  registeredAt: String!
-  lastIndexedAt: String
-  sessionCount: Int
+	path: String!
+	name: String
+	isDefault: Boolean!
+	registeredAt: String!
+	lastIndexedAt: String
+	sessionCount: Int
+	"""
+	Global ID.
+	"""
+	id: ID!
 }
 
-"""Per-config-dir cost breakdown."""
+"""
+Per-config-dir cost breakdown.
+"""
 type ConfigDirCostBreakdown {
-  configDirId: String
-  configDirName: String
-  estimatedCostUsd: Float
-  isEstimated: Boolean
-  cacheSavingsUsd: Float
-  totalSessions: Int
-  totalMessages: Int
-  modelCount: Int
-  costPerSession: Float
-  cacheHitRate: Float
-  potentialSavingsUsd: Float
-  costUtilizationPercent: Float
-  dailyCostTrend: [DailyCost!]
-  weeklyCostTrend: [WeeklyCost!]
-  subscriptionComparisons: [SubscriptionComparison!]
-  breakEvenDailySpend: Float
-  topSessionsByCost: [SessionCost!]
+	configDirId: String
+	configDirName: String
+	estimatedCostUsd: Float
+	isEstimated: Boolean
+	cacheSavingsUsd: Float
+	totalSessions: Int
+	totalMessages: Int
+	modelCount: Int
+	costPerSession: Float
+	cacheHitRate: Float
+	potentialSavingsUsd: Float
+	costUtilizationPercent: Float
+	dailyCostTrend: [DailyCost!]
+	weeklyCostTrend: [WeeklyCost!]
+	subscriptionComparisons: [SubscriptionComparison!]
+	breakEvenDailySpend: Float
+	topSessionsByCost: [SessionCost!]
 }
 
-"""Content block interface - shared `type` field across all block types."""
+"""
+Content block interface - shared `type` field across all block types.
+"""
 interface ContentBlock {
-  type: ContentBlockType!
+	type: ContentBlockType!
 }
 
-"""Content block type discriminator."""
+"""
+Content block type discriminator.
+"""
 enum ContentBlockType {
-  TEXT
-  THINKING
-  TOOL_USE
-  TOOL_RESULT
-  IMAGE
+	TEXT
+	THINKING
+	TOOL_USE
+	TOOL_RESULT
+	IMAGE
 }
 
-"""Contributor metrics (anonymized)."""
+"""
+Contributor metrics (anonymized).
+"""
 type ContributorMetrics {
-  userId: String
-  contributorId: String
-  displayName: String
-  sessionCount: Int
-  taskCount: Int
-  tokenCount: Int
-  successRate: Float
+	userId: String
+	contributorId: String
+	displayName: String
+	sessionCount: Int
+	taskCount: Int
+	tokenCount: Int
+	successRate: Float
 }
 
-"""Coordinator status."""
+"""
+Coordinator status.
+"""
 type CoordinatorStatus {
-  """Current coordinator version."""
-  version: String!
-
-  """Whether a restart is pending due to newer client version."""
-  needsRestart: Boolean!
+	"""
+	Current coordinator version.
+	"""
+	version: String!
+	"""
+	Whether a restart is pending due to newer client version.
+	"""
+	needsRestart: Boolean!
 }
 
-"""Cost analysis with subscription context."""
+"""
+Cost analysis with subscription context.
+"""
 type CostAnalysis {
-  estimatedCostUsd: Float
-  isEstimated: Boolean
-  cacheHitRate: Float
-  cacheSavingsUsd: Float
-  costPerSession: Float
-  costPerCompletedTask: Float
-  maxSubscriptionCostUsd: Float
-  costUtilizationPercent: Float
-  breakEvenDailySpend: Float
-  billingType: String
-  dailyCostTrend: [DailyCost!]
-  weeklyCostTrend: [WeeklyCost!]
-  topSessionsByCost: [SessionCost!]
-  potentialSavingsUsd: Float
-  subscriptionComparisons: [SubscriptionComparison!]
-  configDirBreakdowns: [ConfigDirCostBreakdown!]
+	estimatedCostUsd: Float
+	isEstimated: Boolean
+	cacheHitRate: Float
+	cacheSavingsUsd: Float
+	costPerSession: Float
+	costPerCompletedTask: Float
+	maxSubscriptionCostUsd: Float
+	costUtilizationPercent: Float
+	breakEvenDailySpend: Float
+	billingType: String
+	dailyCostTrend: [DailyCost!]
+	weeklyCostTrend: [WeeklyCost!]
+	topSessionsByCost: [SessionCost!]
+	potentialSavingsUsd: Float
+	subscriptionComparisons: [SubscriptionComparison!]
+	configDirBreakdowns: [ConfigDirCostBreakdown!]
 }
 
-"""Single data point in the activity heatmap."""
+"""
+Single data point in the activity heatmap.
+"""
 type DailyActivity {
-  date: String
-  sessionCount: Int
-  messageCount: Int
-  inputTokens: Int
-  outputTokens: Int
-  cachedTokens: Int
-  linesAdded: Int
-  linesRemoved: Int
-  filesChanged: Int
+	date: String
+	sessionCount: Int
+	messageCount: Int
+	inputTokens: Int
+	outputTokens: Int
+	cachedTokens: Int
+	linesAdded: Int
+	linesRemoved: Int
+	filesChanged: Int
 }
 
-"""Daily cost data point."""
+"""
+Daily cost data point.
+"""
 type DailyCost {
-  date: String
-  costUsd: Float
-  sessionCount: Int
+	date: String
+	costUsd: Float
+	sessionCount: Int
 }
 
-"""Daily token usage by model."""
+"""
+Daily token usage by model.
+"""
 type DailyModelTokens {
-  date: String
-  models: [ModelTokenEntry!]
-  totalTokens: Int
+	date: String
+	models: [ModelTokenEntry!]
+	totalTokens: Int
 }
 
-"""Aggregated dashboard analytics data."""
+"""
+Aggregated dashboard analytics data.
+"""
 type DashboardAnalytics {
-  topSessions: [SessionEffectiveness!]
-  bottomSessions: [SessionEffectiveness!]
-  compactionStats: CompactionStats
-  costAnalysis: CostAnalysis
-  hookHealth: [HookHealthStats!]
-  subagentUsage: [SubagentUsageStats!]
-  toolUsage: [ToolUsageStats!]
+	topSessions: [SessionEffectiveness!]
+	bottomSessions: [SessionEffectiveness!]
+	compactionStats: CompactionStats
+	costAnalysis: CostAnalysis
+	hookHealth: [HookHealthStats!]
+	subagentUsage: [SubagentUsageStats!]
+	toolUsage: [ToolUsageStats!]
 }
 
 type ExposedToolCallMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  tool: String
-  server: String
-  callId: String
-  prefixedName: String
-  input: String
-
-  """Tool result (resolved via DataLoader in the future)."""
-  result: ExposedToolResult
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	tool: String
+	server: String
+	callId: String
+	prefixedName: String
+	input: String
+	"""
+	Tool result resolved inline via DataLoader.
+	"""
+	result: ExposedToolResult
 }
 
-"""Exposed tool result stub."""
+"""
+Exposed tool result data.
+"""
 type ExposedToolResult {
-  id: String
-  success: Boolean
-  result: String
-  output: String
-  error: String
-  durationMs: Int
+	id: String
+	success: Boolean
+	result: String
+	output: String
+	error: String
+	durationMs: Int
 }
 
 type ExposedToolResultMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  tool: String
-  prefixedName: String
-  callId: String
-  success: Boolean
-  durationMs: Int
-  output: String
-  error: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	tool: String
+	prefixedName: String
+	callId: String
+	success: Boolean
+	durationMs: Int
+	output: String
+	error: String
 }
 
-"""A file change recorded during a session."""
+"""
+A file change recorded during a session.
+"""
 type FileChange {
-  id: String
-  filePath: String
-  action: FileChangeAction
-  toolName: String
-  recordedAt: String
-  sessionId: String
-  isValidated: Boolean
-  fileHashBefore: String
-  fileHashAfter: String
-  validations: [FileValidation!]
-  missingValidations: [FileValidation!]
+	id: String
+	filePath: String
+	action: FileChangeAction
+	toolName: String
+	recordedAt: String
+	sessionId: String
+	isValidated: Boolean
+	fileHashBefore: String
+	fileHashAfter: String
+	validations: [FileValidation!]
+	missingValidations: [FileValidation!]
 }
 
-"""File change action type."""
+"""
+File change action type.
+"""
 enum FileChangeAction {
-  created
-  modified
-  deleted
+	created
+	modified
+	deleted
 }
 
-"""File change connection."""
+"""
+File change connection.
+"""
 type FileChangeConnection {
-  edges: [FileChangeEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
+	edges: [FileChangeEdge!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
-"""File change edge."""
+"""
+File change edge.
+"""
 type FileChangeEdge {
-  node: FileChange!
-  cursor: String!
+	node: FileChange!
+	cursor: String!
 }
 
 type FileHistorySnapshotMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  messageId: String
-  fileCount: Int
-  isSnapshotUpdate: Boolean
-  snapshotTimestamp: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	messageId: String
+	fileCount: Int
+	isSnapshotUpdate: Boolean
+	snapshotTimestamp: String
 }
 
-"""File validation record."""
+"""
+File validation record.
+"""
 type FileValidation {
-  id: String
-  pluginName: String
-  hookName: String
-  validatedAt: String
-  directory: String
+	id: String
+	pluginName: String
+	hookName: String
+	validatedAt: String
+	directory: String
 }
 
-"""Aggregated frustration metrics for a session."""
+"""
+Filter for f64/f32 columns.
+"""
+input FloatFilter {
+	"""
+	Exact match.
+	"""
+	_eq: Float
+	"""
+	Not equal.
+	"""
+	_ne: Float
+	"""
+	Greater than.
+	"""
+	_gt: Float
+	"""
+	Greater than or equal.
+	"""
+	_gte: Float
+	"""
+	Less than.
+	"""
+	_lt: Float
+	"""
+	Less than or equal.
+	"""
+	_lte: Float
+	"""
+	Whether the value is null.
+	"""
+	_isNull: Boolean
+}
+
+"""
+Aggregated frustration metrics for a session.
+"""
 type FrustrationSummary {
-  totalAnalyzed: Int
-  moderateCount: Int
-  highCount: Int
-  overallLevel: String
-  averageScore: Float
-  peakScore: Float
-  topSignals: [String!]
+	totalAnalyzed: Int
+	moderateCount: Int
+	highCount: Int
+	overallLevel: String
+	averageScore: Float
+	peakScore: Float
+	topSignals: [String!]
 }
 
-"""Time granularity for team metrics."""
+"""
+Time granularity for team metrics.
+"""
 enum Granularity {
-  day
-  week
-  month
+	day
+	week
+	month
 }
 
-"""Han config summary (legacy)."""
+"""
+Han config summary (legacy).
+"""
 type HanConfigSummary {
-  rootFile: String
-  directoryFile: String
-  path: String
-  exists: Boolean
-  lastModified: String
-  hooksEnabled: Boolean
-  metricsEnabled: Boolean
-  memoryEnabled: Boolean
-  pluginConfigCount: Int
+	rootFile: String
+	directoryFile: String
+	path: String
+	exists: Boolean
+	lastModified: String
+	hooksEnabled: Boolean
+	metricsEnabled: Boolean
+	memoryEnabled: Boolean
+	pluginConfigCount: Int
 }
 
 type HookCheckStateMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  hookType: String
-  hooksCount: Int
-  fingerprint: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	hookType: String
+	hooksCount: Int
+	fingerprint: String
 }
 
 type HookDatetimeMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  datetime: String
-  plugin: String
-  durationMs: Int
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	datetime: String
+	plugin: String
+	durationMs: Int
 }
 
+"""
+Hook execution data.
+"""
 type HookExecution {
-  id: ID!
-  hookType: String!
-  hookName: String!
-  hookSource: String
-  directory: String
-  durationMs: Int!
-  exitCode: Int!
-  passed: Boolean!
-  output: String
-  error: String
-  command: String
-  executedAt: String!
-  status: String
-
-  """Timestamp alias for executed_at (browse-client compat)."""
-  timestamp: String!
+	orchestrationId: String
+	sessionId: String
+	taskId: String
+	hookType: String!
+	hookName: String!
+	hookSource: String
+	directory: String
+	durationMs: Int!
+	exitCode: Int!
+	passed: Boolean!
+	output: String
+	error: String
+	command: String
+	executedAt: String!
+	status: String
+	"""
+	Global ID.
+	"""
+	id: ID!
+	"""
+	Timestamp alias for executed_at (browse-client compat).
+	"""
+	timestamp: String!
 }
 
-"""Hook execution connection."""
+"""
+Hook execution connection.
+"""
 type HookExecutionConnection {
-  edges: [HookExecutionEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
+	edges: [HookExecutionEdge!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
-"""Hook execution edge."""
+"""
+Hook execution edge.
+"""
 type HookExecutionEdge {
-  node: HookExecution!
-  cursor: String!
+	node: HookExecution!
+	cursor: String!
+}
+
+"""
+Auto-generated filter input type.
+"""
+input HookExecutionFilter {
+	orchestrationId: StringFilter
+	sessionId: StringFilter
+	taskId: StringFilter
+	hookType: StringFilter
+	hookName: StringFilter
+	hookSource: StringFilter
+	directory: StringFilter
+	durationMs: IntFilter
+	exitCode: IntFilter
+	passed: BoolFilter
+	output: StringFilter
+	error: StringFilter
+	command: StringFilter
+	executedAt: StringFilter
+	status: StringFilter
+	"""
+	Logical AND: all conditions must match.
+	"""
+	_and: [HookExecutionFilter!]
+	"""
+	Logical OR: at least one condition must match.
+	"""
+	_or: [HookExecutionFilter!]
+	"""
+	Logical NOT: invert the condition.
+	"""
+	_not: HookExecutionFilter
+}
+
+"""
+Auto-generated ordering input type.
+"""
+input HookExecutionOrderBy {
+	orchestrationId: OrderDirection
+	sessionId: OrderDirection
+	taskId: OrderDirection
+	hookType: OrderDirection
+	hookName: OrderDirection
+	hookSource: OrderDirection
+	directory: OrderDirection
+	durationMs: OrderDirection
+	exitCode: OrderDirection
+	passed: OrderDirection
+	output: OrderDirection
+	error: OrderDirection
+	command: OrderDirection
+	executedAt: OrderDirection
+	status: OrderDirection
 }
 
 type HookFileChangeMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  filePath: String
-  action: String
-  changeToolName: String
-  recordedSessionId: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	filePath: String
+	action: String
+	changeToolName: String
+	recordedSessionId: String
 }
 
-"""Hook health and pass/fail rates."""
+"""
+Hook health and pass/fail rates.
+"""
 type HookHealthStats {
-  hookName: String
-  totalRuns: Int
-  passCount: Int
-  failCount: Int
-  passRate: Float
-  avgDurationMs: Float
+	hookName: String
+	totalRuns: Int
+	passCount: Int
+	failCount: Int
+	passRate: Float
+	avgDurationMs: Float
 }
 
 type HookReferenceMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  filePath: String
-  plugin: String
-  reason: String
-  success: Boolean
-  durationMs: Int
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	filePath: String
+	plugin: String
+	reason: String
+	success: Boolean
+	durationMs: Int
 }
 
-"""Hook result stub type for HookRunMessage.result."""
+"""
+Hook result data type for HookRunMessage.result.
+"""
 type HookResult {
-  id: String
-  success: Boolean
-  result: String
-  output: String
-  error: String
-  durationMs: Int
-  exitCode: Int
-  cached: Boolean
+	id: String
+	success: Boolean
+	result: String
+	output: String
+	error: String
+	durationMs: Int
+	exitCode: Int
+	cached: Boolean
 }
 
-"""Hook result added payload."""
+"""
+Hook result added payload.
+"""
 type HookResultAddedPayload {
-  """Session ID."""
-  sessionId: String!
-
-  """UUID of the parent hook_run event."""
-  hookRunId: String!
-
-  """Plugin name."""
-  pluginName: String!
-
-  """Hook name."""
-  hookName: String!
-
-  """Whether the hook succeeded."""
-  success: Boolean!
-
-  """Duration in milliseconds."""
-  durationMs: Int!
+	"""
+	Session ID.
+	"""
+	sessionId: String!
+	"""
+	UUID of the parent hook_run event.
+	"""
+	hookRunId: String!
+	"""
+	Plugin name.
+	"""
+	pluginName: String!
+	"""
+	Hook name.
+	"""
+	hookName: String!
+	"""
+	Whether the hook succeeded.
+	"""
+	success: Boolean!
+	"""
+	Duration in milliseconds.
+	"""
+	durationMs: Int!
 }
 
 type HookResultMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  hook: String
-  directory: String
-  hookName: String
-  plugin: String
-  success: Boolean
-  durationMs: Int
-  exitCode: Int
-  output: String
-  error: String
-  cached: Boolean
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	hook: String
+	directory: String
+	hookName: String
+	plugin: String
+	success: Boolean
+	durationMs: Int
+	exitCode: Int
+	output: String
+	error: String
+	cached: Boolean
 }
 
 type HookRunMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  hookName: String
-  hook: String
-  plugin: String
-  hookType: String
-  directory: String
-  hookRunId: String
-  cached: Boolean
-
-  """Hook result (resolved via DataLoader in the future)."""
-  result: HookResult
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	hookName: String
+	hook: String
+	plugin: String
+	hookType: String
+	directory: String
+	hookRunId: String
+	cached: Boolean
+	"""
+	Hook result resolved inline via DataLoader (line adjacency + hook name matching).
+	"""
+	result: HookResult
 }
 
 type HookScriptMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  command: String
-  plugin: String
-  success: Boolean
-  durationMs: Int
-  exitCode: Int
-  output: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	command: String
+	plugin: String
+	success: Boolean
+	durationMs: Int
+	exitCode: Int
+	output: String
 }
 
-"""Hook statistics for a session."""
+"""
+Hook statistics for a session.
+"""
 type HookStats {
-  totalHooks: Int
-  passedHooks: Int
-  failedHooks: Int
-  totalDurationMs: Int
-  passRate: Float
-  byHookType: [HookTypeStat!]
+	totalHooks: Int
+	passedHooks: Int
+	failedHooks: Int
+	totalDurationMs: Int
+	passRate: Float
+	byHookType: [HookTypeStat!]
 }
 
-"""Hook type statistics breakdown."""
+"""
+Hook type statistics breakdown.
+"""
 type HookTypeStat {
-  hookType: String
-  total: Int
-  passed: Int
+	hookType: String
+	total: Int
+	passed: Int
 }
 
 type HookValidationCacheMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  hook: String
-  plugin: String
-  directory: String
-  fileCount: Int
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	hook: String
+	plugin: String
+	directory: String
+	fileCount: Int
 }
 
 type HookValidationMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  hook: String
-  plugin: String
-  directory: String
-  success: Boolean
-  cached: Boolean
-  durationMs: Int
-  exitCode: Int
-  output: String
-  error: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	hook: String
+	plugin: String
+	directory: String
+	success: Boolean
+	cached: Boolean
+	durationMs: Int
+	exitCode: Int
+	output: String
+	error: String
 }
 
-"""Activity by hour of day (0-23)."""
+"""
+Activity by hour of day (0-23).
+"""
 type HourlyActivity {
-  hour: Int
-  sessionCount: Int
-  messageCount: Int
+	hour: Int
+	sessionCount: Int
+	messageCount: Int
 }
 
 type ImageBlock implements ContentBlock {
-  type: ContentBlockType!
-  mediaType: String!
-  dataUrl: String!
+	type: ContentBlockType!
+	mediaType: String!
+	dataUrl: String!
+}
+
+"""
+Filter for i32 columns.
+"""
+input IntFilter {
+	"""
+	Exact match.
+	"""
+	_eq: Int
+	"""
+	Not equal.
+	"""
+	_ne: Int
+	"""
+	Greater than.
+	"""
+	_gt: Int
+	"""
+	Greater than or equal.
+	"""
+	_gte: Int
+	"""
+	Less than.
+	"""
+	_lt: Int
+	"""
+	Less than or equal.
+	"""
+	_lte: Int
+	"""
+	Value is one of the given integers.
+	"""
+	_in: [Int!]
+	"""
+	Whether the value is null.
+	"""
+	_isNull: Boolean
 }
 
 type InterruptUserMessage implements Message & UserMessage {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  content: String
-  contentBlocks: [ContentBlock!]
-  sentimentAnalysis: SentimentAnalysis
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	content: String
+	contentBlocks: [ContentBlock!]
+	sentimentAnalysis: SentimentAnalysis
 }
 
-"""MCP server configuration."""
+"""
+MCP server configuration.
+"""
 type McpServer {
-  id: String
-  name: String
-  command: String
-  url: String
-  source: String
-  type: String
-  argCount: Int
-  hasEnv: Boolean
+	id: String
+	name: String
+	command: String
+	url: String
+	source: String
+	type: String
+	argCount: Int
+	hasEnv: Boolean
 }
 
 type McpToolCallMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  tool: String
-  server: String
-  serverName: String
-  callId: String
-  prefixedName: String
-  input: String
-
-  """Tool result (resolved via DataLoader in the future)."""
-  result: McpToolResult
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	tool: String
+	server: String
+	serverName: String
+	callId: String
+	prefixedName: String
+	input: String
+	"""
+	Tool result resolved inline via DataLoader.
+	"""
+	result: McpToolResult
 }
 
-"""MCP tool result stub."""
+"""
+MCP tool result data.
+"""
 type McpToolResult {
-  id: String
-  success: Boolean
-  result: String
-  output: String
-  error: String
-  durationMs: Int
+	id: String
+	success: Boolean
+	result: String
+	output: String
+	error: String
+	durationMs: Int
 }
 
 type McpToolResultMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  tool: String
-  server: String
-  prefixedName: String
-  callId: String
-  success: Boolean
-  durationMs: Int
-  output: String
-  error: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	tool: String
+	server: String
+	prefixedName: String
+	callId: String
+	success: Boolean
+	durationMs: Int
+	output: String
+	error: String
 }
 
-"""Memory agent progress payload (stub)."""
+"""
+Memory agent progress payload (stub).
+"""
 type MemoryAgentProgressPayload {
-  queryId: String
-  sessionId: String
-  type: String
-  progress: String
-  message: String
-  layer: String
-  content: String
-  resultCount: Int
-  timestamp: String
+	queryId: String
+	sessionId: String
+	type: String
+	progress: String
+	message: String
+	layer: String
+	content: String
+	resultCount: Int
+	timestamp: String
 }
 
-"""Memory agent result payload (stub)."""
+"""
+Memory agent result payload (stub).
+"""
 type MemoryAgentResultPayload {
-  queryId: String
-  sessionId: String
-  result: String
-  answer: String
-  confidence: String
-  citations: [Citation!]
-  searchedLayers: [String!]
-  success: Boolean
-  error: String
+	queryId: String
+	sessionId: String
+	result: String
+	answer: String
+	confidence: String
+	citations: [Citation!]
+	searchedLayers: [String!]
+	success: Boolean
+	error: String
 }
 
 type MemoryLearnMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  content: String
-  scope: String
-  domain: String
-  append: Boolean
-  paths: [String!]
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	content: String
+	scope: String
+	domain: String
+	append: Boolean
+	paths: [String!]
 }
 
 type MemoryQuery {
-  """All project and user rules across registered projects (stub)."""
-  rules: [MemoryRule!]
-
-  """Search memory with a question (stub)."""
-  search(query: String!, projectPath: String!, layers: [String!]): MemorySearchResult
+	"""
+	All project and user rules across registered projects (stub).
+	"""
+	rules: [MemoryRule!]
+	"""
+	Search memory with a question (stub).
+	"""
+	search(query: String!, projectPath: String!, layers: [String!]): MemorySearchResult
 }
 
 type MemoryQueryMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  question: String
-  route: String
-  resultCount: Int
-  durationMs: Int
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	question: String
+	route: String
+	resultCount: Int
+	durationMs: Int
 }
 
-"""Result of starting a memory query with streaming."""
+"""
+Result of starting a memory query with streaming.
+"""
 type MemoryQueryStartResult {
-  """Session ID to use for subscribing to progress updates."""
-  sessionId: String
-
-  """Whether the operation succeeded."""
-  success: Boolean
-
-  """Status message or error details."""
-  message: String
+	"""
+	Session ID to use for subscribing to progress updates.
+	"""
+	sessionId: String
+	"""
+	Whether the operation succeeded.
+	"""
+	success: Boolean
+	"""
+	Status message or error details.
+	"""
+	message: String
 }
 
-"""A memory rule."""
+"""
+A memory rule.
+"""
 type MemoryRule {
-  id: ID
-  path: String
-  content: String
-  source: String
-  scope: String
-  domain: String
-  projectName: String
-  projectPath: String
-  size: Int
+	id: ID
+	path: String
+	content: String
+	source: String
+	scope: String
+	domain: String
+	projectName: String
+	projectPath: String
+	size: Int
 }
 
-"""Result from memory search."""
+"""
+Result from memory search.
+"""
 type MemorySearchResult {
-  answer: String
-  confidence: String
-  source: String
-  citations: [Citation!]
-  layersSearched: [String!]
-  caveats: [String!]
+	answer: String
+	confidence: String
+	source: String
+	citations: [Citation!]
+	layersSearched: [String!]
+	caveats: [String!]
 }
 
-"""Memory updated payload (stub)."""
+"""
+Memory updated payload (stub).
+"""
 type MemoryUpdatedPayload {
-  type: String
-  action: String
-  path: String
-  timestamp: String
+	type: String
+	action: String
+	path: String
+	timestamp: String
 }
 
 """
@@ -873,1064 +1139,1654 @@ Message interface - the base type for all messages in a session.
 Uses GraphQL interface (not union) so clients can use `... on UserMessage` etc.
 """
 interface Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
 }
 
-"""Message connection with pagination."""
+"""
+Message connection with pagination.
+"""
 type MessageConnection {
-  """List of message edges."""
-  edges: [MessageEdge!]!
-
-  """Pagination information."""
-  pageInfo: PageInfo!
-
-  """Total number of messages."""
-  totalCount: Int!
+	"""
+	List of message edges.
+	"""
+	edges: [MessageEdge!]!
+	"""
+	Pagination information.
+	"""
+	pageInfo: PageInfo!
+	"""
+	Total number of messages.
+	"""
+	totalCount: Int!
 }
 
-"""Message edge for connections."""
+"""
+Message edge for connections.
+"""
 type MessageEdge {
-  """The message at this edge."""
-  node: Message!
-
-  """Cursor for this edge."""
-  cursor: String!
+	"""
+	The message at this edge.
+	"""
+	node: Message!
+	"""
+	Cursor for this edge.
+	"""
+	cursor: String!
 }
 
-"""A search result matching a message in a session."""
+"""
+Auto-generated filter input type.
+"""
+input MessageFilter {
+	id: StringFilter
+	sessionId: StringFilter
+	agentId: StringFilter
+	parentId: StringFilter
+	messageType: StringFilter
+	role: StringFilter
+	toolName: StringFilter
+	timestamp: StringFilter
+	lineNumber: IntFilter
+	sentimentScore: FloatFilter
+	sentimentLevel: StringFilter
+	frustrationScore: FloatFilter
+	frustrationLevel: StringFilter
+	inputTokens: IntFilter
+	outputTokens: IntFilter
+	cacheReadTokens: IntFilter
+	cacheCreationTokens: IntFilter
+	linesAdded: IntFilter
+	linesRemoved: IntFilter
+	filesChanged: IntFilter
+	"""
+	Logical AND: all conditions must match.
+	"""
+	_and: [MessageFilter!]
+	"""
+	Logical OR: at least one condition must match.
+	"""
+	_or: [MessageFilter!]
+	"""
+	Logical NOT: invert the condition.
+	"""
+	_not: MessageFilter
+}
+
+"""
+Auto-generated ordering input type.
+"""
+input MessageOrderBy {
+	id: OrderDirection
+	sessionId: OrderDirection
+	agentId: OrderDirection
+	parentId: OrderDirection
+	messageType: OrderDirection
+	role: OrderDirection
+	toolName: OrderDirection
+	timestamp: OrderDirection
+	lineNumber: OrderDirection
+	sentimentScore: OrderDirection
+	sentimentLevel: OrderDirection
+	frustrationScore: OrderDirection
+	frustrationLevel: OrderDirection
+	inputTokens: OrderDirection
+	outputTokens: OrderDirection
+	cacheReadTokens: OrderDirection
+	cacheCreationTokens: OrderDirection
+	linesAdded: OrderDirection
+	linesRemoved: OrderDirection
+	filesChanged: OrderDirection
+}
+
+"""
+A search result matching a message in a session.
+"""
 type MessageSearchResult {
-  messageId: String
-  messageIndex: Int
-  preview: String
-  matchContext: String
+	messageId: String
+	messageIndex: Int
+	preview: String
+	matchContext: String
 }
 
 type MetaUserMessage implements Message & UserMessage {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  content: String
-  contentBlocks: [ContentBlock!]
-  sentimentAnalysis: SentimentAnalysis
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	content: String
+	contentBlocks: [ContentBlock!]
+	sentimentAnalysis: SentimentAnalysis
 }
 
-"""Metrics data for a time period."""
+"""
+Metrics data for a time period.
+"""
 type MetricsData {
-  totalTasks: Int
-  completedTasks: Int
-  successRate: Float
-  averageConfidence: Float
-  averageDuration: Float
-  calibrationScore: Float
-  significantFrustrations: Int
-  significantFrustrationRate: Float
-  tasksByType: [TaskTypeCount!]
-  tasksByOutcome: [TaskOutcomeCount!]
+	totalTasks: Int
+	completedTasks: Int
+	successRate: Float
+	averageConfidence: Float
+	averageDuration: Float
+	calibrationScore: Float
+	significantFrustrations: Int
+	significantFrustrationRate: Float
+	tasksByType: [TaskTypeCount!]
+	tasksByOutcome: [TaskOutcomeCount!]
 }
 
-"""Metrics period for filtering."""
+"""
+Metrics period for filtering.
+"""
 enum MetricsPeriod {
-  DAY
-  WEEK
-  MONTH
+	DAY
+	WEEK
+	MONTH
 }
 
-"""Token usage for a specific model on a given day."""
+"""
+Token usage for a specific model on a given day.
+"""
 type ModelTokenEntry {
-  model: String
-  displayName: String
-  tokens: Int
+	model: String
+	displayName: String
+	tokens: Int
 }
 
-"""Cumulative usage statistics for a model."""
+"""
+Cumulative usage statistics for a model.
+"""
 type ModelUsageStats {
-  model: String
-  displayName: String
-  inputTokens: Int
-  outputTokens: Int
-  cacheReadTokens: Int
-  cacheCreationTokens: Int
-  totalTokens: Int
-  costUsd: Float
+	model: String
+	displayName: String
+	inputTokens: Int
+	outputTokens: Int
+	cacheReadTokens: Int
+	cacheCreationTokens: Int
+	totalTokens: Int
+	costUsd: Float
 }
 
 type MutationRoot {
-  """Enable or disable a plugin."""
-  togglePlugin(name: String!, marketplace: String!, scope: PluginScope!, enabled: Boolean!): PluginMutationResult
-
-  """Remove a plugin from settings."""
-  removePlugin(name: String!, marketplace: String!, scope: PluginScope!): PluginMutationResult
-
-  """Start a memory query with streaming results."""
-  startMemoryQuery(question: String!, projectPath: String!, model: String): MemoryQueryStartResult
-
-  """Register a new config directory."""
-  registerConfigDir(path: String!, name: String): Boolean!
-
-  """Unregister a config directory."""
-  unregisterConfigDir(path: String!): Boolean!
+	"""
+	Enable or disable a plugin.
+	"""
+	togglePlugin(name: String!, marketplace: String!, scope: PluginScope!, enabled: Boolean!): PluginMutationResult
+	"""
+	Remove a plugin from settings.
+	"""
+	removePlugin(name: String!, marketplace: String!, scope: PluginScope!): PluginMutationResult
+	"""
+	Start a memory query with streaming results.
+	"""
+	startMemoryQuery(question: String!, projectPath: String!, model: String): MemoryQueryStartResult
+	"""
+	Register a new config directory.
+	"""
+	registerConfigDir(path: String!, name: String): Boolean!
+	"""
+	Unregister a config directory.
+	"""
+	unregisterConfigDir(path: String!): Boolean!
 }
 
 type NativeTask {
-  id: ID!
-  subject: String!
-  description: String
-  status: String!
-  activeForm: String
-  owner: String
-  blocks: [String!]
-  blockedBy: [String!]
-  createdAt: String!
-  updatedAt: String!
-  completedAt: String
-
-  """Session ID this task belongs to."""
-  sessionId: String!
-
-  """Message ID that created/updated this task."""
-  messageId: String!
+	id: ID!
+	subject: String!
+	description: String
+	status: String!
+	activeForm: String
+	owner: String
+	blocks: [String!]
+	blockedBy: [String!]
+	createdAt: String!
+	updatedAt: String!
+	completedAt: String
+	"""
+	Session ID this task belongs to.
+	"""
+	sessionId: String!
+	"""
+	Message ID that created/updated this task.
+	"""
+	messageId: String!
 }
 
-"""Relay Node interface - any type with a globally unique ID."""
+"""
+Auto-generated filter input type.
+"""
+input NativeTaskFilter {
+	id: StringFilter
+	sessionId: StringFilter
+	subject: StringFilter
+	status: StringFilter
+	owner: StringFilter
+	createdAt: StringFilter
+	updatedAt: StringFilter
+	completedAt: StringFilter
+	lineNumber: IntFilter
+	"""
+	Logical AND: all conditions must match.
+	"""
+	_and: [NativeTaskFilter!]
+	"""
+	Logical OR: at least one condition must match.
+	"""
+	_or: [NativeTaskFilter!]
+	"""
+	Logical NOT: invert the condition.
+	"""
+	_not: NativeTaskFilter
+}
+
+"""
+Auto-generated ordering input type.
+"""
+input NativeTaskOrderBy {
+	id: OrderDirection
+	sessionId: OrderDirection
+	subject: OrderDirection
+	status: OrderDirection
+	owner: OrderDirection
+	createdAt: OrderDirection
+	updatedAt: OrderDirection
+	completedAt: OrderDirection
+	lineNumber: OrderDirection
+}
+
+"""
+Relay Node interface - any type with a globally unique ID.
+"""
 interface Node {
-  id: ID!
+	id: ID!
 }
 
 type NodeUpdatedPayload {
-  id: String!
-  typename: String!
-
-  """The updated node, loaded from the database."""
-  node: Node
+	id: String!
+	typename: String!
+	"""
+	The updated node, loaded from the database.
+	"""
+	node: Node
 }
 
-"""Relay PageInfo for pagination metadata."""
+"""
+Sort direction for ordering query results.
+"""
+enum OrderDirection {
+	"""
+	Ascending order (A-Z, 0-9, oldest first).
+	"""
+	ASC
+	"""
+	Descending order (Z-A, 9-0, newest first).
+	"""
+	DESC
+}
+
+"""
+Relay PageInfo for pagination metadata.
+"""
 type PageInfo {
-  """Whether there are more items after the last edge."""
-  hasNextPage: Boolean!
-
-  """Whether there are more items before the first edge."""
-  hasPreviousPage: Boolean!
-
-  """Cursor of the first edge."""
-  startCursor: String
-
-  """Cursor of the last edge."""
-  endCursor: String
+	"""
+	Whether there are more items after the last edge.
+	"""
+	hasNextPage: Boolean!
+	"""
+	Whether there are more items before the first edge.
+	"""
+	hasPreviousPage: Boolean!
+	"""
+	Cursor of the first edge.
+	"""
+	startCursor: String
+	"""
+	Cursor of the last edge.
+	"""
+	endCursor: String
 }
 
-"""Session count for a time period."""
+"""
+Session count for a time period.
+"""
 type PeriodSessionCount {
-  period: String
-  count: Int
-  sessionCount: Int
-  taskCount: Int
-  tokenUsage: Int
+	period: String
+	count: Int
+	sessionCount: Int
+	taskCount: Int
+	tokenUsage: Int
 }
 
-"""Permissions configuration."""
+"""
+Permissions configuration.
+"""
 type Permissions {
-  allowList: [String!]
-  denyList: [String!]
-  allowedTools: [String!]
-  deniedTools: [String!]
-  additionalDirectories: [String!]
+	allowList: [String!]
+	denyList: [String!]
+	allowedTools: [String!]
+	deniedTools: [String!]
+	additionalDirectories: [String!]
 }
 
 type Plugin {
-  id: ID!
-  name: String
-  enabled: Boolean
-  scope: PluginScope
-  marketplace: String
-  category: String
+	id: ID!
+	name: String
+	enabled: Boolean
+	scope: PluginScope
+	marketplace: String
+	category: String
 }
 
-"""Plugin category with count."""
+"""
+Plugin category with count.
+"""
 type PluginCategory {
-  category: String
-  count: Int
+	category: String
+	count: Int
 }
 
-"""Result of a plugin mutation."""
+"""
+Result of a plugin mutation.
+"""
 type PluginMutationResult {
-  """Whether the operation succeeded."""
-  success: Boolean
-
-  """Status message."""
-  message: String
+	"""
+	Whether the operation succeeded.
+	"""
+	success: Boolean
+	"""
+	Status message.
+	"""
+	message: String
 }
 
-"""Plugin installation scope."""
+"""
+Plugin installation scope.
+"""
 enum PluginScope {
-  USER
-  PROJECT
-  LOCAL
+	USER
+	PROJECT
+	LOCAL
 }
 
-"""Plugin statistics matching browse-client schema."""
+"""
+Plugin statistics matching browse-client schema.
+"""
 type PluginStats {
-  totalPlugins: Int
-  userPlugins: Int
-  projectPlugins: Int
-  localPlugins: Int
-  enabledPlugins: Int
+	totalPlugins: Int
+	userPlugins: Int
+	projectPlugins: Int
+	localPlugins: Int
+	enabledPlugins: Int
 }
 
+"""
+Project data for GraphQL resolution.
+"""
 type Project implements Node {
-  """Project global ID."""
-  id: ID!
-
-  """Project slug."""
-  slug: String!
-
-  """Full path."""
-  path: String!
-
-  """Project name."""
-  name: String!
-
-  """Repo ID (if git project)."""
-  repoId: String
-
-  """Relative path within repo."""
-  relativePath: String
-
-  """Whether this is a worktree."""
-  isWorktree: Boolean!
-
-  """Created timestamp."""
-  createdAt: String!
-
-  """Updated timestamp."""
-  updatedAt: String!
-
-  """Alias for raw_id."""
-  projectId: String!
-
-  """Total sessions count."""
-  totalSessions: Int
-
-  """Session count."""
-  sessionCount: Int
-
-  """Last activity timestamp."""
-  lastActivity: String
-
-  """Worktrees (stub)."""
-  worktrees: [Project!]
-
-  """Subdirectory projects (stub)."""
-  subdirs: [Project!]
-
-  """Installed plugins (stub)."""
-  plugins: [Plugin!]
+	slug: String!
+	path: String!
+	name: String!
+	repoId: String
+	relativePath: String
+	isWorktree: Boolean!
+	createdAt: String!
+	updatedAt: String!
+	"""
+	Global ID (required by Node interface).
+	"""
+	id: ID!
+	"""
+	Alias for raw_id.
+	"""
+	projectId: String!
+	"""
+	Total sessions count.
+	"""
+	totalSessions: Int
+	"""
+	Session count.
+	"""
+	sessionCount: Int
+	"""
+	Last activity timestamp.
+	"""
+	lastActivity: String
+	"""
+	Worktrees (stub).
+	"""
+	worktrees: [Project!]
+	"""
+	Subdirectory projects (stub).
+	"""
+	subdirs: [Project!]
+	"""
+	Installed plugins (stub).
+	"""
+	plugins: [Plugin!]
 }
 
-"""Project added payload."""
+"""
+Project added payload.
+"""
 type ProjectAddedPayload {
-  projectId: String!
-  parentId: String
+	projectId: String!
+	parentId: String
 }
 
-"""Session count by project."""
+"""
+Auto-generated filter input type.
+"""
+input ProjectFilter {
+	slug: StringFilter
+	path: StringFilter
+	name: StringFilter
+	repoId: StringFilter
+	relativePath: StringFilter
+	isWorktree: BoolFilter
+	createdAt: StringFilter
+	updatedAt: StringFilter
+	"""
+	Logical AND: all conditions must match.
+	"""
+	_and: [ProjectFilter!]
+	"""
+	Logical OR: at least one condition must match.
+	"""
+	_or: [ProjectFilter!]
+	"""
+	Logical NOT: invert the condition.
+	"""
+	_not: ProjectFilter
+}
+
+"""
+Auto-generated ordering input type.
+"""
+input ProjectOrderBy {
+	slug: OrderDirection
+	path: OrderDirection
+	name: OrderDirection
+	repoId: OrderDirection
+	relativePath: OrderDirection
+	isWorktree: OrderDirection
+	createdAt: OrderDirection
+	updatedAt: OrderDirection
+}
+
+"""
+Session count by project.
+"""
 type ProjectSessionCount {
-  projectId: String
-  projectName: String
-  count: Int
-  sessionCount: Int
-  taskCount: Int
-  successRate: Float
+	projectId: String
+	projectName: String
+	count: Int
+	sessionCount: Int
+	taskCount: Int
+	successRate: Float
 }
 
 type Query {
-  """Fetch any node by its global ID (Relay Node interface)."""
-  node(id: ID!): Node
-
-  """Fetch a single message by ID (browse-client compat)."""
-  message(id: String!): Message
-
-  """Memory query interface (stub for browse-client compat)."""
-  memory: MemoryQuery
-
-  """Settings summary with all configuration locations."""
-  settings(projectId: String): SettingsSummary
-
-  """All cache entries for the current project (stub)."""
-  cacheEntries: [CacheEntry!]
-
-  """Aggregate cache statistics (stub)."""
-  cacheStats: CacheStats
-
-  """All projects with sessions."""
-  projects(first: Int): [Project!]!
-
-  """Get a project by ID."""
-  project(id: String!): Project
-
-  """All git repositories with sessions."""
-  repos(first: Int): [Repo!]!
-
-  """Get a repo by its repoId."""
-  repo(id: String!): Repo
-
-  """All registered config directories."""
-  configDirs: [ConfigDir!]!
-
-  """Get a session by ID."""
-  session(id: String!): Session
-
-  """Get sessions with cursor-based pagination."""
-  sessions(first: Int, after: String, last: Int, before: String, projectId: String, worktreeName: String, userId: String): SessionConnection!
-
-  """Coordinator status for version checking."""
-  coordinatorStatus(clientVersion: String): CoordinatorStatus!
-
-  """Team-level aggregate metrics for dashboard."""
-  teamMetrics(startDate: String, endDate: String, granularity: Granularity, projectIds: [String!]): TeamMetrics
-
-  """Task metrics for a time period."""
-  metrics(period: MetricsPeriod): MetricsData
-
-  """Installed plugins, optionally filtered by scope."""
-  plugins(scope: PluginScope): [Plugin!]
-
-  """Aggregate plugin statistics."""
-  pluginStats: PluginStats
-
-  """Plugin counts by category."""
-  pluginCategories: [PluginCategory!]
-
-  """Activity data for dashboard visualizations."""
-  activity(days: Int): ActivityData
-
-  """Aggregated analytics for the enhanced dashboard."""
-  dashboardAnalytics(days: Int, subscriptionTier: Int): DashboardAnalytics
+	"""
+	Fetch any node by its global ID (Relay Node interface).
+	"""
+	node(id: ID!): Node
+	"""
+	Fetch a single message by ID (browse-client compat).
+	"""
+	message(id: String!): Message
+	"""
+	Memory query interface (stub for browse-client compat).
+	"""
+	memory: MemoryQuery
+	"""
+	Settings summary with all configuration locations.
+	"""
+	settings(projectId: String): SettingsSummary
+	"""
+	All cache entries for the current project (stub).
+	"""
+	cacheEntries: [CacheEntry!]
+	"""
+	Aggregate cache statistics (stub).
+	"""
+	cacheStats: CacheStats
+	"""
+	All projects with sessions.
+	"""
+	projects(first: Int, filter: ProjectFilter, orderBy: ProjectOrderBy): [Project!]!
+	"""
+	Get a project by ID.
+	"""
+	project(id: String!): Project
+	"""
+	All git repositories with sessions.
+	"""
+	repos(first: Int, filter: RepoFilter, orderBy: RepoOrderBy): [Repo!]!
+	"""
+	Get a repo by its repoId.
+	"""
+	repo(id: String!): Repo
+	"""
+	All registered config directories.
+	"""
+	configDirs: [ConfigDir!]!
+	"""
+	Get a session by ID.
+	"""
+	session(id: String!): Session
+	"""
+	Get sessions with cursor-based pagination.
+	
+	Filtering is done via the GreenFairy-style `filter` input type.
+	Supports association filtering (e.g., `filter: { project: { repoId: { _eq: "..." } } }`).
+	"""
+	sessions(first: Int, after: String, last: Int, before: String, filter: SessionFilter, orderBy: SessionOrderBy): SessionConnection!
+	"""
+	Coordinator status for version checking.
+	"""
+	coordinatorStatus(clientVersion: String): CoordinatorStatus!
+	"""
+	Team-level aggregate metrics for dashboard.
+	"""
+	teamMetrics(startDate: String, endDate: String, granularity: Granularity, projectIds: [String!], projectId: String, repoId: String): TeamMetrics
+	"""
+	Task metrics for a time period.
+	"""
+	metrics(period: MetricsPeriod, projectId: String, repoId: String): MetricsData
+	"""
+	Installed plugins, optionally filtered by scope.
+	"""
+	plugins(scope: PluginScope): [Plugin!]
+	"""
+	Aggregate plugin statistics.
+	"""
+	pluginStats: PluginStats
+	"""
+	Plugin counts by category.
+	"""
+	pluginCategories: [PluginCategory!]
+	"""
+	Activity data for dashboard visualizations.
+	"""
+	activity(days: Int, projectId: String, repoId: String): ActivityData
+	"""
+	Aggregated analytics for the enhanced dashboard.
+	"""
+	dashboardAnalytics(days: Int, subscriptionTier: Int, projectId: String, repoId: String): DashboardAnalytics
 }
 
 type QueueOperationMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  operation: String
-  queueSessionId: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	operation: String
+	queueSessionId: String
 }
 
 type RegularUserMessage implements Message & UserMessage {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  content: String
-  contentBlocks: [ContentBlock!]
-  sentimentAnalysis: SentimentAnalysis
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	content: String
+	contentBlocks: [ContentBlock!]
+	sentimentAnalysis: SentimentAnalysis
 }
 
+"""
+Repo data for GraphQL resolution.
+"""
 type Repo implements Node {
-  """Repo global ID."""
-  id: ID!
-
-  """Git remote URL."""
-  remote: String!
-
-  """Repository name."""
-  name: String!
-
-  """Default branch."""
-  defaultBranch: String
-
-  """Created timestamp."""
-  createdAt: String!
-
-  """Updated timestamp."""
-  updatedAt: String!
-
-  """Alias for raw_id."""
-  repoId: String!
-
-  """Repo path (uses remote)."""
-  path: String!
-
-  """Total sessions count across all projects in this repo."""
-  totalSessions: Int
-
-  """Last activity timestamp."""
-  lastActivity: String
-
-  """Projects in this repo."""
-  projects: [Project!]
+	remote: String!
+	name: String!
+	defaultBranch: String
+	createdAt: String!
+	updatedAt: String!
+	"""
+	Repo global ID (required by Node interface).
+	"""
+	id: ID!
+	"""
+	Alias for raw_id.
+	"""
+	repoId: String!
+	"""
+	Repo path (uses remote).
+	"""
+	path: String!
+	"""
+	Total sessions count across all projects in this repo.
+	"""
+	totalSessions: Int
+	"""
+	Last activity timestamp.
+	"""
+	lastActivity: String
+	"""
+	Projects in this repo.
+	"""
+	projects: [Project!]
 }
 
-"""Repo added payload."""
+"""
+Repo added payload.
+"""
 type RepoAddedPayload {
-  repoId: String!
+	repoId: String!
+}
+
+"""
+Auto-generated filter input type.
+"""
+input RepoFilter {
+	remote: StringFilter
+	name: StringFilter
+	defaultBranch: StringFilter
+	createdAt: StringFilter
+	updatedAt: StringFilter
+	"""
+	Logical AND: all conditions must match.
+	"""
+	_and: [RepoFilter!]
+	"""
+	Logical OR: at least one condition must match.
+	"""
+	_or: [RepoFilter!]
+	"""
+	Logical NOT: invert the condition.
+	"""
+	_not: RepoFilter
+}
+
+"""
+Auto-generated ordering input type.
+"""
+input RepoOrderBy {
+	remote: OrderDirection
+	name: OrderDirection
+	defaultBranch: OrderDirection
+	createdAt: OrderDirection
+	updatedAt: OrderDirection
 }
 
 type SentimentAnalysis {
-  id: ID!
-  sentimentScore: Float
-  sentimentLevel: String
-  frustrationScore: Float
-  frustrationLevel: String
-  signals: [String!]
+	id: ID!
+	sentimentScore: Float
+	sentimentLevel: String
+	frustrationScore: Float
+	frustrationLevel: String
+	signals: [String!]
 }
 
 type SentimentAnalysisMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  analyzedMessageId: String
-  messageId: String
-  sentimentScore: Float
-  sentimentLevel: String
-  frustrationScore: Float
-  frustrationLevel: String
-  signals: [String!]
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	analyzedMessageId: String
+	messageId: String
+	sentimentScore: Float
+	sentimentLevel: String
+	frustrationScore: Float
+	frustrationLevel: String
+	signals: [String!]
 }
 
-"""Session GraphQL type."""
+"""
+Session GraphQL type.
+"""
 type Session implements Node {
-  """Session global ID in format Session:{projectDir}:{sessionId}."""
-  id: ID!
-
-  """Session ID."""
-  sessionId: String!
-
-  """Human-readable session name."""
-  slug: String
-
-  """Display name (slug or sessionId)."""
-  name: String!
-
-  """Session date."""
-  date: String!
-
-  """Project name."""
-  projectName: String!
-
-  """Full project path."""
-  projectPath: String!
-
-  """Canonical project ID for grouping."""
-  projectId: String
-
-  """Encoded project directory for URL routing."""
-  projectSlug: String
-
-  """Worktree name if part of multi-worktree project."""
-  worktreeName: String
-
-  """First user message as summary."""
-  summary: String
-
-  """Number of messages."""
-  messageCount: Int!
-
-  """Session start time."""
-  startedAt: String
-
-  """When the session was last updated."""
-  updatedAt: String
-
-  """Git branch active during session."""
-  gitBranch: String
-
-  """Claude Code version."""
-  version: String
-
-  """Session status (active, completed, etc.)."""
-  status: String
-
-  """Which CLAUDE_CONFIG_DIR this session originated from."""
-  sourceConfigDir: String
-
-  """Paginated messages in this session."""
-  messages(first: Int, after: String, last: Int, before: String): MessageConnection!
-
-  """Native tasks (Claude Code's built-in task system)."""
-  nativeTasks: [NativeTask!]!
-
-  """Organization ID (only populated in hosted team mode)."""
-  orgId: String
-
-  """Session owner (only populated in hosted team mode)."""
-  owner: User
-
-  """The project this session belongs to."""
-  project: Project
-
-  """The currently in-progress todo, if any."""
-  currentTodo: Todo
-
-  """The most recently started active task, if any."""
-  currentTask: Task
-
-  """IDs of agent tasks spawned during this session."""
-  agentTaskIds: [String!]
-
-  """All tasks tracked in this session via start_task MCP tool."""
-  tasks(first: Int, after: String, last: Int, before: String): TaskConnection
-
-  """Active (in-progress) tasks in this session."""
-  activeTasks(first: Int, after: String, last: Int, before: String): TaskConnection
-
-  """All todos from the most recent TodoWrite in this session."""
-  todos(first: Int, after: String, last: Int, before: String): TodoConnection
-
-  """Non-completed todos (pending or in-progress)."""
-  activeTodos(first: Int, after: String, last: Int, before: String): TodoConnection
-
-  """Counts of todos by status."""
-  todoCounts: TodoCounts
-
-  """Files that were changed during this session."""
-  fileChanges(first: Int, after: String, last: Int, before: String): FileChangeConnection
-
-  """Number of unique files changed in this session."""
-  fileChangeCount: Int
-
-  """Hook executions that occurred during this session."""
-  hookExecutions(first: Int, after: String, last: Int, before: String): HookExecutionConnection
-
-  """Hook execution statistics for this session."""
-  hookStats: HookStats
-
-  """Aggregated frustration metrics for this session."""
-  frustrationSummary: FrustrationSummary
-
-  """Search all messages in this session using FTS."""
-  searchMessages(query: String!, limit: Int): [MessageSearchResult!]
-
-  """All tool results from this session."""
-  toolResults: [ToolResultBlock!]
-
-  """Number of user turns in this session."""
-  turnCount: Int
-
-  """Number of compactions in this session."""
-  compactionCount: Int
-
-  """Estimated cost in USD based on token usage."""
-  estimatedCostUsd: Float
-
-  """Duration of session in seconds (first to last message)."""
-  duration: Int
+	"""
+	Session global ID in format Session:{projectDir}:{sessionId}.
+	"""
+	id: ID!
+	"""
+	Session ID.
+	"""
+	sessionId: String!
+	"""
+	Human-readable session name.
+	"""
+	slug: String
+	"""
+	Display name (slug or sessionId).
+	"""
+	name: String!
+	"""
+	Session date.
+	"""
+	date: String!
+	"""
+	Project name.
+	"""
+	projectName: String!
+	"""
+	Full project path.
+	"""
+	projectPath: String!
+	"""
+	Canonical project ID for grouping.
+	"""
+	projectId: String
+	"""
+	Encoded project directory for URL routing.
+	"""
+	projectSlug: String
+	"""
+	Worktree name if part of multi-worktree project.
+	"""
+	worktreeName: String
+	"""
+	First user message as summary.
+	"""
+	summary: String
+	"""
+	Number of messages.
+	"""
+	messageCount: Int!
+	"""
+	Session start time.
+	"""
+	startedAt: String
+	"""
+	When the session was last updated.
+	"""
+	updatedAt: String
+	"""
+	Git branch active during session.
+	"""
+	gitBranch: String
+	"""
+	Claude Code version.
+	"""
+	version: String
+	"""
+	Session status (active, completed, etc.).
+	"""
+	status: String
+	"""
+	PR number if a pull request was created during this session.
+	"""
+	prNumber: Int
+	"""
+	PR URL if a pull request was created during this session.
+	"""
+	prUrl: String
+	"""
+	Team name if this session involved team collaboration.
+	"""
+	teamName: String
+	"""
+	Which CLAUDE_CONFIG_DIR this session originated from.
+	"""
+	sourceConfigDir: String
+	"""
+	Paginated messages in this session.
+	
+	Uses SQL-level keyset pagination with stable cursors (timestamp|id)
+	instead of loading all messages and paginating in memory.
+	"""
+	messages(first: Int, after: String, last: Int, before: String, filter: MessageFilter, orderBy: MessageOrderBy): MessageConnection!
+	"""
+	Native tasks (Claude Code's built-in task system).
+	"""
+	nativeTasks(filter: NativeTaskFilter, orderBy: NativeTaskOrderBy): [NativeTask!]!
+	"""
+	Organization ID (only populated in hosted team mode).
+	"""
+	orgId: String
+	"""
+	Session owner (only populated in hosted team mode).
+	"""
+	owner: User
+	"""
+	The project this session belongs to.
+	"""
+	project: Project
+	"""
+	The currently in-progress todo, if any.
+	"""
+	currentTodo: Todo
+	"""
+	The most recently started active task, if any.
+	"""
+	currentTask: Task
+	"""
+	IDs of agent tasks spawned during this session.
+	"""
+	agentTaskIds: [String!]
+	"""
+	All tasks tracked in this session via start_task MCP tool.
+	"""
+	tasks(first: Int, after: String, last: Int, before: String, filter: TaskFilter, orderBy: TaskOrderBy): TaskConnection
+	"""
+	Active (in-progress) tasks in this session.
+	"""
+	activeTasks(first: Int, after: String, last: Int, before: String): TaskConnection
+	"""
+	All todos from the most recent TodoWrite in this session.
+	"""
+	todos(first: Int, after: String, last: Int, before: String): TodoConnection
+	"""
+	Non-completed todos (pending or in-progress).
+	"""
+	activeTodos(first: Int, after: String, last: Int, before: String): TodoConnection
+	"""
+	Counts of todos by status.
+	"""
+	todoCounts: TodoCounts
+	"""
+	Files that were changed during this session.
+	"""
+	fileChanges(first: Int, after: String, last: Int, before: String): FileChangeConnection
+	"""
+	Number of unique files changed in this session.
+	"""
+	fileChangeCount: Int
+	"""
+	Hook executions that occurred during this session.
+	"""
+	hookExecutions(first: Int, after: String, last: Int, before: String, filter: HookExecutionFilter, orderBy: HookExecutionOrderBy): HookExecutionConnection
+	"""
+	Hook execution statistics for this session.
+	"""
+	hookStats: HookStats
+	"""
+	Aggregated frustration metrics for this session.
+	"""
+	frustrationSummary: FrustrationSummary
+	"""
+	Search all messages in this session using FTS.
+	"""
+	searchMessages(query: String!, limit: Int): [MessageSearchResult!]
+	"""
+	All tool results from this session.
+	"""
+	toolResults: [ToolResultBlock!]
+	"""
+	Number of user turns (user-role messages) in this session.
+	"""
+	turnCount: Int
+	"""
+	Number of context compactions in this session.
+	"""
+	compactionCount: Int
+	"""
+	Estimated cost in USD based on token usage.
+	"""
+	estimatedCostUsd: Float
+	"""
+	Session duration in seconds (first to last message).
+	"""
+	duration: Int
 }
 
 type SessionAddedPayload {
-  sessionId: String!
-  parentId: String
-  projectId: String
-
-  """The new session edge for Relay @prependEdge."""
-  newSessionEdge: SessionEdge
+	sessionId: String!
+	parentId: String
+	projectId: String
+	"""
+	The new session edge for Relay @prependEdge.
+	"""
+	newSessionEdge: SessionEdge
 }
 
-"""Session connection with pagination."""
+"""
+Session connection with pagination.
+"""
 type SessionConnection {
-  edges: [SessionEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
+	edges: [SessionEdge!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
-"""Session cost for top-sessions-by-cost."""
+"""
+Session cost for top-sessions-by-cost.
+"""
 type SessionCost {
-  sessionId: String
-  slug: String
-  costUsd: Float
-  inputTokens: Int
-  outputTokens: Int
-  cacheReadTokens: Int
-  messageCount: Int
-  startedAt: String
+	sessionId: String
+	slug: String
+	costUsd: Float
+	inputTokens: Int
+	outputTokens: Int
+	cacheReadTokens: Int
+	messageCount: Int
+	startedAt: String
 }
 
-"""Session edge for connections."""
+"""
+Session edge for connections.
+"""
 type SessionEdge {
-  node: Session!
-  cursor: String!
+	node: Session!
+	cursor: String!
 }
 
-"""Composite effectiveness score for a session."""
+"""
+Composite effectiveness score for a session.
+"""
 type SessionEffectiveness {
-  sessionId: String
-  slug: String
-  summary: String
-  startedAt: String
-  score: Float
-  sentimentTrend: String
-  avgSentimentScore: Float
-  turnCount: Int
-  taskCompletionRate: Float
-  compactionCount: Int
-  focusScore: Float
+	sessionId: String
+	slug: String
+	summary: String
+	startedAt: String
+	score: Float
+	sentimentTrend: String
+	avgSentimentScore: Float
+	turnCount: Int
+	taskCompletionRate: Float
+	compactionCount: Int
+	focusScore: Float
 }
 
-"""Session files changed payload."""
+"""
+Session files changed payload.
+"""
 type SessionFilesChangedPayload {
-  sessionId: String!
-  fileCount: Int!
-  toolName: String!
+	sessionId: String!
+	fileCount: Int!
+	toolName: String!
 }
 
-"""Session hooks changed payload."""
+"""
+Session filter with GreenFairy-style operators and association filtering.
+
+Supports filtering by direct column fields (id, projectId, status, slug, etc.)
+and through associations (project → repo chain).
+
+Example: `{ project: { repoId: { _eq: "some-repo-id" } } }`
+"""
+input SessionFilter {
+	"""
+	Filter by session ID.
+	"""
+	id: StringFilter
+	"""
+	Filter by project ID.
+	"""
+	projectId: StringFilter
+	"""
+	Filter by session status.
+	"""
+	status: StringFilter
+	"""
+	Filter by session slug.
+	"""
+	slug: StringFilter
+	"""
+	Filter by PR number.
+	"""
+	prNumber: IntFilter
+	"""
+	Filter by team name.
+	"""
+	teamName: StringFilter
+	"""
+	Association filter: filter sessions by their project's fields.
+	Supports nested filtering through project → repo.
+	"""
+	project: ProjectFilter
+	"""
+	Logical AND: all conditions must match.
+	"""
+	_and: [SessionFilter!]
+	"""
+	Logical OR: at least one condition must match.
+	"""
+	_or: [SessionFilter!]
+	"""
+	Logical NOT: invert the condition.
+	"""
+	_not: SessionFilter
+}
+
+"""
+Session hooks changed payload.
+"""
 type SessionHooksChangedPayload {
-  sessionId: String!
-  pluginName: String!
-  hookName: String!
-  eventType: String!
+	sessionId: String!
+	pluginName: String!
+	hookName: String!
+	eventType: String!
 }
 
 type SessionMessageAddedPayload {
-  sessionId: String!
-  messageIndex: Int!
-
-  """
-  The newest message edge for Relay @prependEdge.
-  
-  Loads the latest non-paired message from the database and returns it
-  as a MessageEdge so Relay can insert it into the connection.
-  """
-  newMessageEdge: MessageEdge
+	sessionId: String!
+	messageIndex: Int!
+	"""
+	The newest message edge for Relay @prependEdge.
+	
+	Loads the latest non-paired message from the database and returns it
+	as a MessageEdge so Relay can insert it into the connection.
+	"""
+	newMessageEdge: MessageEdge
 }
 
-"""Session todos changed payload."""
+"""
+Session ordering.
+"""
+input SessionOrderBy {
+	id: OrderDirection
+	projectId: OrderDirection
+	status: OrderDirection
+	slug: OrderDirection
+	prNumber: OrderDirection
+	teamName: OrderDirection
+}
+
+"""
+Session todos changed payload.
+"""
 type SessionTodosChangedPayload {
-  sessionId: String!
-  todoCount: Int!
-  inProgressCount: Int!
-  completedCount: Int!
+	sessionId: String!
+	todoCount: Int!
+	inProgressCount: Int!
+	completedCount: Int!
 }
 
-"""A settings file with source information."""
+"""
+A settings file with source information.
+"""
 type SettingsFile {
-  """Path to settings file."""
-  path: String
-
-  """Source location (user, project, local, root, directory)."""
-  source: String
-
-  """Human-readable source label."""
-  sourceLabel: String
-
-  """File type (claude or han)."""
-  type: String
-
-  """Whether the file exists."""
-  exists: Boolean
-
-  """Last modification time."""
-  lastModified: String
+	"""
+	Path to settings file.
+	"""
+	path: String
+	"""
+	Source location (user, project, local, root, directory).
+	"""
+	source: String
+	"""
+	Human-readable source label.
+	"""
+	sourceLabel: String
+	"""
+	File type (claude or han).
+	"""
+	type: String
+	"""
+	Whether the file exists.
+	"""
+	exists: Boolean
+	"""
+	Last modification time.
+	"""
+	lastModified: String
 }
 
-"""Settings summary with all configuration locations."""
+"""
+Settings summary with all configuration locations.
+"""
 type SettingsSummary {
-  """All Claude settings files with source information."""
-  claudeSettingsFiles: [SettingsFile!]
-
-  """All Han config files with source information."""
-  hanConfigFiles: [SettingsFile!]
-
-  """Claude settings summary (legacy)."""
-  claudeSettings: ClaudeSettingsSummary
-
-  """Han configuration summary (legacy)."""
-  hanConfig: HanConfigSummary
-
-  """Configured MCP servers."""
-  mcpServers: [McpServer!]
-
-  """Permissions configuration."""
-  permissions: Permissions
+	"""
+	All Claude settings files with source information.
+	"""
+	claudeSettingsFiles: [SettingsFile!]
+	"""
+	All Han config files with source information.
+	"""
+	hanConfigFiles: [SettingsFile!]
+	"""
+	Claude settings summary (legacy).
+	"""
+	claudeSettings: ClaudeSettingsSummary
+	"""
+	Han configuration summary (legacy).
+	"""
+	hanConfig: HanConfigSummary
+	"""
+	Configured MCP servers.
+	"""
+	mcpServers: [McpServer!]
+	"""
+	Permissions configuration.
+	"""
+	permissions: Permissions
 }
 
-"""Subagent type usage statistics."""
+"""
+Filter for String columns.
+"""
+input StringFilter {
+	"""
+	Exact match.
+	"""
+	_eq: String
+	"""
+	Not equal.
+	"""
+	_ne: String
+	"""
+	Contains substring (case-sensitive).
+	"""
+	_contains: String
+	"""
+	Starts with prefix.
+	"""
+	_startsWith: String
+	"""
+	Ends with suffix.
+	"""
+	_endsWith: String
+	"""
+	Value is one of the given strings.
+	"""
+	_in: [String!]
+	"""
+	Value is NOT one of the given strings.
+	"""
+	_notIn: [String!]
+	"""
+	Whether the value is null.
+	"""
+	_isNull: Boolean
+}
+
+"""
+Subagent type usage statistics.
+"""
 type SubagentUsageStats {
-  subagentType: String
-  count: Int
+	subagentType: String
+	count: Int
 }
 
-"""Subscription tier comparison."""
+"""
+Subscription tier comparison.
+"""
 type SubscriptionComparison {
-  tierName: String
-  monthlyCostUsd: Float
-  apiCreditCostUsd: Float
-  savingsUsd: Float
-  savingsPercent: Float
-  recommendation: String
+	tierName: String
+	monthlyCostUsd: Float
+	apiCreditCostUsd: Float
+	savingsUsd: Float
+	savingsPercent: Float
+	recommendation: String
 }
 
 type SubscriptionRoot {
-  """Subscribe to updates for a specific node."""
-  nodeUpdated(id: ID!): NodeUpdatedPayload!
-
-  """Subscribe to new messages in a session. Use "*" for all sessions."""
-  sessionMessageAdded(sessionId: ID!): SessionMessageAddedPayload!
-
-  """Subscribe to tool result for a specific call ID."""
-  toolResultAdded(callId: String!): ToolResultAddedPayload!
-
-  """Subscribe to hook result for a specific hook run ID."""
-  hookResultAdded(hookRunId: String!): HookResultAddedPayload!
-
-  """Subscribe to todo changes for a session."""
-  sessionTodosChanged(sessionId: ID!): SessionTodosChangedPayload!
-
-  """Subscribe to file changes for a session."""
-  sessionFilesChanged(sessionId: ID!): SessionFilesChangedPayload!
-
-  """Subscribe to hook events for a session."""
-  sessionHooksChanged(sessionId: ID!): SessionHooksChangedPayload!
-
-  """Subscribe to new sessions. Filter by projectId or receive all."""
-  sessionAdded(parentId: ID, projectId: ID): SessionAddedPayload!
-
-  """Subscribe to new repos."""
-  repoAdded: RepoAddedPayload!
-
-  """Subscribe to new projects."""
-  projectAdded(parentId: ID): ProjectAddedPayload!
-
-  """Subscribe to memory updates (stub)."""
-  memoryUpdated: MemoryUpdatedPayload!
-
-  """Subscribe to memory agent progress (stub)."""
-  memoryAgentProgress(sessionId: String): MemoryAgentProgressPayload!
-
-  """Subscribe to memory agent results (stub)."""
-  memoryAgentResult(sessionId: String): MemoryAgentResultPayload!
+	"""
+	Subscribe to updates for a specific node.
+	"""
+	nodeUpdated(id: ID!): NodeUpdatedPayload!
+	"""
+	Subscribe to new messages in a session. Use "*" for all sessions.
+	"""
+	sessionMessageAdded(sessionId: ID!): SessionMessageAddedPayload!
+	"""
+	Subscribe to tool result for a specific call ID.
+	"""
+	toolResultAdded(callId: String!): ToolResultAddedPayload!
+	"""
+	Subscribe to hook result for a specific hook run ID.
+	"""
+	hookResultAdded(hookRunId: String!): HookResultAddedPayload!
+	"""
+	Subscribe to todo changes for a session.
+	"""
+	sessionTodosChanged(sessionId: ID!): SessionTodosChangedPayload!
+	"""
+	Subscribe to file changes for a session.
+	"""
+	sessionFilesChanged(sessionId: ID!): SessionFilesChangedPayload!
+	"""
+	Subscribe to hook events for a session.
+	"""
+	sessionHooksChanged(sessionId: ID!): SessionHooksChangedPayload!
+	"""
+	Subscribe to new sessions. Filter by projectId or receive all.
+	"""
+	sessionAdded(parentId: ID, projectId: ID): SessionAddedPayload!
+	"""
+	Subscribe to new repos.
+	"""
+	repoAdded: RepoAddedPayload!
+	"""
+	Subscribe to new projects.
+	"""
+	projectAdded(parentId: ID): ProjectAddedPayload!
+	"""
+	Subscribe to memory updates (stub).
+	"""
+	memoryUpdated: MemoryUpdatedPayload!
+	"""
+	Subscribe to memory agent progress (stub).
+	"""
+	memoryAgentProgress(sessionId: String): MemoryAgentProgressPayload!
+	"""
+	Subscribe to memory agent results (stub).
+	"""
+	memoryAgentResult(sessionId: String): MemoryAgentResultPayload!
 }
 
 type SummaryMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-
-  """The summary text content."""
-  content: String
-
-  """Parsed content blocks."""
-  contentBlocks: [ContentBlock!]
-
-  """Whether this is a context compaction summary."""
-  isCompactSummary: Boolean
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	"""
+	The summary text content.
+	"""
+	content: String
+	"""
+	Parsed content blocks.
+	"""
+	contentBlocks: [ContentBlock!]
+	"""
+	Whether this is a context compaction summary.
+	"""
+	isCompactSummary: Boolean
 }
 
 type SystemMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-
-  """System message text content."""
-  content: String
-
-  """Whether this is a meta message."""
-  isMeta: Boolean
-
-  """Message severity level."""
-  level: String
-
-  """System message subtype."""
-  subtype: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	"""
+	System message text content.
+	"""
+	content: String
+	"""
+	Whether this is a meta message.
+	"""
+	isMeta: Boolean
+	"""
+	Message severity level.
+	"""
+	level: String
+	"""
+	System message subtype.
+	"""
+	subtype: String
 }
 
 type Task {
-  id: ID!
-  taskId: String!
-  description: String!
-  taskType: String!
-
-  """Task type enum (FIX, IMPLEMENTATION, REFACTOR, RESEARCH)."""
-  type: TaskType
-
-  """Task status (ACTIVE, COMPLETED, FAILED)."""
-  status: TaskStatus!
-  outcome: String
-  confidence: Float
-  notes: String
-  filesModified: [String!]
-  testsAdded: Int
-  startedAt: String!
-  completedAt: String
-
-  """Duration in seconds (computed from startedAt/completedAt)."""
-  durationSeconds: Int
+	id: ID!
+	taskId: String!
+	description: String!
+	taskType: String!
+	"""
+	Task type enum (FIX, IMPLEMENTATION, REFACTOR, RESEARCH).
+	"""
+	type: TaskType
+	"""
+	Task status (ACTIVE, COMPLETED, FAILED).
+	"""
+	status: TaskStatus!
+	outcome: String
+	confidence: Float
+	notes: String
+	filesModified: [String!]
+	testsAdded: Int
+	startedAt: String!
+	completedAt: String
+	"""
+	Duration in seconds (computed from startedAt/completedAt).
+	"""
+	durationSeconds: Int
 }
 
-"""Task completion metrics."""
+"""
+Task completion metrics.
+"""
 type TaskCompletionMetrics {
-  totalTasks: Int
-  totalCreated: Int
-  totalCompleted: Int
-  completedTasks: Int
-  successCount: Int
-  partialCount: Int
-  failureCount: Int
-  successRate: Float
-  averageConfidence: Float
+	totalTasks: Int
+	totalCreated: Int
+	totalCompleted: Int
+	completedTasks: Int
+	successCount: Int
+	partialCount: Int
+	failureCount: Int
+	successRate: Float
+	averageConfidence: Float
 }
 
-"""Task connection."""
+"""
+Task connection.
+"""
 type TaskConnection {
-  edges: [TaskEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
+	edges: [TaskEdge!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
-"""Task edge."""
+"""
+Task edge.
+"""
 type TaskEdge {
-  node: Task!
-  cursor: String!
+	node: Task!
+	cursor: String!
 }
 
-"""Task outcome."""
+"""
+Auto-generated filter input type.
+"""
+input TaskFilter {
+	id: StringFilter
+	sessionId: StringFilter
+	taskId: StringFilter
+	description: StringFilter
+	taskType: StringFilter
+	outcome: StringFilter
+	confidence: FloatFilter
+	testsAdded: IntFilter
+	startedAt: StringFilter
+	completedAt: StringFilter
+	"""
+	Logical AND: all conditions must match.
+	"""
+	_and: [TaskFilter!]
+	"""
+	Logical OR: at least one condition must match.
+	"""
+	_or: [TaskFilter!]
+	"""
+	Logical NOT: invert the condition.
+	"""
+	_not: TaskFilter
+}
+
+"""
+Auto-generated ordering input type.
+"""
+input TaskOrderBy {
+	id: OrderDirection
+	sessionId: OrderDirection
+	taskId: OrderDirection
+	description: OrderDirection
+	taskType: OrderDirection
+	outcome: OrderDirection
+	confidence: OrderDirection
+	testsAdded: OrderDirection
+	startedAt: OrderDirection
+	completedAt: OrderDirection
+}
+
+"""
+Task outcome.
+"""
 enum TaskOutcome {
-  SUCCESS
-  PARTIAL
-  FAILURE
+	SUCCESS
+	PARTIAL
+	FAILURE
 }
 
-"""Count of tasks by outcome."""
+"""
+Count of tasks by outcome.
+"""
 type TaskOutcomeCount {
-  outcome: TaskOutcome
-  count: Int
+	outcome: TaskOutcome
+	count: Int
 }
 
-"""Task status."""
+"""
+Task status.
+"""
 enum TaskStatus {
-  ACTIVE
-  COMPLETED
-  FAILED
+	ACTIVE
+	COMPLETED
+	FAILED
 }
 
-"""Task type classification."""
+"""
+Task type classification.
+"""
 enum TaskType {
-  FIX
-  IMPLEMENTATION
-  REFACTOR
-  RESEARCH
+	FIX
+	IMPLEMENTATION
+	REFACTOR
+	RESEARCH
 }
 
-"""Count of tasks by type."""
+"""
+Count of tasks by type.
+"""
 type TaskTypeCount {
-  type: TaskType
-  count: Int
+	type: TaskType
+	count: Int
 }
 
-"""Team metrics data (browse-client compatible)."""
+"""
+Team metrics data (browse-client compatible).
+"""
 type TeamMetrics {
-  totalSessions: Int
-  totalTasks: Int
-  totalTokens: Int
-  estimatedCostUsd: Float
-  sessionsByPeriod: [PeriodSessionCount!]
-  sessionsByProject: [ProjectSessionCount!]
-  topContributors: [ContributorMetrics!]
-  activityTimeline: [ActivityTimelineEntry!]
-  tokenUsageAggregation: TokenUsageAggregation
-  taskCompletionMetrics: TaskCompletionMetrics
+	totalSessions: Int
+	totalTasks: Int
+	totalTokens: Int
+	estimatedCostUsd: Float
+	sessionsByPeriod: [PeriodSessionCount!]
+	sessionsByProject: [ProjectSessionCount!]
+	topContributors: [ContributorMetrics!]
+	activityTimeline: [ActivityTimelineEntry!]
+	tokenUsageAggregation: TokenUsageAggregation
+	taskCompletionMetrics: TaskCompletionMetrics
 }
 
 type TextBlock implements ContentBlock {
-  type: ContentBlockType!
-  text: String!
+	type: ContentBlockType!
+	text: String!
 }
 
 type ThinkingBlock implements ContentBlock {
-  type: ContentBlockType!
-  thinking: String!
-  preview: String!
-  signature: String
+	type: ContentBlockType!
+	thinking: String!
+	preview: String!
+	signature: String
 }
 
-"""Todo item from Claude Code's TodoWrite tool."""
+"""
+Todo item from Claude Code's TodoWrite tool.
+"""
 type Todo {
-  id: ID
-  content: String
-  status: TodoStatus
-  activeForm: String
+	id: ID
+	content: String
+	status: TodoStatus
+	activeForm: String
 }
 
-"""Todo connection with pagination."""
+"""
+Todo connection with pagination.
+"""
 type TodoConnection {
-  edges: [TodoEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
+	edges: [TodoEdge!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
-"""Summary counts of todos by status."""
+"""
+Summary counts of todos by status.
+"""
 type TodoCounts {
-  total: Int
-  pending: Int
-  inProgress: Int
-  completed: Int
+	total: Int
+	pending: Int
+	inProgress: Int
+	completed: Int
 }
 
-"""Todo edge for connections."""
+"""
+Todo edge for connections.
+"""
 type TodoEdge {
-  node: Todo!
-  cursor: String!
+	node: Todo!
+	cursor: String!
 }
 
-"""Todo item status."""
+"""
+Todo item status.
+"""
 enum TodoStatus {
-  pending
-  in_progress
-  completed
+	pending
+	in_progress
+	completed
 }
 
-"""Token usage aggregation."""
+"""
+Token usage aggregation.
+"""
 type TokenUsageAggregation {
-  totalInputTokens: Int
-  totalOutputTokens: Int
-  totalCacheReadTokens: Int
-  totalCachedTokens: Int
-  totalCacheCreationTokens: Int
-  totalTokens: Int
-  estimatedCostUsd: Float
+	totalInputTokens: Int
+	totalOutputTokens: Int
+	totalCacheReadTokens: Int
+	totalCachedTokens: Int
+	totalCacheCreationTokens: Int
+	totalTokens: Int
+	estimatedCostUsd: Float
 }
 
-"""Aggregate token usage statistics."""
+"""
+Aggregate token usage statistics.
+"""
 type TokenUsageStats {
-  totalInputTokens: Int
-  totalOutputTokens: Int
-  totalCachedTokens: Int
-  totalTokens: Int
-  estimatedCostUsd: Float
-  messageCount: Int
-  sessionCount: Int
+	totalInputTokens: Int
+	totalOutputTokens: Int
+	totalCachedTokens: Int
+	totalTokens: Int
+	estimatedCostUsd: Float
+	messageCount: Int
+	sessionCount: Int
 }
 
-"""Tool category for UI grouping."""
+"""
+Tool category for UI grouping.
+"""
 enum ToolCategory {
-  FILE
-  SEARCH
-  SHELL
-  TASK
-  WEB
-  MCP
-  OTHER
+	FILE
+	SEARCH
+	SHELL
+	TASK
+	WEB
+	MCP
+	OTHER
 }
 
-"""Tool result added payload."""
+"""
+Tool result added payload.
+"""
 type ToolResultAddedPayload {
-  """Session ID."""
-  sessionId: String!
-
-  """Call ID for correlation."""
-  callId: String!
-
-  """Type of tool call (mcp or exposed)."""
-  type: String!
-
-  """Whether the tool call succeeded."""
-  success: Boolean!
-
-  """Duration in milliseconds."""
-  durationMs: Int!
+	"""
+	Session ID.
+	"""
+	sessionId: String!
+	"""
+	Call ID for correlation.
+	"""
+	callId: String!
+	"""
+	Type of tool call (mcp or exposed).
+	"""
+	type: String!
+	"""
+	Whether the tool call succeeded.
+	"""
+	success: Boolean!
+	"""
+	Duration in milliseconds.
+	"""
+	durationMs: Int!
 }
 
 type ToolResultBlock implements ContentBlock {
-  type: ContentBlockType!
-  toolCallId: String!
-  content: String!
-  isError: Boolean!
-  isLong: Boolean!
-  preview: String!
-  hasImage: Boolean!
+	type: ContentBlockType!
+	toolCallId: String!
+	content: String!
+	isError: Boolean!
+	isLong: Boolean!
+	preview: String!
+	hasImage: Boolean!
 }
 
 type ToolResultUserMessage implements Message & UserMessage {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  content: String
-  contentBlocks: [ContentBlock!]
-  sentimentAnalysis: SentimentAnalysis
-
-  """Number of tool results in this message."""
-  toolResultCount: Int
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	content: String
+	contentBlocks: [ContentBlock!]
+	sentimentAnalysis: SentimentAnalysis
+	"""
+	Number of tool results in this message.
+	"""
+	toolResultCount: Int
 }
 
-"""Tool usage frequency breakdown."""
+"""
+Tool usage frequency breakdown.
+"""
 type ToolUsageStats {
-  toolName: String
-  count: Int
+	toolName: String
+	count: Int
 }
 
 type ToolUseBlock implements ContentBlock {
-  type: ContentBlockType!
-  toolCallId: String!
-  name: String!
-  input: String!
-  category: ToolCategory!
-  icon: String!
-  displayName: String!
-  color: String!
-  sessionId: String
-  agentTaskId: String
-
-  """Tool result resolved inline (stub - will be populated via DataLoader)."""
-  result: ToolResultBlock
-
-  """Agent task reference (stub for backwards compatibility)."""
-  agentTask: AgentTask
+	type: ContentBlockType!
+	toolCallId: String!
+	name: String!
+	input: String!
+	category: ToolCategory!
+	icon: String!
+	displayName: String!
+	color: String!
+	sessionId: String
+	agentTaskId: String
+	"""
+	Tool result resolved inline via DataLoader.
+	"""
+	result: ToolResultBlock
+	"""
+	Agent task reference (stub for backwards compatibility).
+	"""
+	agentTask: AgentTask
 }
 
 type UnknownEventMessage implements Message {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-
-  """The unrecognized event type."""
-  eventType: String
-
-  """The message type string."""
-  messageType: String
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	"""
+	The unrecognized event type.
+	"""
+	eventType: String
+	"""
+	The message type string.
+	"""
+	messageType: String
 }
 
 type User {
-  id: ID!
-  name: String
-  email: String
-  avatarUrl: String
+	id: ID!
+	name: String
+	email: String
+	avatarUrl: String
 }
 
 """
@@ -1940,24 +2796,39 @@ so UserMessage is a standalone interface. Concrete types are variants in BOTH
 Message and UserMessage enums, producing `type X implements Message & UserMessage`.
 """
 interface UserMessage {
-  id: ID!
-  uuid: String!
-  timestamp: String!
-  rawJson: String
-  agentId: String
-  parentId: String
-  searchText: String
-  content: String
-  contentBlocks: [ContentBlock!]
-  sentimentAnalysis: SentimentAnalysis
+	id: ID!
+	uuid: String!
+	timestamp: String!
+	rawJson: String
+	agentId: String
+	parentId: String
+	searchText: String
+	content: String
+	contentBlocks: [ContentBlock!]
+	sentimentAnalysis: SentimentAnalysis
 }
 
-"""Weekly cost data point."""
+"""
+Weekly cost data point.
+"""
 type WeeklyCost {
-  weekStart: String
-  weekLabel: String
-  costUsd: Float
-  sessionCount: Int
-  avgDailyCost: Float
+	weekStart: String
+	weekLabel: String
+	costUsd: Float
+	sessionCount: Int
+	avgDailyCost: Float
 }
 
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+schema {
+	query: Query
+	mutation: MutationRoot
+	subscription: SubscriptionRoot
+}

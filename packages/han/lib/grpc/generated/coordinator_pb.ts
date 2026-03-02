@@ -2,33 +2,44 @@
 // @generated from file coordinator.proto (package han.coordinator, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
+import type { Message } from '@bufbuild/protobuf';
+import type {
+  GenFile,
+  GenMessage,
+  GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+  fileDesc,
+  messageDesc,
+  serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
 
 /**
  * Describes the file coordinator.proto.
  */
-export const file_coordinator: GenFile = /*@__PURE__*/
-  fileDesc("ChFjb29yZGluYXRvci5wcm90bxIPaGFuLmNvb3JkaW5hdG9yIgcKBUVtcHR5IqcBCg5TdGF0dXNSZXNwb25zZRIPCgd2ZXJzaW9uGAEgASgJEhYKDnVwdGltZV9zZWNvbmRzGAIgASgJEg8KB2RiX3BhdGgYAyABKAkSFQoNc2Vzc2lvbl9jb3VudBgEIAEoAxIVCg1tZXNzYWdlX2NvdW50GAUgASgDEhYKDndhdGNoZXJfYWN0aXZlGAYgASgIEhUKDXdhdGNoZWRfcGF0aHMYByADKAkiRQoOSGVhbHRoUmVzcG9uc2USDwoHaGVhbHRoeRgBIAEoCBIPCgd2ZXJzaW9uGAIgASgJEhEKCXVwdGltZV9tcxgDIAEoAyI8Cg9TaHV0ZG93blJlcXVlc3QSEAoIZ3JhY2VmdWwYASABKAgSFwoPdGltZW91dF9zZWNvbmRzGAIgASgFIi8KF0dldEFjdGl2ZVNlc3Npb25SZXF1ZXN0EhQKDHByb2plY3RfcGF0aBgBIAEoCSInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJInwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSFwoKcHJvamVjdF9pZBgBIAEoCUgAiAEBEhMKBnN0YXR1cxgCIAEoCUgBiAEBEg0KBWxpbWl0GAMgASgFEg4KBm9mZnNldBgEIAEoBUINCgtfcHJvamVjdF9pZEIJCgdfc3RhdHVzIlEKD1Nlc3Npb25SZXNwb25zZRIyCgdzZXNzaW9uGAEgASgLMhwuaGFuLmNvb3JkaW5hdG9yLlNlc3Npb25EYXRhSACIAQFCCgoIX3Nlc3Npb24i2QIKC1Nlc3Npb25EYXRhEgoKAmlkGAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkSFwoKcHJvamVjdF9pZBgDIAEoCUgAiAEBEhMKBnN0YXR1cxgEIAEoCUgBiAEBEh4KEXNlc3Npb25fZmlsZV9wYXRoGAUgASgJSAKIAQESGQoMc2Vzc2lvbl9zbHVnGAYgASgJSAOIAQESFwoKc3RhcnRlZF9hdBgHIAEoCUgEiAEBEhUKCGVuZGVkX2F0GAggASgJSAWIAQESHgoRbGFzdF9pbmRleGVkX2xpbmUYCSABKAVIBogBAUINCgtfcHJvamVjdF9pZEIJCgdfc3RhdHVzQhQKEl9zZXNzaW9uX2ZpbGVfcGF0aEIPCg1fc2Vzc2lvbl9zbHVnQg0KC19zdGFydGVkX2F0QgsKCV9lbmRlZF9hdEIUChJfbGFzdF9pbmRleGVkX2xpbmUiVQoUTGlzdFNlc3Npb25zUmVzcG9uc2USLgoIc2Vzc2lvbnMYASADKAsyHC5oYW4uY29vcmRpbmF0b3IuU2Vzc2lvbkRhdGESDQoFdG90YWwYAiABKAUiPAoSVHJpZ2dlclNjYW5SZXF1ZXN0EhcKCmNvbmZpZ19kaXIYASABKAlIAIgBAUINCgtfY29uZmlnX2RpciJSCgxTY2FuUmVzcG9uc2USGAoQc2Vzc2lvbnNfaW5kZXhlZBgBIAEoBRIYChBtZXNzYWdlc19pbmRleGVkGAIgASgFEg4KBmVycm9ycxgDIAMoCSJNChBJbmRleEZpbGVSZXF1ZXN0EhEKCWZpbGVfcGF0aBgBIAEoCRIXCgpjb25maWdfZGlyGAIgASgJSACIAQFCDQoLX2NvbmZpZ19kaXIijwEKEUluZGV4RmlsZVJlc3BvbnNlEhIKCnNlc3Npb25faWQYASABKAkSGAoQbWVzc2FnZXNfaW5kZXhlZBgCIAEoBRIWCg50b3RhbF9tZXNzYWdlcxgDIAEoBRIWCg5pc19uZXdfc2Vzc2lvbhgEIAEoCBISCgVlcnJvchgFIAEoCUgAiAEBQggKBl9lcnJvciKcAgoTRXhlY3V0ZUhvb2tzUmVxdWVzdBINCgVldmVudBgBIAEoCRIXCgpzZXNzaW9uX2lkGAIgASgJSACIAQESFgoJdG9vbF9uYW1lGAMgASgJSAGIAQESFwoKdG9vbF9pbnB1dBgEIAEoCUgCiAEBEhAKA2N3ZBgFIAEoCUgDiAEBEjoKA2VudhgGIAMoCzItLmhhbi5jb29yZGluYXRvci5FeGVjdXRlSG9va3NSZXF1ZXN0LkVudkVudHJ5GioKCEVudkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCDQoLX3Nlc3Npb25faWRCDAoKX3Rvb2xfbmFtZUINCgtfdG9vbF9pbnB1dEIGCgRfY3dkIrEBCgpIb29rT3V0cHV0Eg8KB2hvb2tfaWQYASABKAkSEwoLcGx1Z2luX25hbWUYAiABKAkSEQoJaG9va19uYW1lGAMgASgJEhUKC3N0ZG91dF9saW5lGAQgASgJSAASFQoLc3RkZXJyX2xpbmUYBSABKAlIABIxCghjb21wbGV0ZRgGIAEoCzIdLmhhbi5jb29yZGluYXRvci5Ib29rQ29tcGxldGVIAEIJCgdwYXlsb2FkImQKDEhvb2tDb21wbGV0ZRIRCglleGl0X2NvZGUYASABKAUSDgoGY2FjaGVkGAIgASgIEhIKBWVycm9yGAMgASgJSACIAQESEwoLZHVyYXRpb25fbXMYBCABKANCCAoGX2Vycm9yIj4KEExpc3RIb29rc1JlcXVlc3QSGQoMZXZlbnRfZmlsdGVyGAEgASgJSACIAQFCDwoNX2V2ZW50X2ZpbHRlciJDChFMaXN0SG9va3NSZXNwb25zZRIuCgVob29rcxgBIAMoCzIfLmhhbi5jb29yZGluYXRvci5Ib29rRGVmaW5pdGlvbiKiAQoOSG9va0RlZmluaXRpb24SEwoLcGx1Z2luX25hbWUYASABKAkSEQoJaG9va19uYW1lGAIgASgJEg0KBWV2ZW50GAMgASgJEg8KB2NvbW1hbmQYBCABKAkSFAoHbWF0Y2hlchgFIAEoCUgAiAEBEhcKCnRpbWVvdXRfbXMYBiABKAVIAYgBAUIKCghfbWF0Y2hlckINCgtfdGltZW91dF9tcyJgChJBY3F1aXJlU2xvdFJlcXVlc3QSEQoJc2xvdF9uYW1lGAEgASgJEg0KBW93bmVyGAIgASgJEhgKC3R0bF9zZWNvbmRzGAMgASgFSACIAQFCDgoMX3R0bF9zZWNvbmRzIlUKE0FjcXVpcmVTbG90UmVzcG9uc2USEAoIYWNxdWlyZWQYASABKAgSGgoNY3VycmVudF9vd25lchgCIAEoCUgAiAEBQhAKDl9jdXJyZW50X293bmVyIjYKElJlbGVhc2VTbG90UmVxdWVzdBIRCglzbG90X25hbWUYASABKAkSDQoFb3duZXIYAiABKAkiEgoQTGlzdFNsb3RzUmVxdWVzdCJrCghTbG90SW5mbxIRCglzbG90X25hbWUYASABKAkSDQoFb3duZXIYAiABKAkSEwoLYWNxdWlyZWRfYXQYAyABKAkSGAoLdHRsX3NlY29uZHMYBCABKAVIAIgBAUIOCgxfdHRsX3NlY29uZHMiPQoRTGlzdFNsb3RzUmVzcG9uc2USKAoFc2xvdHMYASADKAsyGS5oYW4uY29vcmRpbmF0b3IuU2xvdEluZm8iWwoTTWVtb3J5U2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRIXCgpzZXNzaW9uX2lkGAIgASgJSACIAQESDQoFbGltaXQYAyABKAVCDQoLX3Nlc3Npb25faWQiRgoUTWVtb3J5U2VhcmNoUmVzcG9uc2USLgoHcmVzdWx0cxgBIAMoCzIdLmhhbi5jb29yZGluYXRvci5NZW1vcnlSZXN1bHQiggEKDE1lbW9yeVJlc3VsdBIKCgJpZBgBIAEoCRIPCgdjb250ZW50GAIgASgJEg0KBXNjb3JlGAMgASgBEhcKCnNlc3Npb25faWQYBCABKAlIAIgBARITCgZzb3VyY2UYBSABKAlIAYgBAUINCgtfc2Vzc2lvbl9pZEIJCgdfc291cmNlIucBChRJbmRleERvY3VtZW50UmVxdWVzdBIPCgdjb250ZW50GAEgASgJEhcKCnNlc3Npb25faWQYAiABKAlIAIgBARITCgZzb3VyY2UYAyABKAlIAYgBARJFCghtZXRhZGF0YRgEIAMoCzIzLmhhbi5jb29yZGluYXRvci5JbmRleERvY3VtZW50UmVxdWVzdC5NZXRhZGF0YUVudHJ5Gi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUINCgtfc2Vzc2lvbl9pZEIJCgdfc291cmNlMuABChJDb29yZGluYXRvclNlcnZpY2USQQoGSGVhbHRoEhYuaGFuLmNvb3JkaW5hdG9yLkVtcHR5Gh8uaGFuLmNvb3JkaW5hdG9yLkhlYWx0aFJlc3BvbnNlEkQKCFNodXRkb3duEiAuaGFuLmNvb3JkaW5hdG9yLlNodXRkb3duUmVxdWVzdBoWLmhhbi5jb29yZGluYXRvci5FbXB0eRJBCgZTdGF0dXMSFi5oYW4uY29vcmRpbmF0b3IuRW1wdHkaHy5oYW4uY29vcmRpbmF0b3IuU3RhdHVzUmVzcG9uc2UyiwIKDlNlc3Npb25TZXJ2aWNlElcKCUdldEFjdGl2ZRIoLmhhbi5jb29yZGluYXRvci5HZXRBY3RpdmVTZXNzaW9uUmVxdWVzdBogLmhhbi5jb29yZGluYXRvci5TZXNzaW9uUmVzcG9uc2USSwoDR2V0EiIuaGFuLmNvb3JkaW5hdG9yLkdldFNlc3Npb25SZXF1ZXN0GiAuaGFuLmNvb3JkaW5hdG9yLlNlc3Npb25SZXNwb25zZRJTCgRMaXN0EiQuaGFuLmNvb3JkaW5hdG9yLkxpc3RTZXNzaW9uc1JlcXVlc3QaJS5oYW4uY29vcmRpbmF0b3IuTGlzdFNlc3Npb25zUmVzcG9uc2UytwEKDkluZGV4ZXJTZXJ2aWNlElEKC1RyaWdnZXJTY2FuEiMuaGFuLmNvb3JkaW5hdG9yLlRyaWdnZXJTY2FuUmVxdWVzdBodLmhhbi5jb29yZGluYXRvci5TY2FuUmVzcG9uc2USUgoJSW5kZXhGaWxlEiEuaGFuLmNvb3JkaW5hdG9yLkluZGV4RmlsZVJlcXVlc3QaIi5oYW4uY29vcmRpbmF0b3IuSW5kZXhGaWxlUmVzcG9uc2UytgEKC0hvb2tTZXJ2aWNlElMKDEV4ZWN1dGVIb29rcxIkLmhhbi5jb29yZGluYXRvci5FeGVjdXRlSG9va3NSZXF1ZXN0GhsuaGFuLmNvb3JkaW5hdG9yLkhvb2tPdXRwdXQwARJSCglMaXN0SG9va3MSIS5oYW4uY29vcmRpbmF0b3IuTGlzdEhvb2tzUmVxdWVzdBoiLmhhbi5jb29yZGluYXRvci5MaXN0SG9va3NSZXNwb25zZTL6AQoLU2xvdFNlcnZpY2USVAoHQWNxdWlyZRIjLmhhbi5jb29yZGluYXRvci5BY3F1aXJlU2xvdFJlcXVlc3QaJC5oYW4uY29vcmRpbmF0b3IuQWNxdWlyZVNsb3RSZXNwb25zZRJGCgdSZWxlYXNlEiMuaGFuLmNvb3JkaW5hdG9yLlJlbGVhc2VTbG90UmVxdWVzdBoWLmhhbi5jb29yZGluYXRvci5FbXB0eRJNCgRMaXN0EiEuaGFuLmNvb3JkaW5hdG9yLkxpc3RTbG90c1JlcXVlc3QaIi5oYW4uY29vcmRpbmF0b3IuTGlzdFNsb3RzUmVzcG9uc2UytgEKDU1lbW9yeVNlcnZpY2USVQoGU2VhcmNoEiQuaGFuLmNvb3JkaW5hdG9yLk1lbW9yeVNlYXJjaFJlcXVlc3QaJS5oYW4uY29vcmRpbmF0b3IuTWVtb3J5U2VhcmNoUmVzcG9uc2USTgoNSW5kZXhEb2N1bWVudBIlLmhhbi5jb29yZGluYXRvci5JbmRleERvY3VtZW50UmVxdWVzdBoWLmhhbi5jb29yZGluYXRvci5FbXB0eWIGcHJvdG8z");
+export const file_coordinator: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChFjb29yZGluYXRvci5wcm90bxIPaGFuLmNvb3JkaW5hdG9yIgcKBUVtcHR5IqcBCg5TdGF0dXNSZXNwb25zZRIPCgd2ZXJzaW9uGAEgASgJEhYKDnVwdGltZV9zZWNvbmRzGAIgASgJEg8KB2RiX3BhdGgYAyABKAkSFQoNc2Vzc2lvbl9jb3VudBgEIAEoAxIVCg1tZXNzYWdlX2NvdW50GAUgASgDEhYKDndhdGNoZXJfYWN0aXZlGAYgASgIEhUKDXdhdGNoZWRfcGF0aHMYByADKAkiRQoOSGVhbHRoUmVzcG9uc2USDwoHaGVhbHRoeRgBIAEoCBIPCgd2ZXJzaW9uGAIgASgJEhEKCXVwdGltZV9tcxgDIAEoAyI8Cg9TaHV0ZG93blJlcXVlc3QSEAoIZ3JhY2VmdWwYASABKAgSFwoPdGltZW91dF9zZWNvbmRzGAIgASgFIi8KF0dldEFjdGl2ZVNlc3Npb25SZXF1ZXN0EhQKDHByb2plY3RfcGF0aBgBIAEoCSInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJInwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSFwoKcHJvamVjdF9pZBgBIAEoCUgAiAEBEhMKBnN0YXR1cxgCIAEoCUgBiAEBEg0KBWxpbWl0GAMgASgFEg4KBm9mZnNldBgEIAEoBUINCgtfcHJvamVjdF9pZEIJCgdfc3RhdHVzIlEKD1Nlc3Npb25SZXNwb25zZRIyCgdzZXNzaW9uGAEgASgLMhwuaGFuLmNvb3JkaW5hdG9yLlNlc3Npb25EYXRhSACIAQFCCgoIX3Nlc3Npb24i2QIKC1Nlc3Npb25EYXRhEgoKAmlkGAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkSFwoKcHJvamVjdF9pZBgDIAEoCUgAiAEBEhMKBnN0YXR1cxgEIAEoCUgBiAEBEh4KEXNlc3Npb25fZmlsZV9wYXRoGAUgASgJSAKIAQESGQoMc2Vzc2lvbl9zbHVnGAYgASgJSAOIAQESFwoKc3RhcnRlZF9hdBgHIAEoCUgEiAEBEhUKCGVuZGVkX2F0GAggASgJSAWIAQESHgoRbGFzdF9pbmRleGVkX2xpbmUYCSABKAVIBogBAUINCgtfcHJvamVjdF9pZEIJCgdfc3RhdHVzQhQKEl9zZXNzaW9uX2ZpbGVfcGF0aEIPCg1fc2Vzc2lvbl9zbHVnQg0KC19zdGFydGVkX2F0QgsKCV9lbmRlZF9hdEIUChJfbGFzdF9pbmRleGVkX2xpbmUiVQoUTGlzdFNlc3Npb25zUmVzcG9uc2USLgoIc2Vzc2lvbnMYASADKAsyHC5oYW4uY29vcmRpbmF0b3IuU2Vzc2lvbkRhdGESDQoFdG90YWwYAiABKAUiPAoSVHJpZ2dlclNjYW5SZXF1ZXN0EhcKCmNvbmZpZ19kaXIYASABKAlIAIgBAUINCgtfY29uZmlnX2RpciJSCgxTY2FuUmVzcG9uc2USGAoQc2Vzc2lvbnNfaW5kZXhlZBgBIAEoBRIYChBtZXNzYWdlc19pbmRleGVkGAIgASgFEg4KBmVycm9ycxgDIAMoCSJNChBJbmRleEZpbGVSZXF1ZXN0EhEKCWZpbGVfcGF0aBgBIAEoCRIXCgpjb25maWdfZGlyGAIgASgJSACIAQFCDQoLX2NvbmZpZ19kaXIijwEKEUluZGV4RmlsZVJlc3BvbnNlEhIKCnNlc3Npb25faWQYASABKAkSGAoQbWVzc2FnZXNfaW5kZXhlZBgCIAEoBRIWCg50b3RhbF9tZXNzYWdlcxgDIAEoBRIWCg5pc19uZXdfc2Vzc2lvbhgEIAEoCBISCgVlcnJvchgFIAEoCUgAiAEBQggKBl9lcnJvciKcAgoTRXhlY3V0ZUhvb2tzUmVxdWVzdBINCgVldmVudBgBIAEoCRIXCgpzZXNzaW9uX2lkGAIgASgJSACIAQESFgoJdG9vbF9uYW1lGAMgASgJSAGIAQESFwoKdG9vbF9pbnB1dBgEIAEoCUgCiAEBEhAKA2N3ZBgFIAEoCUgDiAEBEjoKA2VudhgGIAMoCzItLmhhbi5jb29yZGluYXRvci5FeGVjdXRlSG9va3NSZXF1ZXN0LkVudkVudHJ5GioKCEVudkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCDQoLX3Nlc3Npb25faWRCDAoKX3Rvb2xfbmFtZUINCgtfdG9vbF9pbnB1dEIGCgRfY3dkIrEBCgpIb29rT3V0cHV0Eg8KB2hvb2tfaWQYASABKAkSEwoLcGx1Z2luX25hbWUYAiABKAkSEQoJaG9va19uYW1lGAMgASgJEhUKC3N0ZG91dF9saW5lGAQgASgJSAASFQoLc3RkZXJyX2xpbmUYBSABKAlIABIxCghjb21wbGV0ZRgGIAEoCzIdLmhhbi5jb29yZGluYXRvci5Ib29rQ29tcGxldGVIAEIJCgdwYXlsb2FkImQKDEhvb2tDb21wbGV0ZRIRCglleGl0X2NvZGUYASABKAUSDgoGY2FjaGVkGAIgASgIEhIKBWVycm9yGAMgASgJSACIAQESEwoLZHVyYXRpb25fbXMYBCABKANCCAoGX2Vycm9yIj4KEExpc3RIb29rc1JlcXVlc3QSGQoMZXZlbnRfZmlsdGVyGAEgASgJSACIAQFCDwoNX2V2ZW50X2ZpbHRlciJDChFMaXN0SG9va3NSZXNwb25zZRIuCgVob29rcxgBIAMoCzIfLmhhbi5jb29yZGluYXRvci5Ib29rRGVmaW5pdGlvbiKiAQoOSG9va0RlZmluaXRpb24SEwoLcGx1Z2luX25hbWUYASABKAkSEQoJaG9va19uYW1lGAIgASgJEg0KBWV2ZW50GAMgASgJEg8KB2NvbW1hbmQYBCABKAkSFAoHbWF0Y2hlchgFIAEoCUgAiAEBEhcKCnRpbWVvdXRfbXMYBiABKAVIAYgBAUIKCghfbWF0Y2hlckINCgtfdGltZW91dF9tcyJgChJBY3F1aXJlU2xvdFJlcXVlc3QSEQoJc2xvdF9uYW1lGAEgASgJEg0KBW93bmVyGAIgASgJEhgKC3R0bF9zZWNvbmRzGAMgASgFSACIAQFCDgoMX3R0bF9zZWNvbmRzIlUKE0FjcXVpcmVTbG90UmVzcG9uc2USEAoIYWNxdWlyZWQYASABKAgSGgoNY3VycmVudF9vd25lchgCIAEoCUgAiAEBQhAKDl9jdXJyZW50X293bmVyIjYKElJlbGVhc2VTbG90UmVxdWVzdBIRCglzbG90X25hbWUYASABKAkSDQoFb3duZXIYAiABKAkiEgoQTGlzdFNsb3RzUmVxdWVzdCJrCghTbG90SW5mbxIRCglzbG90X25hbWUYASABKAkSDQoFb3duZXIYAiABKAkSEwoLYWNxdWlyZWRfYXQYAyABKAkSGAoLdHRsX3NlY29uZHMYBCABKAVIAIgBAUIOCgxfdHRsX3NlY29uZHMiPQoRTGlzdFNsb3RzUmVzcG9uc2USKAoFc2xvdHMYASADKAsyGS5oYW4uY29vcmRpbmF0b3IuU2xvdEluZm8iWwoTTWVtb3J5U2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRIXCgpzZXNzaW9uX2lkGAIgASgJSACIAQESDQoFbGltaXQYAyABKAVCDQoLX3Nlc3Npb25faWQiRgoUTWVtb3J5U2VhcmNoUmVzcG9uc2USLgoHcmVzdWx0cxgBIAMoCzIdLmhhbi5jb29yZGluYXRvci5NZW1vcnlSZXN1bHQiggEKDE1lbW9yeVJlc3VsdBIKCgJpZBgBIAEoCRIPCgdjb250ZW50GAIgASgJEg0KBXNjb3JlGAMgASgBEhcKCnNlc3Npb25faWQYBCABKAlIAIgBARITCgZzb3VyY2UYBSABKAlIAYgBAUINCgtfc2Vzc2lvbl9pZEIJCgdfc291cmNlIucBChRJbmRleERvY3VtZW50UmVxdWVzdBIPCgdjb250ZW50GAEgASgJEhcKCnNlc3Npb25faWQYAiABKAlIAIgBARITCgZzb3VyY2UYAyABKAlIAYgBARJFCghtZXRhZGF0YRgEIAMoCzIzLmhhbi5jb29yZGluYXRvci5JbmRleERvY3VtZW50UmVxdWVzdC5NZXRhZGF0YUVudHJ5Gi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUINCgtfc2Vzc2lvbl9pZEIJCgdfc291cmNlMuABChJDb29yZGluYXRvclNlcnZpY2USQQoGSGVhbHRoEhYuaGFuLmNvb3JkaW5hdG9yLkVtcHR5Gh8uaGFuLmNvb3JkaW5hdG9yLkhlYWx0aFJlc3BvbnNlEkQKCFNodXRkb3duEiAuaGFuLmNvb3JkaW5hdG9yLlNodXRkb3duUmVxdWVzdBoWLmhhbi5jb29yZGluYXRvci5FbXB0eRJBCgZTdGF0dXMSFi5oYW4uY29vcmRpbmF0b3IuRW1wdHkaHy5oYW4uY29vcmRpbmF0b3IuU3RhdHVzUmVzcG9uc2UyiwIKDlNlc3Npb25TZXJ2aWNlElcKCUdldEFjdGl2ZRIoLmhhbi5jb29yZGluYXRvci5HZXRBY3RpdmVTZXNzaW9uUmVxdWVzdBogLmhhbi5jb29yZGluYXRvci5TZXNzaW9uUmVzcG9uc2USSwoDR2V0EiIuaGFuLmNvb3JkaW5hdG9yLkdldFNlc3Npb25SZXF1ZXN0GiAuaGFuLmNvb3JkaW5hdG9yLlNlc3Npb25SZXNwb25zZRJTCgRMaXN0EiQuaGFuLmNvb3JkaW5hdG9yLkxpc3RTZXNzaW9uc1JlcXVlc3QaJS5oYW4uY29vcmRpbmF0b3IuTGlzdFNlc3Npb25zUmVzcG9uc2UytwEKDkluZGV4ZXJTZXJ2aWNlElEKC1RyaWdnZXJTY2FuEiMuaGFuLmNvb3JkaW5hdG9yLlRyaWdnZXJTY2FuUmVxdWVzdBodLmhhbi5jb29yZGluYXRvci5TY2FuUmVzcG9uc2USUgoJSW5kZXhGaWxlEiEuaGFuLmNvb3JkaW5hdG9yLkluZGV4RmlsZVJlcXVlc3QaIi5oYW4uY29vcmRpbmF0b3IuSW5kZXhGaWxlUmVzcG9uc2UytgEKC0hvb2tTZXJ2aWNlElMKDEV4ZWN1dGVIb29rcxIkLmhhbi5jb29yZGluYXRvci5FeGVjdXRlSG9va3NSZXF1ZXN0GhsuaGFuLmNvb3JkaW5hdG9yLkhvb2tPdXRwdXQwARJSCglMaXN0SG9va3MSIS5oYW4uY29vcmRpbmF0b3IuTGlzdEhvb2tzUmVxdWVzdBoiLmhhbi5jb29yZGluYXRvci5MaXN0SG9va3NSZXNwb25zZTL6AQoLU2xvdFNlcnZpY2USVAoHQWNxdWlyZRIjLmhhbi5jb29yZGluYXRvci5BY3F1aXJlU2xvdFJlcXVlc3QaJC5oYW4uY29vcmRpbmF0b3IuQWNxdWlyZVNsb3RSZXNwb25zZRJGCgdSZWxlYXNlEiMuaGFuLmNvb3JkaW5hdG9yLlJlbGVhc2VTbG90UmVxdWVzdBoWLmhhbi5jb29yZGluYXRvci5FbXB0eRJNCgRMaXN0EiEuaGFuLmNvb3JkaW5hdG9yLkxpc3RTbG90c1JlcXVlc3QaIi5oYW4uY29vcmRpbmF0b3IuTGlzdFNsb3RzUmVzcG9uc2UytgEKDU1lbW9yeVNlcnZpY2USVQoGU2VhcmNoEiQuaGFuLmNvb3JkaW5hdG9yLk1lbW9yeVNlYXJjaFJlcXVlc3QaJS5oYW4uY29vcmRpbmF0b3IuTWVtb3J5U2VhcmNoUmVzcG9uc2USTgoNSW5kZXhEb2N1bWVudBIlLmhhbi5jb29yZGluYXRvci5JbmRleERvY3VtZW50UmVxdWVzdBoWLmhhbi5jb29yZGluYXRvci5FbXB0eWIGcHJvdG8z'
+  );
 
 /**
  * @generated from message han.coordinator.Empty
  */
-export type Empty = Message<"han.coordinator.Empty"> & {
-};
+export type Empty = Message<'han.coordinator.Empty'> & {};
 
 /**
  * Describes the message han.coordinator.Empty.
  * Use `create(EmptySchema)` to create a new message.
  */
-export const EmptySchema: GenMessage<Empty> = /*@__PURE__*/
+export const EmptySchema: GenMessage<Empty> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 0);
 
 /**
  * @generated from message han.coordinator.StatusResponse
  */
-export type StatusResponse = Message<"han.coordinator.StatusResponse"> & {
+export type StatusResponse = Message<'han.coordinator.StatusResponse'> & {
   /**
    * @generated from field: string version = 1;
    */
@@ -69,13 +80,14 @@ export type StatusResponse = Message<"han.coordinator.StatusResponse"> & {
  * Describes the message han.coordinator.StatusResponse.
  * Use `create(StatusResponseSchema)` to create a new message.
  */
-export const StatusResponseSchema: GenMessage<StatusResponse> = /*@__PURE__*/
+export const StatusResponseSchema: GenMessage<StatusResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 1);
 
 /**
  * @generated from message han.coordinator.HealthResponse
  */
-export type HealthResponse = Message<"han.coordinator.HealthResponse"> & {
+export type HealthResponse = Message<'han.coordinator.HealthResponse'> & {
   /**
    * @generated from field: bool healthy = 1;
    */
@@ -96,13 +108,14 @@ export type HealthResponse = Message<"han.coordinator.HealthResponse"> & {
  * Describes the message han.coordinator.HealthResponse.
  * Use `create(HealthResponseSchema)` to create a new message.
  */
-export const HealthResponseSchema: GenMessage<HealthResponse> = /*@__PURE__*/
+export const HealthResponseSchema: GenMessage<HealthResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 2);
 
 /**
  * @generated from message han.coordinator.ShutdownRequest
  */
-export type ShutdownRequest = Message<"han.coordinator.ShutdownRequest"> & {
+export type ShutdownRequest = Message<'han.coordinator.ShutdownRequest'> & {
   /**
    * @generated from field: bool graceful = 1;
    */
@@ -118,30 +131,33 @@ export type ShutdownRequest = Message<"han.coordinator.ShutdownRequest"> & {
  * Describes the message han.coordinator.ShutdownRequest.
  * Use `create(ShutdownRequestSchema)` to create a new message.
  */
-export const ShutdownRequestSchema: GenMessage<ShutdownRequest> = /*@__PURE__*/
+export const ShutdownRequestSchema: GenMessage<ShutdownRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 3);
 
 /**
  * @generated from message han.coordinator.GetActiveSessionRequest
  */
-export type GetActiveSessionRequest = Message<"han.coordinator.GetActiveSessionRequest"> & {
-  /**
-   * @generated from field: string project_path = 1;
-   */
-  projectPath: string;
-};
+export type GetActiveSessionRequest =
+  Message<'han.coordinator.GetActiveSessionRequest'> & {
+    /**
+     * @generated from field: string project_path = 1;
+     */
+    projectPath: string;
+  };
 
 /**
  * Describes the message han.coordinator.GetActiveSessionRequest.
  * Use `create(GetActiveSessionRequestSchema)` to create a new message.
  */
-export const GetActiveSessionRequestSchema: GenMessage<GetActiveSessionRequest> = /*@__PURE__*/
+export const GetActiveSessionRequestSchema: GenMessage<GetActiveSessionRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 4);
 
 /**
  * @generated from message han.coordinator.GetSessionRequest
  */
-export type GetSessionRequest = Message<"han.coordinator.GetSessionRequest"> & {
+export type GetSessionRequest = Message<'han.coordinator.GetSessionRequest'> & {
   /**
    * @generated from field: string session_id = 1;
    */
@@ -152,45 +168,48 @@ export type GetSessionRequest = Message<"han.coordinator.GetSessionRequest"> & {
  * Describes the message han.coordinator.GetSessionRequest.
  * Use `create(GetSessionRequestSchema)` to create a new message.
  */
-export const GetSessionRequestSchema: GenMessage<GetSessionRequest> = /*@__PURE__*/
+export const GetSessionRequestSchema: GenMessage<GetSessionRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 5);
 
 /**
  * @generated from message han.coordinator.ListSessionsRequest
  */
-export type ListSessionsRequest = Message<"han.coordinator.ListSessionsRequest"> & {
-  /**
-   * @generated from field: optional string project_id = 1;
-   */
-  projectId?: string;
+export type ListSessionsRequest =
+  Message<'han.coordinator.ListSessionsRequest'> & {
+    /**
+     * @generated from field: optional string project_id = 1;
+     */
+    projectId?: string;
 
-  /**
-   * @generated from field: optional string status = 2;
-   */
-  status?: string;
+    /**
+     * @generated from field: optional string status = 2;
+     */
+    status?: string;
 
-  /**
-   * @generated from field: int32 limit = 3;
-   */
-  limit: number;
+    /**
+     * @generated from field: int32 limit = 3;
+     */
+    limit: number;
 
-  /**
-   * @generated from field: int32 offset = 4;
-   */
-  offset: number;
-};
+    /**
+     * @generated from field: int32 offset = 4;
+     */
+    offset: number;
+  };
 
 /**
  * Describes the message han.coordinator.ListSessionsRequest.
  * Use `create(ListSessionsRequestSchema)` to create a new message.
  */
-export const ListSessionsRequestSchema: GenMessage<ListSessionsRequest> = /*@__PURE__*/
+export const ListSessionsRequestSchema: GenMessage<ListSessionsRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 6);
 
 /**
  * @generated from message han.coordinator.SessionResponse
  */
-export type SessionResponse = Message<"han.coordinator.SessionResponse"> & {
+export type SessionResponse = Message<'han.coordinator.SessionResponse'> & {
   /**
    * @generated from field: optional han.coordinator.SessionData session = 1;
    */
@@ -201,13 +220,14 @@ export type SessionResponse = Message<"han.coordinator.SessionResponse"> & {
  * Describes the message han.coordinator.SessionResponse.
  * Use `create(SessionResponseSchema)` to create a new message.
  */
-export const SessionResponseSchema: GenMessage<SessionResponse> = /*@__PURE__*/
+export const SessionResponseSchema: GenMessage<SessionResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 7);
 
 /**
  * @generated from message han.coordinator.SessionData
  */
-export type SessionData = Message<"han.coordinator.SessionData"> & {
+export type SessionData = Message<'han.coordinator.SessionData'> & {
   /**
    * @generated from field: string id = 1;
    */
@@ -258,52 +278,57 @@ export type SessionData = Message<"han.coordinator.SessionData"> & {
  * Describes the message han.coordinator.SessionData.
  * Use `create(SessionDataSchema)` to create a new message.
  */
-export const SessionDataSchema: GenMessage<SessionData> = /*@__PURE__*/
+export const SessionDataSchema: GenMessage<SessionData> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 8);
 
 /**
  * @generated from message han.coordinator.ListSessionsResponse
  */
-export type ListSessionsResponse = Message<"han.coordinator.ListSessionsResponse"> & {
-  /**
-   * @generated from field: repeated han.coordinator.SessionData sessions = 1;
-   */
-  sessions: SessionData[];
+export type ListSessionsResponse =
+  Message<'han.coordinator.ListSessionsResponse'> & {
+    /**
+     * @generated from field: repeated han.coordinator.SessionData sessions = 1;
+     */
+    sessions: SessionData[];
 
-  /**
-   * @generated from field: int32 total = 2;
-   */
-  total: number;
-};
+    /**
+     * @generated from field: int32 total = 2;
+     */
+    total: number;
+  };
 
 /**
  * Describes the message han.coordinator.ListSessionsResponse.
  * Use `create(ListSessionsResponseSchema)` to create a new message.
  */
-export const ListSessionsResponseSchema: GenMessage<ListSessionsResponse> = /*@__PURE__*/
+export const ListSessionsResponseSchema: GenMessage<ListSessionsResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 9);
 
 /**
  * @generated from message han.coordinator.TriggerScanRequest
  */
-export type TriggerScanRequest = Message<"han.coordinator.TriggerScanRequest"> & {
-  /**
-   * @generated from field: optional string config_dir = 1;
-   */
-  configDir?: string;
-};
+export type TriggerScanRequest =
+  Message<'han.coordinator.TriggerScanRequest'> & {
+    /**
+     * @generated from field: optional string config_dir = 1;
+     */
+    configDir?: string;
+  };
 
 /**
  * Describes the message han.coordinator.TriggerScanRequest.
  * Use `create(TriggerScanRequestSchema)` to create a new message.
  */
-export const TriggerScanRequestSchema: GenMessage<TriggerScanRequest> = /*@__PURE__*/
+export const TriggerScanRequestSchema: GenMessage<TriggerScanRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 10);
 
 /**
  * @generated from message han.coordinator.ScanResponse
  */
-export type ScanResponse = Message<"han.coordinator.ScanResponse"> & {
+export type ScanResponse = Message<'han.coordinator.ScanResponse'> & {
   /**
    * @generated from field: int32 sessions_indexed = 1;
    */
@@ -324,13 +349,14 @@ export type ScanResponse = Message<"han.coordinator.ScanResponse"> & {
  * Describes the message han.coordinator.ScanResponse.
  * Use `create(ScanResponseSchema)` to create a new message.
  */
-export const ScanResponseSchema: GenMessage<ScanResponse> = /*@__PURE__*/
+export const ScanResponseSchema: GenMessage<ScanResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 11);
 
 /**
  * @generated from message han.coordinator.IndexFileRequest
  */
-export type IndexFileRequest = Message<"han.coordinator.IndexFileRequest"> & {
+export type IndexFileRequest = Message<'han.coordinator.IndexFileRequest'> & {
   /**
    * @generated from field: string file_path = 1;
    */
@@ -346,13 +372,14 @@ export type IndexFileRequest = Message<"han.coordinator.IndexFileRequest"> & {
  * Describes the message han.coordinator.IndexFileRequest.
  * Use `create(IndexFileRequestSchema)` to create a new message.
  */
-export const IndexFileRequestSchema: GenMessage<IndexFileRequest> = /*@__PURE__*/
+export const IndexFileRequestSchema: GenMessage<IndexFileRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 12);
 
 /**
  * @generated from message han.coordinator.IndexFileResponse
  */
-export type IndexFileResponse = Message<"han.coordinator.IndexFileResponse"> & {
+export type IndexFileResponse = Message<'han.coordinator.IndexFileResponse'> & {
   /**
    * @generated from field: string session_id = 1;
    */
@@ -383,55 +410,58 @@ export type IndexFileResponse = Message<"han.coordinator.IndexFileResponse"> & {
  * Describes the message han.coordinator.IndexFileResponse.
  * Use `create(IndexFileResponseSchema)` to create a new message.
  */
-export const IndexFileResponseSchema: GenMessage<IndexFileResponse> = /*@__PURE__*/
+export const IndexFileResponseSchema: GenMessage<IndexFileResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 13);
 
 /**
  * @generated from message han.coordinator.ExecuteHooksRequest
  */
-export type ExecuteHooksRequest = Message<"han.coordinator.ExecuteHooksRequest"> & {
-  /**
-   * @generated from field: string event = 1;
-   */
-  event: string;
+export type ExecuteHooksRequest =
+  Message<'han.coordinator.ExecuteHooksRequest'> & {
+    /**
+     * @generated from field: string event = 1;
+     */
+    event: string;
 
-  /**
-   * @generated from field: optional string session_id = 2;
-   */
-  sessionId?: string;
+    /**
+     * @generated from field: optional string session_id = 2;
+     */
+    sessionId?: string;
 
-  /**
-   * @generated from field: optional string tool_name = 3;
-   */
-  toolName?: string;
+    /**
+     * @generated from field: optional string tool_name = 3;
+     */
+    toolName?: string;
 
-  /**
-   * @generated from field: optional string tool_input = 4;
-   */
-  toolInput?: string;
+    /**
+     * @generated from field: optional string tool_input = 4;
+     */
+    toolInput?: string;
 
-  /**
-   * @generated from field: optional string cwd = 5;
-   */
-  cwd?: string;
+    /**
+     * @generated from field: optional string cwd = 5;
+     */
+    cwd?: string;
 
-  /**
-   * @generated from field: map<string, string> env = 6;
-   */
-  env: { [key: string]: string };
-};
+    /**
+     * @generated from field: map<string, string> env = 6;
+     */
+    env: { [key: string]: string };
+  };
 
 /**
  * Describes the message han.coordinator.ExecuteHooksRequest.
  * Use `create(ExecuteHooksRequestSchema)` to create a new message.
  */
-export const ExecuteHooksRequestSchema: GenMessage<ExecuteHooksRequest> = /*@__PURE__*/
+export const ExecuteHooksRequestSchema: GenMessage<ExecuteHooksRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 14);
 
 /**
  * @generated from message han.coordinator.HookOutput
  */
-export type HookOutput = Message<"han.coordinator.HookOutput"> & {
+export type HookOutput = Message<'han.coordinator.HookOutput'> & {
   /**
    * @generated from field: string hook_id = 1;
    */
@@ -450,38 +480,43 @@ export type HookOutput = Message<"han.coordinator.HookOutput"> & {
   /**
    * @generated from oneof han.coordinator.HookOutput.payload
    */
-  payload: {
-    /**
-     * @generated from field: string stdout_line = 4;
-     */
-    value: string;
-    case: "stdoutLine";
-  } | {
-    /**
-     * @generated from field: string stderr_line = 5;
-     */
-    value: string;
-    case: "stderrLine";
-  } | {
-    /**
-     * @generated from field: han.coordinator.HookComplete complete = 6;
-     */
-    value: HookComplete;
-    case: "complete";
-  } | { case: undefined; value?: undefined };
+  payload:
+    | {
+        /**
+         * @generated from field: string stdout_line = 4;
+         */
+        value: string;
+        case: 'stdoutLine';
+      }
+    | {
+        /**
+         * @generated from field: string stderr_line = 5;
+         */
+        value: string;
+        case: 'stderrLine';
+      }
+    | {
+        /**
+         * @generated from field: han.coordinator.HookComplete complete = 6;
+         */
+        value: HookComplete;
+        case: 'complete';
+      }
+    | { case: undefined; value?: undefined };
 };
 
 /**
  * Describes the message han.coordinator.HookOutput.
  * Use `create(HookOutputSchema)` to create a new message.
  */
-export const HookOutputSchema: GenMessage<HookOutput> = /*@__PURE__*/
+export const HookOutputSchema: GenMessage<HookOutput> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 15);
 
 /**
  * @generated from message han.coordinator.HookComplete
  */
-export type HookComplete = Message<"han.coordinator.HookComplete"> & {
+export type HookComplete = Message<'han.coordinator.HookComplete'> & {
   /**
    * @generated from field: int32 exit_code = 1;
    */
@@ -507,13 +542,14 @@ export type HookComplete = Message<"han.coordinator.HookComplete"> & {
  * Describes the message han.coordinator.HookComplete.
  * Use `create(HookCompleteSchema)` to create a new message.
  */
-export const HookCompleteSchema: GenMessage<HookComplete> = /*@__PURE__*/
+export const HookCompleteSchema: GenMessage<HookComplete> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 16);
 
 /**
  * @generated from message han.coordinator.ListHooksRequest
  */
-export type ListHooksRequest = Message<"han.coordinator.ListHooksRequest"> & {
+export type ListHooksRequest = Message<'han.coordinator.ListHooksRequest'> & {
   /**
    * @generated from field: optional string event_filter = 1;
    */
@@ -524,13 +560,14 @@ export type ListHooksRequest = Message<"han.coordinator.ListHooksRequest"> & {
  * Describes the message han.coordinator.ListHooksRequest.
  * Use `create(ListHooksRequestSchema)` to create a new message.
  */
-export const ListHooksRequestSchema: GenMessage<ListHooksRequest> = /*@__PURE__*/
+export const ListHooksRequestSchema: GenMessage<ListHooksRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 17);
 
 /**
  * @generated from message han.coordinator.ListHooksResponse
  */
-export type ListHooksResponse = Message<"han.coordinator.ListHooksResponse"> & {
+export type ListHooksResponse = Message<'han.coordinator.ListHooksResponse'> & {
   /**
    * @generated from field: repeated han.coordinator.HookDefinition hooks = 1;
    */
@@ -541,13 +578,14 @@ export type ListHooksResponse = Message<"han.coordinator.ListHooksResponse"> & {
  * Describes the message han.coordinator.ListHooksResponse.
  * Use `create(ListHooksResponseSchema)` to create a new message.
  */
-export const ListHooksResponseSchema: GenMessage<ListHooksResponse> = /*@__PURE__*/
+export const ListHooksResponseSchema: GenMessage<ListHooksResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 18);
 
 /**
  * @generated from message han.coordinator.HookDefinition
  */
-export type HookDefinition = Message<"han.coordinator.HookDefinition"> & {
+export type HookDefinition = Message<'han.coordinator.HookDefinition'> & {
   /**
    * @generated from field: string plugin_name = 1;
    */
@@ -583,97 +621,104 @@ export type HookDefinition = Message<"han.coordinator.HookDefinition"> & {
  * Describes the message han.coordinator.HookDefinition.
  * Use `create(HookDefinitionSchema)` to create a new message.
  */
-export const HookDefinitionSchema: GenMessage<HookDefinition> = /*@__PURE__*/
+export const HookDefinitionSchema: GenMessage<HookDefinition> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 19);
 
 /**
  * @generated from message han.coordinator.AcquireSlotRequest
  */
-export type AcquireSlotRequest = Message<"han.coordinator.AcquireSlotRequest"> & {
-  /**
-   * @generated from field: string slot_name = 1;
-   */
-  slotName: string;
+export type AcquireSlotRequest =
+  Message<'han.coordinator.AcquireSlotRequest'> & {
+    /**
+     * @generated from field: string slot_name = 1;
+     */
+    slotName: string;
 
-  /**
-   * @generated from field: string owner = 2;
-   */
-  owner: string;
+    /**
+     * @generated from field: string owner = 2;
+     */
+    owner: string;
 
-  /**
-   * @generated from field: optional int32 ttl_seconds = 3;
-   */
-  ttlSeconds?: number;
-};
+    /**
+     * @generated from field: optional int32 ttl_seconds = 3;
+     */
+    ttlSeconds?: number;
+  };
 
 /**
  * Describes the message han.coordinator.AcquireSlotRequest.
  * Use `create(AcquireSlotRequestSchema)` to create a new message.
  */
-export const AcquireSlotRequestSchema: GenMessage<AcquireSlotRequest> = /*@__PURE__*/
+export const AcquireSlotRequestSchema: GenMessage<AcquireSlotRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 20);
 
 /**
  * @generated from message han.coordinator.AcquireSlotResponse
  */
-export type AcquireSlotResponse = Message<"han.coordinator.AcquireSlotResponse"> & {
-  /**
-   * @generated from field: bool acquired = 1;
-   */
-  acquired: boolean;
+export type AcquireSlotResponse =
+  Message<'han.coordinator.AcquireSlotResponse'> & {
+    /**
+     * @generated from field: bool acquired = 1;
+     */
+    acquired: boolean;
 
-  /**
-   * @generated from field: optional string current_owner = 2;
-   */
-  currentOwner?: string;
-};
+    /**
+     * @generated from field: optional string current_owner = 2;
+     */
+    currentOwner?: string;
+  };
 
 /**
  * Describes the message han.coordinator.AcquireSlotResponse.
  * Use `create(AcquireSlotResponseSchema)` to create a new message.
  */
-export const AcquireSlotResponseSchema: GenMessage<AcquireSlotResponse> = /*@__PURE__*/
+export const AcquireSlotResponseSchema: GenMessage<AcquireSlotResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 21);
 
 /**
  * @generated from message han.coordinator.ReleaseSlotRequest
  */
-export type ReleaseSlotRequest = Message<"han.coordinator.ReleaseSlotRequest"> & {
-  /**
-   * @generated from field: string slot_name = 1;
-   */
-  slotName: string;
+export type ReleaseSlotRequest =
+  Message<'han.coordinator.ReleaseSlotRequest'> & {
+    /**
+     * @generated from field: string slot_name = 1;
+     */
+    slotName: string;
 
-  /**
-   * @generated from field: string owner = 2;
-   */
-  owner: string;
-};
+    /**
+     * @generated from field: string owner = 2;
+     */
+    owner: string;
+  };
 
 /**
  * Describes the message han.coordinator.ReleaseSlotRequest.
  * Use `create(ReleaseSlotRequestSchema)` to create a new message.
  */
-export const ReleaseSlotRequestSchema: GenMessage<ReleaseSlotRequest> = /*@__PURE__*/
+export const ReleaseSlotRequestSchema: GenMessage<ReleaseSlotRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 22);
 
 /**
  * @generated from message han.coordinator.ListSlotsRequest
  */
-export type ListSlotsRequest = Message<"han.coordinator.ListSlotsRequest"> & {
-};
+export type ListSlotsRequest = Message<'han.coordinator.ListSlotsRequest'> & {};
 
 /**
  * Describes the message han.coordinator.ListSlotsRequest.
  * Use `create(ListSlotsRequestSchema)` to create a new message.
  */
-export const ListSlotsRequestSchema: GenMessage<ListSlotsRequest> = /*@__PURE__*/
+export const ListSlotsRequestSchema: GenMessage<ListSlotsRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 23);
 
 /**
  * @generated from message han.coordinator.SlotInfo
  */
-export type SlotInfo = Message<"han.coordinator.SlotInfo"> & {
+export type SlotInfo = Message<'han.coordinator.SlotInfo'> & {
   /**
    * @generated from field: string slot_name = 1;
    */
@@ -699,13 +744,14 @@ export type SlotInfo = Message<"han.coordinator.SlotInfo"> & {
  * Describes the message han.coordinator.SlotInfo.
  * Use `create(SlotInfoSchema)` to create a new message.
  */
-export const SlotInfoSchema: GenMessage<SlotInfo> = /*@__PURE__*/
+export const SlotInfoSchema: GenMessage<SlotInfo> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 24);
 
 /**
  * @generated from message han.coordinator.ListSlotsResponse
  */
-export type ListSlotsResponse = Message<"han.coordinator.ListSlotsResponse"> & {
+export type ListSlotsResponse = Message<'han.coordinator.ListSlotsResponse'> & {
   /**
    * @generated from field: repeated han.coordinator.SlotInfo slots = 1;
    */
@@ -716,57 +762,62 @@ export type ListSlotsResponse = Message<"han.coordinator.ListSlotsResponse"> & {
  * Describes the message han.coordinator.ListSlotsResponse.
  * Use `create(ListSlotsResponseSchema)` to create a new message.
  */
-export const ListSlotsResponseSchema: GenMessage<ListSlotsResponse> = /*@__PURE__*/
+export const ListSlotsResponseSchema: GenMessage<ListSlotsResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 25);
 
 /**
  * @generated from message han.coordinator.MemorySearchRequest
  */
-export type MemorySearchRequest = Message<"han.coordinator.MemorySearchRequest"> & {
-  /**
-   * @generated from field: string query = 1;
-   */
-  query: string;
+export type MemorySearchRequest =
+  Message<'han.coordinator.MemorySearchRequest'> & {
+    /**
+     * @generated from field: string query = 1;
+     */
+    query: string;
 
-  /**
-   * @generated from field: optional string session_id = 2;
-   */
-  sessionId?: string;
+    /**
+     * @generated from field: optional string session_id = 2;
+     */
+    sessionId?: string;
 
-  /**
-   * @generated from field: int32 limit = 3;
-   */
-  limit: number;
-};
+    /**
+     * @generated from field: int32 limit = 3;
+     */
+    limit: number;
+  };
 
 /**
  * Describes the message han.coordinator.MemorySearchRequest.
  * Use `create(MemorySearchRequestSchema)` to create a new message.
  */
-export const MemorySearchRequestSchema: GenMessage<MemorySearchRequest> = /*@__PURE__*/
+export const MemorySearchRequestSchema: GenMessage<MemorySearchRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 26);
 
 /**
  * @generated from message han.coordinator.MemorySearchResponse
  */
-export type MemorySearchResponse = Message<"han.coordinator.MemorySearchResponse"> & {
-  /**
-   * @generated from field: repeated han.coordinator.MemoryResult results = 1;
-   */
-  results: MemoryResult[];
-};
+export type MemorySearchResponse =
+  Message<'han.coordinator.MemorySearchResponse'> & {
+    /**
+     * @generated from field: repeated han.coordinator.MemoryResult results = 1;
+     */
+    results: MemoryResult[];
+  };
 
 /**
  * Describes the message han.coordinator.MemorySearchResponse.
  * Use `create(MemorySearchResponseSchema)` to create a new message.
  */
-export const MemorySearchResponseSchema: GenMessage<MemorySearchResponse> = /*@__PURE__*/
+export const MemorySearchResponseSchema: GenMessage<MemorySearchResponse> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 27);
 
 /**
  * @generated from message han.coordinator.MemoryResult
  */
-export type MemoryResult = Message<"han.coordinator.MemoryResult"> & {
+export type MemoryResult = Message<'han.coordinator.MemoryResult'> & {
   /**
    * @generated from field: string id = 1;
    */
@@ -797,39 +848,42 @@ export type MemoryResult = Message<"han.coordinator.MemoryResult"> & {
  * Describes the message han.coordinator.MemoryResult.
  * Use `create(MemoryResultSchema)` to create a new message.
  */
-export const MemoryResultSchema: GenMessage<MemoryResult> = /*@__PURE__*/
+export const MemoryResultSchema: GenMessage<MemoryResult> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 28);
 
 /**
  * @generated from message han.coordinator.IndexDocumentRequest
  */
-export type IndexDocumentRequest = Message<"han.coordinator.IndexDocumentRequest"> & {
-  /**
-   * @generated from field: string content = 1;
-   */
-  content: string;
+export type IndexDocumentRequest =
+  Message<'han.coordinator.IndexDocumentRequest'> & {
+    /**
+     * @generated from field: string content = 1;
+     */
+    content: string;
 
-  /**
-   * @generated from field: optional string session_id = 2;
-   */
-  sessionId?: string;
+    /**
+     * @generated from field: optional string session_id = 2;
+     */
+    sessionId?: string;
 
-  /**
-   * @generated from field: optional string source = 3;
-   */
-  source?: string;
+    /**
+     * @generated from field: optional string source = 3;
+     */
+    source?: string;
 
-  /**
-   * @generated from field: map<string, string> metadata = 4;
-   */
-  metadata: { [key: string]: string };
-};
+    /**
+     * @generated from field: map<string, string> metadata = 4;
+     */
+    metadata: { [key: string]: string };
+  };
 
 /**
  * Describes the message han.coordinator.IndexDocumentRequest.
  * Use `create(IndexDocumentRequestSchema)` to create a new message.
  */
-export const IndexDocumentRequestSchema: GenMessage<IndexDocumentRequest> = /*@__PURE__*/
+export const IndexDocumentRequestSchema: GenMessage<IndexDocumentRequest> =
+  /*@__PURE__*/
   messageDesc(file_coordinator, 29);
 
 /**
@@ -840,28 +894,27 @@ export const CoordinatorService: GenService<{
    * @generated from rpc han.coordinator.CoordinatorService.Health
    */
   health: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof EmptySchema;
     output: typeof HealthResponseSchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.CoordinatorService.Shutdown
    */
   shutdown: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof ShutdownRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.CoordinatorService.Status
    */
   status: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof EmptySchema;
     output: typeof StatusResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_coordinator, 0);
+  };
+}> = /*@__PURE__*/ serviceDesc(file_coordinator, 0);
 
 /**
  * @generated from service han.coordinator.SessionService
@@ -871,28 +924,27 @@ export const SessionService: GenService<{
    * @generated from rpc han.coordinator.SessionService.GetActive
    */
   getActive: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof GetActiveSessionRequestSchema;
     output: typeof SessionResponseSchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.SessionService.Get
    */
   get: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof GetSessionRequestSchema;
     output: typeof SessionResponseSchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.SessionService.List
    */
   list: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof ListSessionsRequestSchema;
     output: typeof ListSessionsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_coordinator, 1);
+  };
+}> = /*@__PURE__*/ serviceDesc(file_coordinator, 1);
 
 /**
  * @generated from service han.coordinator.IndexerService
@@ -902,20 +954,19 @@ export const IndexerService: GenService<{
    * @generated from rpc han.coordinator.IndexerService.TriggerScan
    */
   triggerScan: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof TriggerScanRequestSchema;
     output: typeof ScanResponseSchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.IndexerService.IndexFile
    */
   indexFile: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof IndexFileRequestSchema;
     output: typeof IndexFileResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_coordinator, 2);
+  };
+}> = /*@__PURE__*/ serviceDesc(file_coordinator, 2);
 
 /**
  * @generated from service han.coordinator.HookService
@@ -925,20 +976,19 @@ export const HookService: GenService<{
    * @generated from rpc han.coordinator.HookService.ExecuteHooks
    */
   executeHooks: {
-    methodKind: "server_streaming";
+    methodKind: 'server_streaming';
     input: typeof ExecuteHooksRequestSchema;
     output: typeof HookOutputSchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.HookService.ListHooks
    */
   listHooks: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof ListHooksRequestSchema;
     output: typeof ListHooksResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_coordinator, 3);
+  };
+}> = /*@__PURE__*/ serviceDesc(file_coordinator, 3);
 
 /**
  * @generated from service han.coordinator.SlotService
@@ -948,28 +998,27 @@ export const SlotService: GenService<{
    * @generated from rpc han.coordinator.SlotService.Acquire
    */
   acquire: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof AcquireSlotRequestSchema;
     output: typeof AcquireSlotResponseSchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.SlotService.Release
    */
   release: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof ReleaseSlotRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.SlotService.List
    */
   list: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof ListSlotsRequestSchema;
     output: typeof ListSlotsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_coordinator, 4);
+  };
+}> = /*@__PURE__*/ serviceDesc(file_coordinator, 4);
 
 /**
  * @generated from service han.coordinator.MemoryService
@@ -979,18 +1028,16 @@ export const MemoryService: GenService<{
    * @generated from rpc han.coordinator.MemoryService.Search
    */
   search: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof MemorySearchRequestSchema;
     output: typeof MemorySearchResponseSchema;
-  },
+  };
   /**
    * @generated from rpc han.coordinator.MemoryService.IndexDocument
    */
   indexDocument: {
-    methodKind: "unary";
+    methodKind: 'unary';
     input: typeof IndexDocumentRequestSchema;
     output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_coordinator, 5);
-
+  };
+}> = /*@__PURE__*/ serviceDesc(file_coordinator, 5);

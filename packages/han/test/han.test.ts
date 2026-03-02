@@ -783,17 +783,27 @@ describe('Hook config (han-plugin.yml)', () => {
       execSync('git add .', { cwd: projectDir, stdio: 'pipe' });
 
       // Success messages go to stderr (not stdout) to avoid interrupting the model
-      const result = spawnSync(binCommand.split(' ')[0], [...binCommand.split(' ').slice(1), 'hook', 'run', 'jutsu-test', 'test'], {
-        cwd: projectDir,
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: {
-          ...process.env,
-          CLAUDE_PLUGIN_ROOT: undefined,
-          CLAUDE_PROJECT_DIR: projectDir,
-        },
-        shell: true,
-      });
+      const result = spawnSync(
+        binCommand.split(' ')[0],
+        [
+          ...binCommand.split(' ').slice(1),
+          'hook',
+          'run',
+          'jutsu-test',
+          'test',
+        ],
+        {
+          cwd: projectDir,
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            CLAUDE_PLUGIN_ROOT: undefined,
+            CLAUDE_PROJECT_DIR: projectDir,
+          },
+          shell: true,
+        }
+      );
 
       expect(result.status).toBe(0);
       expect(result.stderr).toContain('passed');
@@ -894,17 +904,27 @@ describe('Hook config (han-plugin.yml)', () => {
       execSync('git add .', { cwd: projectDir, stdio: 'pipe' });
 
       // Success messages go to stderr (not stdout) to avoid interrupting the model
-      const result = spawnSync(binCommand.split(' ')[0], [...binCommand.split(' ').slice(1), 'hook', 'run', 'test-plugin', 'test'], {
-        cwd: projectDir,
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: {
-          ...process.env,
-          CLAUDE_PLUGIN_ROOT: pluginDir,
-          CLAUDE_PROJECT_DIR: projectDir,
-        },
-        shell: true,
-      });
+      const result = spawnSync(
+        binCommand.split(' ')[0],
+        [
+          ...binCommand.split(' ').slice(1),
+          'hook',
+          'run',
+          'test-plugin',
+          'test',
+        ],
+        {
+          cwd: projectDir,
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            CLAUDE_PLUGIN_ROOT: pluginDir,
+            CLAUDE_PROJECT_DIR: projectDir,
+          },
+          shell: true,
+        }
+      );
 
       expect(result.status).toBe(0);
       expect(result.stderr).toContain('passed');
@@ -933,17 +953,27 @@ describe('Hook config (han-plugin.yml)', () => {
       mkdirSync(projectDir, { recursive: true });
 
       // Success messages go to stderr (not stdout) to avoid interrupting the model
-      const result = spawnSync(binCommand.split(' ')[0], [...binCommand.split(' ').slice(1), 'hook', 'run', 'test-plugin', 'lint'], {
-        cwd: projectDir,
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: {
-          ...process.env,
-          CLAUDE_PLUGIN_ROOT: pluginDir,
-          CLAUDE_PROJECT_DIR: projectDir,
-        },
-        shell: true,
-      });
+      const result = spawnSync(
+        binCommand.split(' ')[0],
+        [
+          ...binCommand.split(' ').slice(1),
+          'hook',
+          'run',
+          'test-plugin',
+          'lint',
+        ],
+        {
+          cwd: projectDir,
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            CLAUDE_PLUGIN_ROOT: pluginDir,
+            CLAUDE_PROJECT_DIR: projectDir,
+          },
+          shell: true,
+        }
+      );
 
       expect(result.status).toBe(0);
       expect(result.stderr).toContain('passed');
@@ -970,17 +1000,27 @@ describe('Hook config (han-plugin.yml)', () => {
       mkdirSync(projectDir, { recursive: true });
 
       // Informational messages go to stderr (not stdout) to avoid interrupting the model
-      const result = spawnSync(binCommand.split(' ')[0], [...binCommand.split(' ').slice(1), 'hook', 'run', 'test-plugin', 'nonexistent'], {
-        cwd: projectDir,
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: {
-          ...process.env,
-          CLAUDE_PLUGIN_ROOT: pluginDir,
-          CLAUDE_PROJECT_DIR: projectDir,
-        },
-        shell: true,
-      });
+      const result = spawnSync(
+        binCommand.split(' ')[0],
+        [
+          ...binCommand.split(' ').slice(1),
+          'hook',
+          'run',
+          'test-plugin',
+          'nonexistent',
+        ],
+        {
+          cwd: projectDir,
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            CLAUDE_PLUGIN_ROOT: pluginDir,
+            CLAUDE_PROJECT_DIR: projectDir,
+          },
+          shell: true,
+        }
+      );
 
       expect(result.status).toBe(0);
       expect(

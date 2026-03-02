@@ -20,3 +20,4 @@ pub mod file_changes;
 pub mod file_validations;
 pub mod orchestrations;
 pub mod async_hooks;
+pub mod tool_call_results;

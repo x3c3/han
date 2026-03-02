@@ -9,11 +9,5 @@
   "homepage": "https://github.com/thebushidocollective/han",
   "repository": "https://github.com/thebushidocollective/han",
   "license": "Apache-2.0",
-  "keywords": [
-    "sre",
-    "reliability",
-    "monitoring",
-    "incidents",
-    "devops"
-  ]
+  "keywords": ["sre", "reliability", "monitoring", "incidents", "devops"]
 }

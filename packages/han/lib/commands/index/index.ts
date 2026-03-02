@@ -5,7 +5,7 @@
  * All data is event-sourced from logs, so this is a safe operation.
  *
  * Usage:
- *   han reindex              # Clear tables and reindex
+ *   han reindex              # Clear database and reindex
  *   han reindex -v           # With verbose output
  */
 
@@ -24,27 +24,60 @@ export function registerReindexCommand(program: Command): void {
   // Main reindex action (default)
   reindexCommand
     .command('run', { isDefault: true })
-    .description('Clear tables and reindex from logs')
+    .description('Clear database and reindex from logs')
     .option('-v, --verbose', 'Show detailed progress')
     .action(async (options: { verbose?: boolean }) => {
       try {
-        // Lazy import to avoid loading native module until needed
+        const { existsSync, unlinkSync, statSync } = await import('node:fs');
+        const { join } = await import('node:path');
+        const { getHanDataDir } = await import(
+          '../../config/claude-settings.ts'
+        );
+
+        const dataDir = getHanDataDir();
+        const dbPath = join(dataDir, 'han.db');
+        const dbWalPath = `${dbPath}-wal`;
+        const dbShmPath = `${dbPath}-shm`;
+
+        // Step 1: Stop the coordinator if running
+        if (options.verbose) {
+          console.log('Stopping coordinator...');
+        }
+        try {
+          const { stopDaemon } = await import('../coordinator/daemon.ts');
+          await stopDaemon();
+        } catch {
+          if (options.verbose) {
+            console.log('  Coordinator not running or already stopped');
+          }
+        }
+
+        // Step 2: Delete the database file (all data is derived from JSONL)
+        if (existsSync(dbPath)) {
+          const stats = statSync(dbPath);
+          const sizeMb = (stats.size / 1024 / 1024).toFixed(2);
+
+          unlinkSync(dbPath);
+          // Clean up WAL and SHM files if present
+          try {
+            if (existsSync(dbWalPath)) unlinkSync(dbWalPath);
+          } catch {
+            /* ignore */
+          }
+          try {
+            if (existsSync(dbShmPath)) unlinkSync(dbShmPath);
+          } catch {
+            /* ignore */
+          }
+
+          console.log(`Deleted database (${sizeMb} MB): ${dbPath}`);
+        } else {
+          console.log('No database found - nothing to clear');
+        }
+
+        // Step 3: Re-index memory store
         const { runIndex } = await import('../../memory/indexer.ts');
         type IndexOptions = import('../../memory/indexer.ts').IndexOptions;
-
-        // Always truncate derived tables first (all data comes from logs)
-        const { truncateDerivedTables } = await import('../../grpc/data-access.ts');
-        if (options.verbose) {
-          console.log('Clearing derived tables...');
-        }
-        const deleted = truncateDerivedTables();
-        console.log(`Cleared ${deleted} rows from database`);
-        if (options.verbose) {
-          console.log(
-            '  (repos and projects preserved, sessions/messages cleared)'
-          );
-        }
-
         const gitRemote = getGitRemote() || undefined;
 
         const indexOptions: IndexOptions = {
@@ -53,7 +86,7 @@ export function registerReindexCommand(program: Command): void {
         };
 
         if (options.verbose) {
-          console.log('Starting indexing...');
+          console.log('\nRe-indexing memory store...');
           if (gitRemote) {
             console.log(`Project: ${gitRemote}`);
           }
@@ -61,7 +94,6 @@ export function registerReindexCommand(program: Command): void {
 
         const results = await runIndex(indexOptions);
 
-        // Print summary
         const totalIndexed =
           results.observations +
           results.summaries +
@@ -69,7 +101,7 @@ export function registerReindexCommand(program: Command): void {
           results.transcripts;
 
         if (options.verbose || totalIndexed > 0) {
-          console.log('\nIndexing complete:');
+          console.log('\nMemory indexing complete:');
           if (results.observations > 0) {
             console.log(`  Observations: ${results.observations} documents`);
           }
@@ -87,10 +119,15 @@ export function registerReindexCommand(program: Command): void {
           }
         }
 
+        console.log(
+          '\nDone. The coordinator will rebuild session data from JSONL on next start.'
+        );
+        console.log('Run `han browse` to start the coordinator and re-index.');
+
         process.exit(0);
       } catch (error: unknown) {
         console.error(
-          'Error during indexing:',
+          'Error during reindex:',
           error instanceof Error ? error.message : error
         );
         process.exit(1);

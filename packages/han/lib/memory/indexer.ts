@@ -143,7 +143,7 @@ export async function indexDocuments(
  * Batch size for embedding generation
  * Larger batches are more efficient but use more memory
  */
-const EMBEDDING_BATCH_SIZE = 32;
+const _EMBEDDING_BATCH_SIZE = 32;
 
 /**
  * Index documents to vector store for semantic search
@@ -285,7 +285,9 @@ export async function generateEmbedding(_text: string): Promise<number[]> {
  * Generate embeddings for multiple texts (batched)
  * @deprecated Embedding generation is now handled by the coordinator
  */
-export async function generateEmbeddings(_texts: string[]): Promise<number[][]> {
+export async function generateEmbeddings(
+  _texts: string[]
+): Promise<number[][]> {
   // Embedding generation is now handled by the coordinator via gRPC
   return [];
 }

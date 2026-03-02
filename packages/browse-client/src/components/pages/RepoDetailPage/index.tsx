@@ -19,9 +19,13 @@ import { HStack } from "@/components/atoms/HStack.tsx";
 import { Spinner } from "@/components/atoms/Spinner.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
+import {
+	formatRelativeTime,
+	pluralize,
+} from "@/components/helpers/formatters.ts";
 import { NavCard } from "@/components/organisms/NavCard.tsx";
 import { StatCard } from "@/components/organisms/StatCard.tsx";
-import { formatRelativeTime } from "../Shared/utils.ts";
+import { formatRepoUrl } from "@/components/pages/RepoListPage/utils.ts";
 import type { RepoDetailPageQuery as RepoDetailPageQueryType } from "./__generated__/RepoDetailPageQuery.graphql.ts";
 
 const RepoDetailPageQueryDef = graphql`
@@ -91,11 +95,13 @@ function RepoDetailContent({ repoId }: { repoId: string }): React.ReactElement {
 						<Text weight="semibold">{repo.name}</Text>
 					</HStack>
 					<Text size="sm" color="muted">
-						{repo.path}
+						{formatRepoUrl(repo.path ?? "")}
 					</Text>
 				</VStack>
 				<HStack gap="sm">
-					<Text color="muted">{repo.totalSessions ?? 0} sessions</Text>
+					<Text color="muted">
+						{pluralize(repo.totalSessions ?? 0, "session")}
+					</Text>
 				</HStack>
 			</HStack>
 
@@ -144,7 +150,7 @@ function RepoDetailContent({ repoId }: { repoId: string }): React.ReactElement {
 									<HStack justify="space-between" align="center">
 										<Text weight="semibold">{project.name}</Text>
 										<Text size="sm" color="muted">
-											{project.totalSessions ?? 0} sessions
+											{pluralize(project.totalSessions ?? 0, "session")}
 										</Text>
 									</HStack>
 									{project.worktrees && project.worktrees.length > 0 && (

@@ -12,6 +12,7 @@ import { Box } from "@/components/atoms/Box.tsx";
 import { HStack } from "@/components/atoms/HStack.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
+import { formatDurationMs } from "@/components/helpers/formatters.ts";
 
 interface HookHealthStats {
 	readonly hookName: string;
@@ -30,19 +31,6 @@ const COLORS = {
 	pass: "#10b981", // Green
 	fail: "#ef4444", // Red
 };
-
-/**
- * Format duration in human-readable form
- */
-function formatDuration(ms: number): string {
-	if (ms < 1000) {
-		return `${Math.round(ms)}ms`;
-	}
-	if (ms < 60_000) {
-		return `${(ms / 1000).toFixed(1)}s`;
-	}
-	return `${(ms / 60_000).toFixed(1)}m`;
-}
 
 /**
  * Get pass rate display color
@@ -139,7 +127,7 @@ export function HookHealthCard({
 										{passPercent.toFixed(0)}%
 									</Text>
 									<Text color="muted" size="xs">
-										{formatDuration(hook.avgDurationMs)}
+										{formatDurationMs(hook.avgDurationMs)}
 									</Text>
 								</HStack>
 							</HStack>

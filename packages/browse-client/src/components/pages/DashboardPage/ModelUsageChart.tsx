@@ -317,10 +317,10 @@ export function ModelUsageChart({
 							key={`label-${week.startDate}-${idx}`}
 							size="xs"
 							color="muted"
+							numberOfLines={1}
 							style={{
 								flex: 1,
 								textAlign: "center",
-								overflow: "hidden",
 							}}
 						>
 							{formatDateRange(week.startDate, week.endDate)}

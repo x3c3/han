@@ -16,8 +16,8 @@ import {
 } from '../lib/hooks/index.ts';
 
 // Skip tests that require native module when SKIP_NATIVE is set
-const SKIP_NATIVE = process.env.SKIP_NATIVE === "true";
-const testWithNative = SKIP_NATIVE ? test.skip : test;
+const SKIP_NATIVE = process.env.SKIP_NATIVE === 'true';
+const _testWithNative = SKIP_NATIVE ? test.skip : test;
 
 let testDir: string;
 let projectDir: string;

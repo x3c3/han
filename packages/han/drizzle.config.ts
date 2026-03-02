@@ -9,20 +9,20 @@
  *   npx drizzle-kit studio    # Open Drizzle Studio UI
  */
 
-import { defineConfig } from "drizzle-kit";
+import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-	schema: "./lib/data/hosted/schema/index.ts",
-	out: "./drizzle",
-	dialect: "postgresql",
-	dbCredentials: {
-		host: process.env.POSTGRES_HOST ?? "localhost",
-		port: Number.parseInt(process.env.POSTGRES_PORT ?? "5432", 10),
-		user: process.env.POSTGRES_USER ?? "postgres",
-		password: process.env.POSTGRES_PASSWORD ?? "",
-		database: process.env.POSTGRES_DB ?? "han",
-		ssl: process.env.POSTGRES_SSL === "true",
-	},
-	verbose: true,
-	strict: true,
+  schema: './lib/data/hosted/schema/index.ts',
+  out: './drizzle',
+  dialect: 'postgresql',
+  dbCredentials: {
+    host: process.env.POSTGRES_HOST ?? 'localhost',
+    port: Number.parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
+    user: process.env.POSTGRES_USER ?? 'postgres',
+    password: process.env.POSTGRES_PASSWORD ?? '',
+    database: process.env.POSTGRES_DB ?? 'han',
+    ssl: process.env.POSTGRES_SSL === 'true',
+  },
+  verbose: true,
+  strict: true,
 });

@@ -86,7 +86,10 @@ async function generatePerformanceContext(
     lines.push('## Your Recent Performance (Last 7 Days)\n');
 
     // Overall stats
-    const successRate = metrics.total_tasks > 0 ? Math.round((metrics.completed_tasks / metrics.total_tasks) * 100) : 0;
+    const successRate =
+      metrics.total_tasks > 0
+        ? Math.round((metrics.completed_tasks / metrics.total_tasks) * 100)
+        : 0;
     const calibrationScore = 0; // calibration score not available in gRPC data layer
 
     lines.push(

@@ -9,11 +9,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
-    "types": [
-      "bun-types"
-    ]
+    "types": ["bun-types"]
   },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }

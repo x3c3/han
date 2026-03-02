@@ -9,12 +9,18 @@
  * - Top contributors
  */
 
-import type React from 'react';
-import { useState } from 'react';
-import { graphql } from 'react-relay';
-import { PageLoader } from '@/components/helpers';
-import type { TeamDashboardPageQuery as TeamDashboardPageQueryType } from './__generated__/TeamDashboardPageQuery.graphql.ts';
-import { TeamDashboardContent } from './TeamDashboardContent.tsx';
+import type React from "react";
+import { useState } from "react";
+import { graphql } from "react-relay";
+import { Center } from "@/components/atoms/Center.tsx";
+import { Heading } from "@/components/atoms/Heading.tsx";
+import { Text } from "@/components/atoms/Text.tsx";
+import { VStack } from "@/components/atoms/VStack.tsx";
+import { PageLoader } from "@/components/helpers";
+import { useMode } from "@/contexts/ModeContext.tsx";
+import { spacing } from "@/theme.ts";
+import type { TeamDashboardPageQuery as TeamDashboardPageQueryType } from "./__generated__/TeamDashboardPageQuery.graphql.ts";
+import { TeamDashboardContent } from "./TeamDashboardContent.tsx";
 
 export const TeamDashboardPageQuery = graphql`
   query TeamDashboardPageQuery(
@@ -80,55 +86,74 @@ export const TeamDashboardPageQuery = graphql`
   }
 `;
 
-type Granularity = 'DAY' | 'WEEK' | 'MONTH';
+type Granularity = "day" | "week" | "month";
 
 /**
  * Get default date range (last 30 days)
  */
 function getDefaultDateRange(): { startDate: string; endDate: string } {
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 30);
-  return {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-  };
+	const endDate = new Date();
+	const startDate = new Date();
+	startDate.setDate(startDate.getDate() - 30);
+	return {
+		startDate: startDate.toISOString(),
+		endDate: endDate.toISOString(),
+	};
 }
 
 export interface TeamDashboardPageProps {
-  /**
-   * Initial granularity for time aggregation
-   */
-  initialGranularity?: Granularity;
+	/**
+	 * Initial granularity for time aggregation
+	 */
+	initialGranularity?: Granularity;
 }
 
 /**
- * Team Dashboard page with PageLoader for query preloading
+ * Team Dashboard page with PageLoader for query preloading.
+ * In local mode, team features are not available — show a friendly message.
  */
 export default function TeamDashboardPage({
-  initialGranularity = 'DAY',
+	initialGranularity = "day",
 }: TeamDashboardPageProps): React.ReactElement {
-  const [granularity, setGranularity] =
-    useState<Granularity>(initialGranularity);
-  const { startDate, endDate } = getDefaultDateRange();
+	const { isLocal } = useMode();
+	const [granularity, setGranularity] =
+		useState<Granularity>(initialGranularity);
+	const { startDate, endDate } = getDefaultDateRange();
 
-  return (
-    <PageLoader<TeamDashboardPageQueryType>
-      query={TeamDashboardPageQuery}
-      variables={{
-        startDate,
-        endDate,
-        granularity,
-      }}
-      loadingMessage="Loading team metrics..."
-    >
-      {(queryRef) => (
-        <TeamDashboardContent
-          queryRef={queryRef}
-          granularity={granularity}
-          onGranularityChange={setGranularity}
-        />
-      )}
-    </PageLoader>
-  );
+	if (isLocal) {
+		return (
+			<Center style={{ flex: 1, padding: spacing.xl }}>
+				<VStack gap="md" align="center">
+					<Heading size="md">Team Dashboard</Heading>
+					<Text color="muted" style={{ textAlign: "center" }}>
+						Team metrics are available in hosted mode.
+					</Text>
+					<Text color="muted" size="sm" style={{ textAlign: "center" }}>
+						Use the individual session and project pages to view your local
+						activity.
+					</Text>
+				</VStack>
+			</Center>
+		);
+	}
+
+	return (
+		<PageLoader<TeamDashboardPageQueryType>
+			query={TeamDashboardPageQuery}
+			variables={{
+				startDate,
+				endDate,
+				granularity,
+			}}
+			loadingMessage="Loading team metrics..."
+		>
+			{(queryRef) => (
+				<TeamDashboardContent
+					queryRef={queryRef}
+					granularity={granularity}
+					onGranularityChange={setGranularity}
+				/>
+			)}
+		</PageLoader>
+	);
 }

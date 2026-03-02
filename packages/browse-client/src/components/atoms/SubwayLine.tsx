@@ -6,8 +6,8 @@
  */
 
 import type React from "react";
-import { Box } from "./Box.tsx";
 import { radii, spacing } from "@/theme.ts";
+import { Box } from "./Box.tsx";
 
 interface SubwayLineProps {
 	/** Color of the subway line */

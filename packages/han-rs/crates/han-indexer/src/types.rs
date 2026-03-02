@@ -106,6 +106,7 @@ pub struct ParsedMessage {
     pub lines_added: Option<i32>,
     pub lines_removed: Option<i32>,
     pub files_changed: Option<i32>,
+    pub compact_type: Option<String>,
 }
 
 /// Intermediate parsed line before timestamp resolution (first pass).

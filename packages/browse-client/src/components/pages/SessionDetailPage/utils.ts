@@ -2,41 +2,15 @@
  * Utility functions for session detail components
  */
 
+export { formatRelativeTime } from "@/components/helpers/formatters.ts";
+
+import { formatAbsoluteDate } from "@/components/helpers/formatters.ts";
+
 /**
- * Format a date for display
+ * Format a date for display (delegates to shared formatAbsoluteDate)
  */
 export function formatDate(dateStr: string | null): string {
-	if (!dateStr) return "-";
-	const date = new Date(dateStr);
-	return date.toLocaleString();
-}
-
-/**
- * Format a date as relative time (e.g., "2 minutes ago", "1 hour ago")
- */
-export function formatRelativeTime(dateStr: string | null): string {
-	if (!dateStr) return "-";
-
-	const date = new Date(dateStr);
-	const now = new Date();
-	const diffMs = now.getTime() - date.getTime();
-
-	// Handle future dates
-	if (diffMs < 0) return "just now";
-
-	const seconds = Math.floor(diffMs / 1000);
-	const minutes = Math.floor(seconds / 60);
-	const hours = Math.floor(minutes / 60);
-	const days = Math.floor(hours / 24);
-
-	if (seconds < 10) return "just now";
-	if (seconds < 60) return `${seconds}s ago`;
-	if (minutes < 60) return `${minutes}m ago`;
-	if (hours < 24) return `${hours}h ago`;
-	if (days < 7) return `${days}d ago`;
-
-	// Fall back to date for older entries
-	return date.toLocaleDateString();
+	return formatAbsoluteDate(dateStr, "-");
 }
 
 /**

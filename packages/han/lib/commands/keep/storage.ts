@@ -22,8 +22,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { getClaudeConfigDir } from '../../config/claude-settings.ts';
 import { getGitBranch, getGitRemoteUrl } from '../../bun-utils.ts';
+import { getClaudeConfigDir } from '../../config/claude-settings.ts';
 
 export type Scope = 'global' | 'repo' | 'branch';
 

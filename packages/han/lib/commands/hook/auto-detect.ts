@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import type { Command } from 'commander';
 import micromatch from 'micromatch';
+import { getGitRemoteUrl } from '../../bun-utils.ts';
 import { getClaudeConfigDir } from '../../config/claude-settings.ts';
 import { getLearnMode } from '../../config/han-settings.ts';
 import {
@@ -22,7 +23,6 @@ import {
   runDirTest,
 } from '../../marker-detection.ts';
 import { getMarketplacePlugins } from '../../marketplace-cache.ts';
-import { getGitRemoteUrl } from '../../bun-utils.ts';
 import {
   getInstalledPlugins,
   isDebugMode,

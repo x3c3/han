@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<93704ec122f40359b0cf64de54fe9150>>
+ * @generated SignedSource<<6dbf20ff9c744f2a3864e98190fb704e>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -34,6 +34,7 @@ export type SessionListItem_session$data = {
   } | null | undefined;
   readonly duration: number | null | undefined;
   readonly estimatedCostUsd: number | null | undefined;
+  readonly gitBranch: string | null | undefined;
   readonly id: string;
   readonly messageCount: number;
   readonly name: string;
@@ -43,12 +44,15 @@ export type SessionListItem_session$data = {
     readonly id: string;
     readonly name: string | null | undefined;
   } | null | undefined;
+  readonly prNumber: number | null | undefined;
+  readonly prUrl: string | null | undefined;
   readonly projectId: string | null | undefined;
   readonly projectName: string;
   readonly projectSlug: string | null | undefined;
   readonly sessionId: string;
   readonly startedAt: string | null | undefined;
   readonly summary: string | null | undefined;
+  readonly teamName: string | null | undefined;
   readonly todoCounts: {
     readonly completed: number | null | undefined;
     readonly inProgress: number | null | undefined;
@@ -317,6 +321,34 @@ return {
       "alias": null,
       "args": null,
       "kind": "ScalarField",
+      "name": "gitBranch",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "prNumber",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "prUrl",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "teamName",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
       "name": "turnCount",
       "storageKey": null
     },
@@ -347,6 +379,6 @@ return {
 };
 })();
 
-(node as any).hash = "c5b840d4651024825c559ed7f8159567";
+(node as any).hash = "455cb59b262725d1aa583312ff0491b5";
 
 export default node;

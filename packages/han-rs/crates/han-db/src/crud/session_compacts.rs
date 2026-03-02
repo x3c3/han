@@ -15,9 +15,8 @@ pub async fn upsert(
     compact_type: Option<String>,
 ) -> DbResult<session_compacts::Model> {
     let id = message_id.clone();
+    let id_clone = id.clone();
     let now = chrono::Utc::now().to_rfc3339();
-
-    let session_id_clone = session_id.clone();
 
     session_compacts::Entity::insert(session_compacts::ActiveModel {
         id: Set(id),
@@ -31,9 +30,9 @@ pub async fn upsert(
         indexed_at: Set(Some(now)),
     })
     .on_conflict(
-        sea_query::OnConflict::column(session_compacts::Column::SessionId)
+        sea_query::OnConflict::column(session_compacts::Column::Id)
             .update_columns([
-                session_compacts::Column::Id,
+                session_compacts::Column::SessionId,
                 session_compacts::Column::MessageId,
                 session_compacts::Column::Content,
                 session_compacts::Column::RawJson,
@@ -49,8 +48,7 @@ pub async fn upsert(
     .map_err(DbError::Database)?;
 
     // Fetch the row after upsert
-    session_compacts::Entity::find()
-        .filter(session_compacts::Column::SessionId.eq(&session_id_clone))
+    session_compacts::Entity::find_by_id(&id_clone)
         .one(db)
         .await
         .map_err(DbError::Database)?

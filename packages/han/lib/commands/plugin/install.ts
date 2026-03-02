@@ -76,7 +76,12 @@ export function registerPluginInstall(pluginCommand: Command): void {
     .action(
       async (
         pluginNames: string[],
-        options: { auto?: boolean; analyze?: boolean; scope?: string; from?: string },
+        options: {
+          auto?: boolean;
+          analyze?: boolean;
+          scope?: string;
+          from?: string;
+        },
         command: Command
       ) => {
         try {

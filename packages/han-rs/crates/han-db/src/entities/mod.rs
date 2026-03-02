@@ -21,6 +21,8 @@ pub mod session_file_validations;
 pub mod async_hook_queue;
 pub mod generated_session_summaries;
 
+pub mod tool_call_results;
+
 // Team/hosted mode entities
 pub mod users;
 pub mod teams;

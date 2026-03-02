@@ -56,35 +56,29 @@ export function registerAliasCommands(program: Command): void {
       'Only run in directories containing the specified file'
     )
     .allowUnknownOption()
-    .action(
-      async (
-        _ignored: string[],
-        options: { dirsWith?: string }
-      ) => {
-        // Parse command from process.argv after --
-        const separatorIndex = process.argv.indexOf('--');
+    .action(async (_ignored: string[], options: { dirsWith?: string }) => {
+      // Parse command from process.argv after --
+      const separatorIndex = process.argv.indexOf('--');
 
-        if (separatorIndex === -1) {
-          console.error(
-            'Error: Command must be specified after -- separator\n\nExample: han validate-legacy --dirs-with package.json -- npm test'
-          );
-          process.exit(1);
-        }
-
-        const commandArgs = process.argv.slice(separatorIndex + 1);
-
-        if (commandArgs.length === 0) {
-          console.error(
-            'Error: No command specified after --\n\nExample: han validate-legacy --dirs-with package.json -- npm test'
-          );
-          process.exit(1);
-        }
-
-        await validate({
-          dirsWith: options.dirsWith || null,
-          command: commandArgs.join(' '),
-        });
+      if (separatorIndex === -1) {
+        console.error(
+          'Error: Command must be specified after -- separator\n\nExample: han validate-legacy --dirs-with package.json -- npm test'
+        );
+        process.exit(1);
       }
-    );
 
+      const commandArgs = process.argv.slice(separatorIndex + 1);
+
+      if (commandArgs.length === 0) {
+        console.error(
+          'Error: No command specified after --\n\nExample: han validate-legacy --dirs-with package.json -- npm test'
+        );
+        process.exit(1);
+      }
+
+      await validate({
+        dirsWith: options.dirsWith || null,
+        command: commandArgs.join(' '),
+      });
+    });
 }

@@ -123,7 +123,9 @@ export class LocalDataSource implements DataSource {
       return db.messages.countBatch(sessionIds);
     },
 
-    async timestampsBatch(sessionIds: string[]): Promise<Record<string, db.SessionTimestamps>> {
+    async timestampsBatch(
+      sessionIds: string[]
+    ): Promise<Record<string, db.SessionTimestamps>> {
       return db.messages.timestampsBatch(sessionIds);
     },
 
@@ -179,7 +181,7 @@ export class LocalDataSource implements DataSource {
   // Task/Metrics Operations
   // =========================================================================
   tasks = {
-    async queryMetrics(options?: TaskMetricsOptions) {
+    async queryMetrics(_options?: TaskMetricsOptions) {
       return db.tasks.queryMetrics({});
     },
   };
@@ -209,19 +211,30 @@ export class LocalDataSource implements DataSource {
       const results = await getHookExecutionsForSession(sessionId);
       // Convert null to undefined for native type compatibility
       return results.map((r) => ({
-        id: (r as unknown as Record<string, unknown>).id as string ?? '',
-        session_id: (r as unknown as Record<string, unknown>).sessionId as string ?? '',
-        hook_name: (r as unknown as Record<string, unknown>).hookName as string ?? '',
-        plugin_name: (r as unknown as Record<string, unknown>).hookSource as string ?? null,
-        event_type: (r as unknown as Record<string, unknown>).hookType as string ?? '',
-        exit_code: (r as unknown as Record<string, unknown>).exitCode as number ?? null,
-        duration_ms: (r as unknown as Record<string, unknown>).durationMs as number ?? null,
+        id: ((r as unknown as Record<string, unknown>).id as string) ?? '',
+        session_id:
+          ((r as unknown as Record<string, unknown>).sessionId as string) ?? '',
+        hook_name:
+          ((r as unknown as Record<string, unknown>).hookName as string) ?? '',
+        plugin_name:
+          ((r as unknown as Record<string, unknown>).hookSource as string) ??
+          null,
+        event_type:
+          ((r as unknown as Record<string, unknown>).hookType as string) ?? '',
+        exit_code:
+          ((r as unknown as Record<string, unknown>).exitCode as number) ??
+          null,
+        duration_ms:
+          ((r as unknown as Record<string, unknown>).durationMs as number) ??
+          null,
         cached: false,
-        executed_at: (r as unknown as Record<string, unknown>).executedAt as string ?? new Date().toISOString(),
+        executed_at:
+          ((r as unknown as Record<string, unknown>).executedAt as string) ??
+          new Date().toISOString(),
       }));
     },
 
-    async queryStats(options?: HookStatsOptions) {
+    async queryStats(_options?: HookStatsOptions) {
       return db.hookExecutions.queryStats({});
     },
   };

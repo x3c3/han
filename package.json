@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "devDependencies": {
+    "relay-compiler": "^19.0.0"
+  }
+}

@@ -40,7 +40,7 @@ export interface VectorStore {
 /**
  * Get the vector database path
  */
-function getVectorDbPath(): string {
+function _getVectorDbPath(): string {
   const { homedir } = require('node:os');
   const { join } = require('node:path');
   return join(homedir(), '.claude', 'han', 'memory', 'index', 'vectors.db');
@@ -49,7 +49,7 @@ function getVectorDbPath(): string {
 /**
  * Ensure the database directory exists
  */
-function ensureDbDir(): void {
+function _ensureDbDir(): void {
   const { existsSync, mkdirSync } = require('node:fs');
   const { homedir } = require('node:os');
   const { join } = require('node:path');
@@ -128,7 +128,7 @@ export async function createNativeVectorStore(): Promise<VectorStore> {
           obs.id,
           `${obs.summary}\n${obs.detail}`,
           undefined,
-          obs.source,
+          obs.source
         );
       }
     },

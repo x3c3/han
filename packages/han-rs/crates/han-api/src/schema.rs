@@ -4,7 +4,10 @@ use async_graphql::*;
 use sea_orm::DatabaseConnection;
 use tokio::sync::broadcast;
 
+use async_graphql::dataloader::DataLoader;
+
 use crate::context::DbChangeEvent;
+use crate::loaders::{HookResultByRunIdLoader, ToolResultByCallIdLoader, ToolResultByParentIdLoader};
 use crate::mutation::MutationRoot;
 use crate::query::QueryRoot;
 use crate::subscription::SubscriptionRoot;
@@ -17,9 +20,25 @@ pub fn build_schema(
     db: DatabaseConnection,
     event_sender: broadcast::Sender<DbChangeEvent>,
 ) -> HanSchema {
+    let tool_result_by_parent_id = DataLoader::new(
+        ToolResultByParentIdLoader { db: db.clone() },
+        tokio::spawn,
+    );
+    let tool_result_by_call_id = DataLoader::new(
+        ToolResultByCallIdLoader { db: db.clone() },
+        tokio::spawn,
+    );
+    let hook_result_by_run_id = DataLoader::new(
+        HookResultByRunIdLoader { db: db.clone() },
+        tokio::spawn,
+    );
+
     Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
         .data(db)
         .data(event_sender)
+        .data(tool_result_by_parent_id)
+        .data(tool_result_by_call_id)
+        .data(hook_result_by_run_id)
         // Manually register types not directly reachable from root queries
         // but needed for fragments in browse-client.
         .register_output_type::<crate::types::messages::UserMessage>()
@@ -128,5 +147,48 @@ mod tests {
         assert!(!sdl.is_empty());
         // Should be substantial - at least 2KB for all these types
         assert!(sdl.len() > 2000, "SDL too short: {} bytes", sdl.len());
+    }
+
+    /// Verify filter types appear in SDL now that they're wired into resolvers.
+    #[test]
+    fn test_schema_sdl_has_filter_types() {
+        let schema = build_test_schema();
+        let sdl = export_sdl(&schema);
+
+        // Filter InputObject types
+        assert!(sdl.contains("input MessageFilter"), "Missing MessageFilter");
+        assert!(sdl.contains("input SessionFilter"), "Missing SessionFilter");
+        assert!(sdl.contains("input ProjectFilter"), "Missing ProjectFilter");
+        assert!(sdl.contains("input RepoFilter"), "Missing RepoFilter");
+        assert!(sdl.contains("input NativeTaskFilter"), "Missing NativeTaskFilter");
+        assert!(sdl.contains("input TaskFilter"), "Missing TaskFilter");
+        assert!(sdl.contains("input HookExecutionFilter"), "Missing HookExecutionFilter");
+
+        // OrderBy InputObject types
+        assert!(sdl.contains("input MessageOrderBy"), "Missing MessageOrderBy");
+        assert!(sdl.contains("input SessionOrderBy"), "Missing SessionOrderBy");
+        assert!(sdl.contains("input ProjectOrderBy"), "Missing ProjectOrderBy");
+        assert!(sdl.contains("input RepoOrderBy"), "Missing RepoOrderBy");
+
+        // Filter primitive types
+        assert!(sdl.contains("input StringFilter"), "Missing StringFilter");
+        assert!(sdl.contains("input IntFilter"), "Missing IntFilter");
+        assert!(sdl.contains("input FloatFilter"), "Missing FloatFilter");
+        assert!(sdl.contains("enum OrderDirection"), "Missing OrderDirection");
+    }
+
+    /// Export schema SDL to browse-client/schema.graphql.
+    /// Run with: cargo test -p han-api export_schema_file -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn export_schema_file() {
+        let schema = build_test_schema();
+        let sdl = export_sdl(&schema);
+        let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        // han-api is at packages/han-rs/crates/han-api, go up to packages/
+        let packages_dir = manifest.parent().unwrap().parent().unwrap().parent().unwrap();
+        let out = packages_dir.join("browse-client").join("schema.graphql");
+        std::fs::write(&out, &sdl).expect("Failed to write schema.graphql");
+        eprintln!("Wrote {} bytes to {}", sdl.len(), out.display());
     }
 }

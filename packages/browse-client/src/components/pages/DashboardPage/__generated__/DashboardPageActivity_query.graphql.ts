@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<26f6d7aa98e021d9ac5d92477c791a28>>
+ * @generated SignedSource<<534be65573d1eb3fffbe8528104ab12a>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -127,7 +127,18 @@ v7 = {
   "storageKey": null
 };
 return {
-  "argumentDefinitions": [],
+  "argumentDefinitions": [
+    {
+      "defaultValue": null,
+      "kind": "LocalArgument",
+      "name": "projectId"
+    },
+    {
+      "defaultValue": null,
+      "kind": "LocalArgument",
+      "name": "repoId"
+    }
+  ],
   "kind": "Fragment",
   "metadata": null,
   "name": "DashboardPageActivity_query",
@@ -139,6 +150,16 @@ return {
           "kind": "Literal",
           "name": "days",
           "value": 730
+        },
+        {
+          "kind": "Variable",
+          "name": "projectId",
+          "variableName": "projectId"
+        },
+        {
+          "kind": "Variable",
+          "name": "repoId",
+          "variableName": "repoId"
         }
       ],
       "concreteType": "ActivityData",
@@ -358,7 +379,7 @@ return {
           "storageKey": null
         }
       ],
-      "storageKey": "activity(days:730)"
+      "storageKey": null
     }
   ],
   "type": "Query",
@@ -366,6 +387,6 @@ return {
 };
 })();
 
-(node as any).hash = "1fe5d2d27adc8a78f80ca329e6a8bf87";
+(node as any).hash = "2fb6022e01f565ee62ccf7963ef3db83";
 
 export default node;

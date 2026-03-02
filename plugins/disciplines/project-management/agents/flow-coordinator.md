@@ -5,6 +5,12 @@ description: |
 model: inherit
 color: green
 memory: project
+isolation: worktree
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/../../core/hooks/worktree-merge-prompt.sh"
 ---
 # The Flow Coordinator - The Way of Flow
 

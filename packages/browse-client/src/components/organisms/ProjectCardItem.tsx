@@ -7,6 +7,7 @@
 import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge, Card, Heading, HStack, Text, VStack } from "../atoms/index.ts";
+import { formatRelativeTime } from "../helpers/formatters.ts";
 
 interface Project {
 	id: string;
@@ -20,12 +21,6 @@ interface Project {
 interface ProjectCardItemProps {
 	project: Project;
 	style?: CSSProperties;
-}
-
-function formatDate(date?: string) {
-	if (!date) return "No activity";
-	const d = new Date(date);
-	return d.toLocaleDateString();
 }
 
 export function ProjectCardItem({ project, style }: ProjectCardItemProps) {
@@ -49,7 +44,7 @@ export function ProjectCardItem({ project, style }: ProjectCardItemProps) {
 					)}
 				</HStack>
 				<Text size="xs" color="muted">
-					{formatDate(project.lastActivity)}
+					{formatRelativeTime(project.lastActivity)}
 				</Text>
 			</VStack>
 		</Card>

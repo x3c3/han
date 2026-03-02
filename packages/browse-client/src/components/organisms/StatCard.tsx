@@ -43,7 +43,7 @@ export function StatCard({
 		? {
 				backgroundColor: theme.colors.bg.secondary,
 				borderRadius: theme.radii.md,
-				padding: `${theme.spacing.sm}px ${theme.spacing.md}px`,
+				padding: theme.spacing.sm,
 				minWidth: 80,
 				textAlign: "center" as const,
 			}

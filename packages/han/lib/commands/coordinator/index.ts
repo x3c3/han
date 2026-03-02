@@ -294,7 +294,7 @@ export function registerCoordinatorCommands(program: Command): void {
           `${process.env.HOME}/.claude`;
 
         const defaultConfigDir = `${process.env.HOME}/.claude`;
-        const isDefault = configDir === defaultConfigDir;
+        const _isDefault = configDir === defaultConfigDir;
 
         // Always register (idempotent upsert)
         const result = await registerConfigDir({

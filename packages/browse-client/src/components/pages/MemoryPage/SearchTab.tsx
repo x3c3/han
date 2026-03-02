@@ -19,11 +19,11 @@ import { Input } from "@/components/atoms/Input.tsx";
 import { Spinner } from "@/components/atoms/Spinner.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
+import { ConfidenceBadge } from "@/components/molecules";
 import { MarkdownContent } from "@/components/organisms/MarkdownContent.tsx";
 import type { SearchTabProgressSubscription } from "./__generated__/SearchTabProgressSubscription.graphql.ts";
 import type { SearchTabResultSubscription } from "./__generated__/SearchTabResultSubscription.graphql.ts";
 import type { SearchTabStartMutation } from "./__generated__/SearchTabStartMutation.graphql.ts";
-import { ConfidenceBadge } from "./ConfidenceBadge.tsx";
 
 // Mutation to start a memory query - returns session ID for subscriptions
 const StartMemoryQueryMutation = graphql`

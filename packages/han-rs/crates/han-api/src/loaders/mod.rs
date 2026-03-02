@@ -251,6 +251,175 @@ impl Loader<String> for SessionTodosLoader {
 }
 
 // ============================================================================
+// Tool Result by Parent ID Loader (native tool calls)
+// ============================================================================
+
+/// Batch loads pre-indexed tool call results by tool_call_id.
+/// Uses the `tool_call_results` table populated at indexing time —
+/// simple PK lookup, no LIKE scans or JSON parsing at query time.
+pub struct ToolResultByParentIdLoader {
+    pub db: DatabaseConnection,
+}
+
+impl Loader<String> for ToolResultByParentIdLoader {
+    type Value = han_db::entities::tool_call_results::Model;
+    type Error = async_graphql::Error;
+
+    async fn load(
+        &self,
+        keys: &[String],
+    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        let results = han_db::crud::tool_call_results::get_batch(&self.db, keys.to_vec())
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        let map: HashMap<String, han_db::entities::tool_call_results::Model> = results
+            .into_iter()
+            .map(|r| (r.tool_call_id.clone(), r))
+            .collect();
+
+        Ok(map)
+    }
+}
+
+// ============================================================================
+// Tool Result by Call ID Loader (MCP + exposed tool calls)
+// ============================================================================
+
+/// Batch loads MCP/exposed tool result messages by call_id in raw_json.
+pub struct ToolResultByCallIdLoader {
+    pub db: DatabaseConnection,
+}
+
+impl Loader<String> for ToolResultByCallIdLoader {
+    type Value = messages::Model;
+    type Error = async_graphql::Error;
+
+    async fn load(
+        &self,
+        keys: &[String],
+    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        let results = han_db::crud::messages::find_results_by_call_ids(
+            &self.db,
+            keys.to_vec(),
+            &["mcp_tool_result", "exposed_tool_result"],
+        )
+        .await
+        .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        let mut map: HashMap<String, messages::Model> = HashMap::new();
+        for msg in results {
+            if let Some(call_id) = extract_data_field(&msg.raw_json, "call_id") {
+                map.entry(call_id).or_insert(msg);
+            }
+        }
+
+        Ok(map)
+    }
+}
+
+// ============================================================================
+// Hook Result by Adjacency Loader
+// ============================================================================
+
+/// Batch loads hook result messages by line adjacency to hook_run messages.
+/// Keys are "session_id:hook_name:line_number" where line_number is the
+/// hook_run's line. The loader finds the first hook_result with the same
+/// hook name after that line in the same session.
+pub struct HookResultByRunIdLoader {
+    pub db: DatabaseConnection,
+}
+
+impl Loader<String> for HookResultByRunIdLoader {
+    type Value = messages::Model;
+    type Error = async_graphql::Error;
+
+    async fn load(
+        &self,
+        keys: &[String],
+    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        // Parse composite keys "session_id:hook_name:line_number"
+        struct RunKey {
+            session_id: String,
+            hook_name: String,
+            line_number: i32,
+            original_key: String,
+        }
+
+        let run_keys: Vec<RunKey> = keys
+            .iter()
+            .filter_map(|k| {
+                // Format: "session_id:hook_name:line_number"
+                let parts: Vec<&str> = k.rsplitn(2, ':').collect();
+                if parts.len() != 2 { return None; }
+                let line: i32 = parts[0].parse().ok()?;
+                let rest = parts[1];
+                let (sid, hook) = rest.rsplit_once(':')?;
+                Some(RunKey {
+                    session_id: sid.to_string(),
+                    hook_name: hook.to_string(),
+                    line_number: line,
+                    original_key: k.clone(),
+                })
+            })
+            .collect();
+
+        // Collect unique session IDs
+        let session_ids: Vec<String> = run_keys
+            .iter()
+            .map(|k| k.session_id.clone())
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        // Fetch all hook_results for these sessions
+        let all_results = han_db::crud::messages::find_hook_results_for_sessions(
+            &self.db,
+            session_ids,
+        )
+        .await
+        .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        // Group results by session_id for efficient matching
+        let mut by_session: HashMap<String, Vec<&messages::Model>> = HashMap::new();
+        for msg in &all_results {
+            by_session.entry(msg.session_id.clone()).or_default().push(msg);
+        }
+
+        // Match each hook_run to its closest hook_result
+        let mut map: HashMap<String, messages::Model> = HashMap::new();
+        for rk in &run_keys {
+            if let Some(results) = by_session.get(&rk.session_id) {
+                // Find the first hook_result after this hook_run with the same hook name
+                for msg in results {
+                    if msg.line_number > rk.line_number {
+                        let result_hook = extract_data_field(&msg.raw_json, "hook");
+                        if result_hook.as_deref() == Some(&rk.hook_name) {
+                            map.entry(rk.original_key.clone())
+                                .or_insert_with(|| (*msg).clone());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(map)
+    }
+}
+
+/// Extract a string field from $.data.<field> in raw_json.
+fn extract_data_field(raw_json: &Option<String>, field: &str) -> Option<String> {
+    let raw = raw_json.as_ref()?;
+    let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
+    parsed
+        .get("data")
+        .and_then(|d| d.get(field))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
+// ============================================================================
 // Composite HanLoaders
 // ============================================================================
 
@@ -262,6 +431,9 @@ pub struct HanLoaders {
     pub session_tasks: DataLoader<SessionTasksLoader>,
     pub session_file_changes: DataLoader<SessionFileChangesLoader>,
     pub session_todos: DataLoader<SessionTodosLoader>,
+    pub tool_result_by_parent_id: DataLoader<ToolResultByParentIdLoader>,
+    pub tool_result_by_call_id: DataLoader<ToolResultByCallIdLoader>,
+    pub hook_result_by_run_id: DataLoader<HookResultByRunIdLoader>,
 }
 
 impl HanLoaders {
@@ -289,7 +461,19 @@ impl HanLoaders {
                 tokio::spawn,
             ),
             session_todos: DataLoader::new(
-                SessionTodosLoader { db },
+                SessionTodosLoader { db: db.clone() },
+                tokio::spawn,
+            ),
+            tool_result_by_parent_id: DataLoader::new(
+                ToolResultByParentIdLoader { db: db.clone() },
+                tokio::spawn,
+            ),
+            tool_result_by_call_id: DataLoader::new(
+                ToolResultByCallIdLoader { db: db.clone() },
+                tokio::spawn,
+            ),
+            hook_result_by_run_id: DataLoader::new(
+                HookResultByRunIdLoader { db },
                 tokio::spawn,
             ),
         }

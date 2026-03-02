@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<e941e86778ed49e5e7627e9e091aa54e>>
+ * @generated SignedSource<<0ca7206023981c96007a5a9051cd0447>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -10,12 +10,59 @@
 
 import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
+export type SessionFilter = {
+  _and?: ReadonlyArray<SessionFilter> | null | undefined;
+  _not?: SessionFilter | null | undefined;
+  _or?: ReadonlyArray<SessionFilter> | null | undefined;
+  id?: StringFilter | null | undefined;
+  prNumber?: IntFilter | null | undefined;
+  project?: ProjectFilter | null | undefined;
+  projectId?: StringFilter | null | undefined;
+  slug?: StringFilter | null | undefined;
+  status?: StringFilter | null | undefined;
+  teamName?: StringFilter | null | undefined;
+};
+export type StringFilter = {
+  _contains?: string | null | undefined;
+  _endsWith?: string | null | undefined;
+  _eq?: string | null | undefined;
+  _in?: ReadonlyArray<string> | null | undefined;
+  _isNull?: boolean | null | undefined;
+  _ne?: string | null | undefined;
+  _notIn?: ReadonlyArray<string> | null | undefined;
+  _startsWith?: string | null | undefined;
+};
+export type IntFilter = {
+  _eq?: number | null | undefined;
+  _gt?: number | null | undefined;
+  _gte?: number | null | undefined;
+  _in?: ReadonlyArray<number> | null | undefined;
+  _isNull?: boolean | null | undefined;
+  _lt?: number | null | undefined;
+  _lte?: number | null | undefined;
+  _ne?: number | null | undefined;
+};
+export type ProjectFilter = {
+  _and?: ReadonlyArray<ProjectFilter> | null | undefined;
+  _not?: ProjectFilter | null | undefined;
+  _or?: ReadonlyArray<ProjectFilter> | null | undefined;
+  createdAt?: StringFilter | null | undefined;
+  isWorktree?: BoolFilter | null | undefined;
+  name?: StringFilter | null | undefined;
+  path?: StringFilter | null | undefined;
+  relativePath?: StringFilter | null | undefined;
+  repoId?: StringFilter | null | undefined;
+  slug?: StringFilter | null | undefined;
+  updatedAt?: StringFilter | null | undefined;
+};
+export type BoolFilter = {
+  _eq?: boolean | null | undefined;
+  _isNull?: boolean | null | undefined;
+};
 export type SessionsContentPaginationQuery$variables = {
   after?: string | null | undefined;
+  filter?: SessionFilter | null | undefined;
   first?: number | null | undefined;
-  projectId?: string | null | undefined;
-  userId?: string | null | undefined;
-  worktreeName?: string | null | undefined;
 };
 export type SessionsContentPaginationQuery$data = {
   readonly " $fragmentSpreads": FragmentRefs<"SessionsContent_query">;
@@ -33,24 +80,14 @@ var v0 = [
     "name": "after"
   },
   {
+    "defaultValue": null,
+    "kind": "LocalArgument",
+    "name": "filter"
+  },
+  {
     "defaultValue": 50,
     "kind": "LocalArgument",
     "name": "first"
-  },
-  {
-    "defaultValue": null,
-    "kind": "LocalArgument",
-    "name": "projectId"
-  },
-  {
-    "defaultValue": null,
-    "kind": "LocalArgument",
-    "name": "userId"
-  },
-  {
-    "defaultValue": null,
-    "kind": "LocalArgument",
-    "name": "worktreeName"
   }
 ],
 v1 = [
@@ -61,23 +98,13 @@ v1 = [
   },
   {
     "kind": "Variable",
+    "name": "filter",
+    "variableName": "filter"
+  },
+  {
+    "kind": "Variable",
     "name": "first",
     "variableName": "first"
-  },
-  {
-    "kind": "Variable",
-    "name": "projectId",
-    "variableName": "projectId"
-  },
-  {
-    "kind": "Variable",
-    "name": "userId",
-    "variableName": "userId"
-  },
-  {
-    "kind": "Variable",
-    "name": "worktreeName",
-    "variableName": "worktreeName"
   }
 ],
 v2 = {
@@ -380,6 +407,27 @@ return {
                     "alias": null,
                     "args": null,
                     "kind": "ScalarField",
+                    "name": "prNumber",
+                    "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "prUrl",
+                    "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "teamName",
+                    "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
                     "name": "turnCount",
                     "storageKey": null
                   },
@@ -469,9 +517,7 @@ return {
         "alias": null,
         "args": (v1/*: any*/),
         "filters": [
-          "projectId",
-          "worktreeName",
-          "userId"
+          "filter"
         ],
         "handle": "connection",
         "key": "SessionsContent_sessions",
@@ -481,16 +527,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "282eab15b316bf7424c207d17f8d2f2e",
+    "cacheID": "cb4e95c01a9b577fdef850d179a8e32d",
     "id": null,
     "metadata": {},
     "name": "SessionsContentPaginationQuery",
     "operationKind": "query",
-    "text": "query SessionsContentPaginationQuery(\n  $after: String\n  $first: Int = 50\n  $projectId: String\n  $userId: String\n  $worktreeName: String\n) {\n  ...SessionsContent_query_3JqmuJ\n}\n\nfragment SessionListItem_session on Session {\n  id\n  sessionId\n  name\n  projectName\n  projectSlug\n  projectId\n  worktreeName\n  summary\n  messageCount\n  startedAt\n  updatedAt\n  owner {\n    id\n    name\n    email\n    avatarUrl\n  }\n  currentTodo {\n    content\n    activeForm\n    status\n    id\n  }\n  activeTasks {\n    totalCount\n    edges {\n      node {\n        id\n        taskId\n        description\n        type\n        status\n      }\n    }\n  }\n  todoCounts {\n    total\n    pending\n    inProgress\n    completed\n  }\n  turnCount\n  compactionCount\n  estimatedCostUsd\n  duration\n}\n\nfragment SessionsContent_query_3JqmuJ on Query {\n  sessions(first: $first, after: $after, projectId: $projectId, worktreeName: $worktreeName, userId: $userId) {\n    edges {\n      node {\n        id\n        sessionId\n        projectName\n        worktreeName\n        summary\n        updatedAt\n        startedAt\n        gitBranch\n        ...SessionListItem_session\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    totalCount\n  }\n}\n"
+    "text": "query SessionsContentPaginationQuery(\n  $after: String\n  $filter: SessionFilter\n  $first: Int = 50\n) {\n  ...SessionsContent_query_G9cLv\n}\n\nfragment SessionListItem_session on Session {\n  id\n  sessionId\n  name\n  projectName\n  projectSlug\n  projectId\n  worktreeName\n  summary\n  messageCount\n  startedAt\n  updatedAt\n  owner {\n    id\n    name\n    email\n    avatarUrl\n  }\n  currentTodo {\n    content\n    activeForm\n    status\n    id\n  }\n  activeTasks {\n    totalCount\n    edges {\n      node {\n        id\n        taskId\n        description\n        type\n        status\n      }\n    }\n  }\n  todoCounts {\n    total\n    pending\n    inProgress\n    completed\n  }\n  gitBranch\n  prNumber\n  prUrl\n  teamName\n  turnCount\n  compactionCount\n  estimatedCostUsd\n  duration\n}\n\nfragment SessionsContent_query_G9cLv on Query {\n  sessions(first: $first, after: $after, filter: $filter) {\n    edges {\n      node {\n        id\n        sessionId\n        projectName\n        worktreeName\n        summary\n        updatedAt\n        startedAt\n        gitBranch\n        ...SessionListItem_session\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    totalCount\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "421589093331250115eacff340eb2ee7";
+(node as any).hash = "3e292ee2b022eed472b2b60006746fc6";
 
 export default node;

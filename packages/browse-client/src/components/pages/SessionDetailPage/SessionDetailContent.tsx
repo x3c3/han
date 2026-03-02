@@ -2,32 +2,34 @@
  * Session Detail Content Component
  *
  * Main content for session detail page using usePreloadedQuery.
- * Displays session info, messages (paginated), and expensive fields (deferred).
+ * Header banner + tabbed content (Overview, Messages, Tasks, Files).
+ * Messages tab stays mounted (display toggled) to preserve VirtualList scroll.
  */
 
 import type React from "react";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { PreloadedQuery } from "react-relay";
 import { graphql, usePreloadedQuery, useSubscription } from "react-relay";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { GraphQLSubscriptionConfig } from "relay-runtime";
-import { Badge } from "@/components/atoms/Badge.tsx";
 import { Box } from "@/components/atoms/Box.tsx";
 import { Button } from "@/components/atoms/Button.tsx";
 import { Center } from "@/components/atoms/Center.tsx";
-import { Heading } from "@/components/atoms/Heading.tsx";
 import { HStack } from "@/components/atoms/HStack.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
-import { colors, spacing } from "@/theme.ts";
+import { spacing } from "@/theme.ts";
 import type { SessionDetailContentFilesSubscription } from "./__generated__/SessionDetailContentFilesSubscription.graphql.ts";
 import type { SessionDetailContentHooksSubscription } from "./__generated__/SessionDetailContentHooksSubscription.graphql.ts";
 import type { SessionDetailContentSubscription } from "./__generated__/SessionDetailContentSubscription.graphql.ts";
 import type { SessionDetailContentTodosSubscription } from "./__generated__/SessionDetailContentTodosSubscription.graphql.ts";
 import type { SessionDetailPageQuery } from "./__generated__/SessionDetailPageQuery.graphql.ts";
-import { formatDuration } from "./components.ts";
+import { FilesTab } from "./FilesTab.tsx";
 import { SessionDetailPageQuery as SessionDetailPageQueryDef } from "./index.tsx";
+import { OverviewTab } from "./OverviewTab.tsx";
+import { SessionDetailHeader } from "./SessionDetailHeader.tsx";
+import { SessionDetailTabs, type SessionTab } from "./SessionDetailTabs.tsx";
 import { SessionMessages } from "./SessionMessages.tsx";
-import { SessionSidebar } from "./SessionSidebar.tsx";
+import { TasksTab } from "./TasksTab.tsx";
 
 /**
  * Subscription for live updates - watches for new messages in this session
@@ -98,8 +100,29 @@ export function SessionDetailContent({
 	isAgentTask = false,
 }: SessionDetailContentProps): React.ReactElement {
 	const navigate = useNavigate();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const [, setRefreshKey] = useState(0);
 	const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Read active tab from URL, default to "overview"
+	const activeTab = (searchParams.get("tab") as SessionTab) || "overview";
+	const setActiveTab = useCallback(
+		(tab: SessionTab) => {
+			setSearchParams(
+				(prev) => {
+					const next = new URLSearchParams(prev);
+					if (tab === "overview") {
+						next.delete("tab");
+					} else {
+						next.set("tab", tab);
+					}
+					return next;
+				},
+				{ replace: true },
+			);
+		},
+		[setSearchParams],
+	);
 
 	const data = usePreloadedQuery<SessionDetailPageQuery>(
 		SessionDetailPageQueryDef,
@@ -119,7 +142,6 @@ export function SessionDetailContent({
 			onNext: (response) => {
 				const event = response?.sessionMessageAdded;
 				if (event?.sessionId === sessionId) {
-					// Debounce refresh
 					if (fetchTimeoutRef.current) {
 						clearTimeout(fetchTimeoutRef.current);
 					}
@@ -137,7 +159,7 @@ export function SessionDetailContent({
 
 	useSubscription<SessionDetailContentSubscription>(subscriptionConfig);
 
-	// Subscription for todo changes - triggers a refresh when todos update
+	// Subscription for todo changes
 	const todosSubscriptionConfig = useMemo<
 		GraphQLSubscriptionConfig<SessionDetailContentTodosSubscription>
 	>(
@@ -147,7 +169,6 @@ export function SessionDetailContent({
 			onNext: (response) => {
 				const event = response?.sessionTodosChanged;
 				if (event?.sessionId === sessionId) {
-					// Trigger a refresh - the sidebar will re-render with updated todos
 					setRefreshKey((k) => k + 1);
 				}
 			},
@@ -162,7 +183,7 @@ export function SessionDetailContent({
 		todosSubscriptionConfig,
 	);
 
-	// Subscription for file changes - triggers a refresh when files are modified
+	// Subscription for file changes
 	const filesSubscriptionConfig = useMemo<
 		GraphQLSubscriptionConfig<SessionDetailContentFilesSubscription>
 	>(
@@ -172,7 +193,6 @@ export function SessionDetailContent({
 			onNext: (response) => {
 				const event = response?.sessionFilesChanged;
 				if (event?.sessionId === sessionId) {
-					// Trigger a refresh - the sidebar will re-render with updated file changes
 					setRefreshKey((k) => k + 1);
 				}
 			},
@@ -187,7 +207,7 @@ export function SessionDetailContent({
 		filesSubscriptionConfig,
 	);
 
-	// Subscription for hook changes - triggers a refresh when hooks run or complete
+	// Subscription for hook changes
 	const hooksSubscriptionConfig = useMemo<
 		GraphQLSubscriptionConfig<SessionDetailContentHooksSubscription>
 	>(
@@ -197,7 +217,6 @@ export function SessionDetailContent({
 			onNext: (response) => {
 				const event = response?.sessionHooksChanged;
 				if (event?.sessionId === sessionId) {
-					// Trigger a refresh - the sidebar will re-render with updated hooks
 					setRefreshKey((k) => k + 1);
 				}
 			},
@@ -213,13 +232,10 @@ export function SessionDetailContent({
 	);
 
 	const handleBack = () => {
-		// For agent tasks, go back to parent session
 		if (isAgentTask && parentSessionId) {
 			navigate(`/sessions/${parentSessionId}`);
 			return;
 		}
-
-		// Navigate back to project sessions if projectId available, else global sessions
 		if (session?.projectId) {
 			navigate(`/projects/${session.projectId}/sessions`);
 		} else {
@@ -249,6 +265,13 @@ export function SessionDetailContent({
 		);
 	}
 
+	// Count tasks for tab badge (native tasks + todos)
+	const nativeTaskCount = (session.nativeTasks ?? []).filter(
+		(t) => t != null && !!t.id,
+	).length;
+	const todoCount = session.todoCounts?.total ?? 0;
+	const taskCount = nativeTaskCount + todoCount;
+
 	return (
 		<Box
 			style={{
@@ -259,92 +282,64 @@ export function SessionDetailContent({
 				overflow: "hidden",
 			}}
 		>
-			{/* Fixed header - not in scroll area */}
-			<Box
-				style={{
-					flexShrink: 0,
-					backgroundColor: colors.bg.primary,
-					paddingTop: spacing.md,
-					paddingBottom: spacing.sm,
-					paddingLeft: spacing.md,
-					paddingRight: spacing.md,
-					borderBottom: `1px solid ${colors.border.default}`,
-				}}
-			>
-				<HStack
-					justify="space-between"
-					align="center"
-					style={{ marginBottom: spacing.xs }}
-				>
-					<HStack gap="sm" align="center" style={{ flexWrap: "wrap", flex: 1 }}>
-						<Heading size="sm">{session.name}</Heading>
-						{isAgentTask && <Badge variant="purple">Agent Task</Badge>}
-						<Text color="muted" size="sm">
-							|
-						</Text>
-						<Text size="sm" color="secondary">
-							{session.projectName}
-						</Text>
-						<Text color="muted" size="sm">
-							|
-						</Text>
-						<Text size="xs" color="muted">
-							{formatDuration(session.startedAt, session.updatedAt)}
-						</Text>
-						<Text color="muted" size="sm">
-							|
-						</Text>
-						<Text size="xs" color="muted">
-							{session.messageCount} msgs
-						</Text>
-					</HStack>
-					<Button variant="secondary" size="sm" onClick={handleBack}>
-						Back to Sessions
-					</Button>
-				</HStack>
-			</Box>
+			{/* Sticky header banner */}
+			<SessionDetailHeader
+				name={session.name}
+				summary={session.summary}
+				sessionId={sessionId}
+				projectName={session.projectName}
+				gitBranch={session.gitBranch}
+				prNumber={session.prNumber}
+				prUrl={session.prUrl}
+				teamName={session.teamName}
+				messageCount={session.messageCount ?? 0}
+				turnCount={session.turnCount}
+				duration={session.duration}
+				estimatedCostUsd={session.estimatedCostUsd}
+				compactionCount={session.compactionCount}
+				status={session.status}
+				isAgentTask={isAgentTask}
+				onBack={handleBack}
+			/>
 
-			{/* Main content area with messages and sidebar */}
+			{/* Tab bar */}
+			<SessionDetailTabs
+				activeTab={activeTab}
+				onTabChange={setActiveTab}
+				messageCount={session.messageCount ?? 0}
+				taskCount={taskCount}
+				fileCount={session.fileChangeCount ?? 0}
+			/>
+
+			{/* Tab content */}
 			<Box
 				style={{
 					display: "flex",
-					flexDirection: "row",
+					flexDirection: "column",
 					flex: 1,
 					minHeight: 0,
 					overflow: "hidden",
 				}}
 			>
-				{/* Messages scroll area - takes most space */}
+				{/* Messages tab - ALWAYS MOUNTED, display toggled to preserve scroll */}
 				<Box
 					style={{
-						flex: 1,
-						minWidth: 0,
-						minHeight: 0,
-						display: "flex",
+						display: activeTab === "messages" ? "flex" : "none",
 						flexDirection: "column",
+						flex: 1,
+						minHeight: 0,
 						overflow: "hidden",
 					}}
 				>
 					<SessionMessages fragmentRef={session} sessionId={sessionId} />
 				</Box>
 
-				{/* Expensive fields sidebar - checkpoints, hooks, file changes */}
-				<Box
-					style={{
-						width: 360,
-						minWidth: 360,
-						maxWidth: 360,
-						flexBasis: 360,
-						flexShrink: 0,
-						flexGrow: 0,
-						borderLeft: `1px solid ${colors.border.default}`,
-						overflowY: "auto",
-						backgroundColor: colors.bg.secondary,
-						padding: spacing.md,
-					}}
-				>
-					<SessionSidebar fragmentRef={session} />
-				</Box>
+				{/* Other tabs render/unmount on switch */}
+				{activeTab === "overview" && (
+					<OverviewTab fragmentRef={session} onSwitchTab={setActiveTab} />
+				)}
+				{activeTab === "tasks" && <TasksTab fragmentRef={session} />}
+				{activeTab === "files" && <FilesTab fragmentRef={session} />}
 			</Box>
 		</Box>
 	);

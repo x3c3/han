@@ -11,6 +11,7 @@ import { Box } from "@/components/atoms/Box.tsx";
 import { HStack } from "@/components/atoms/HStack.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
+import { cleanSessionSummary } from "@/components/helpers/formatters.ts";
 import { SessionRow } from "@/components/molecules/SessionRow.tsx";
 
 interface SessionEffectiveness {
@@ -34,7 +35,8 @@ interface SessionEffectivenessCardProps {
 }
 
 function getSessionLabel(session: SessionEffectiveness): string {
-	if (session.summary) return session.summary;
+	const cleaned = cleanSessionSummary(session.summary);
+	if (cleaned) return cleaned;
 	if (session.slug) return session.slug;
 	return `${session.sessionId.slice(0, 12)}...`;
 }

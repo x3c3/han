@@ -296,7 +296,7 @@ export async function handleSyncRequest(
     const response = await processSyncPayload(
       payload,
       store,
-      keyValidation.teamId ?? keyValidation.userId!
+      keyValidation.teamId ?? (keyValidation.userId as string)
     );
 
     // Determine HTTP status code

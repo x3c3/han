@@ -2,6 +2,9 @@
 
 pub mod m20260215_000001_initial;
 pub mod m20260215_000002_team_entities;
+pub mod m20260220_add_session_pr_team;
+pub mod m20260222_tool_call_results;
+pub mod m20260223_performance_indexes;
 
 use sea_orm::DatabaseConnection;
 use sea_orm_migration::prelude::*;
@@ -14,6 +17,9 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20260215_000001_initial::Migration),
             Box::new(m20260215_000002_team_entities::Migration),
+            Box::new(m20260220_add_session_pr_team::Migration),
+            Box::new(m20260222_tool_call_results::Migration),
+            Box::new(m20260223_performance_indexes::Migration),
         ]
     }
 }

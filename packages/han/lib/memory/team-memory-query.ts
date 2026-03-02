@@ -11,7 +11,10 @@
  */
 
 import type { Session } from '../grpc/data-access.ts';
-import { sessions as dbSessions, searchMessages as grpcSearchMessages } from '../grpc/data-access.ts';
+import {
+  sessions as dbSessions,
+  searchMessages as grpcSearchMessages,
+} from '../grpc/data-access.ts';
 
 import type {
   MemoryScope,

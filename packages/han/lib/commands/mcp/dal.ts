@@ -14,9 +14,11 @@
  * Other layers use the indexer functions which also target the same database.
  */
 
-import { join } from 'node:path';
 import { createInterface } from 'node:readline';
-import { getHanDataDir } from '../../config/claude-settings.ts';
+import {
+  fts as grpcFts,
+  searchMessages as grpcSearchMessages,
+} from '../../grpc/data-access.ts';
 import {
   detectTemporalQuery,
   grepTranscripts,
@@ -39,7 +41,6 @@ import {
   multiStrategySearchWithFallbacks,
   type SearchStrategy,
 } from '../../memory/multi-strategy-search.ts';
-import { searchMessages as grpcSearchMessages, fts as grpcFts } from '../../grpc/data-access.ts';
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';

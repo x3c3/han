@@ -17,7 +17,7 @@ import { ConnectionOverlay } from "./ConnectionOverlay.tsx";
 
 type GatePhase = "disconnected" | "transitioning" | "connected";
 
-const OVERLAY_FADE_MS = 400;
+const OVERLAY_FADE_MS = 200;
 
 interface ConnectionGateProps {
 	children: React.ReactNode;
@@ -74,18 +74,31 @@ export function ConnectionGate({
 		return <>{children}</>;
 	}
 
-	// Disconnected or transitioning: show overlay as standalone pane
-	const isTransitioning = phase === "transitioning";
+	// Transitioning: render children behind a fading overlay so Relay
+	// queries start fetching while the overlay fades out.
+	if (phase === "transitioning") {
+		return (
+			<>
+				{children}
+				<Box
+					style={{
+						position: "fixed" as const,
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						zIndex: 100,
+						opacity: 0,
+						transition: `opacity ${OVERLAY_FADE_MS}ms ease`,
+						pointerEvents: "none" as const,
+					}}
+				>
+					<ConnectionOverlay />
+				</Box>
+			</>
+		);
+	}
 
-	const overlayContainerStyle = {
-		opacity: isTransitioning ? 0 : 1,
-		transition: `opacity ${OVERLAY_FADE_MS}ms ease`,
-		pointerEvents: (isTransitioning ? "none" : "auto") as "none" | "auto",
-	};
-
-	return (
-		<Box style={overlayContainerStyle}>
-			<ConnectionOverlay />
-		</Box>
-	);
+	// Disconnected: show overlay as standalone pane
+	return <ConnectionOverlay />;
 }

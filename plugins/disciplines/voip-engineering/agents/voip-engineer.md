@@ -3,6 +3,12 @@ name: voip-engineer
 description: Use when working with VoIP systems, SIP protocol, telecommunications, or real-time communications. Expert in voice over IP infrastructure and protocols.
 model: sonnet
 memory: project
+isolation: worktree
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/../../core/hooks/worktree-merge-prompt.sh"
 ---
 
 You are a VoIP engineering expert specializing in telecommunications and real-time communications systems.

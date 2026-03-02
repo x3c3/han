@@ -16,10 +16,12 @@
 
 use crate::parser::{jsonl_read_page, JsonlLine};
 use crate::sentiment;
+#[allow(unused_imports)]
 use crate::task_timeline::{build_task_timeline, TaskTimeline};
 use crate::types::{
     FileEventType, IndexResult, IntermediateParsedLine, MessageType, ParsedHanEvent, ParsedMessage,
 };
+#[allow(unused_imports)]
 use chrono::{DateTime, Duration, Utc};
 use han_db::crud;
 use han_db::entities::messages;
@@ -118,28 +120,53 @@ fn finalize_parsed_message(
     let json = &parsed.json;
     let message_type = parsed.message_type;
 
-    let (role, content) = match message_type {
+    // Skip assistant messages that contain only whitespace text content.
+    // Claude Code writes each content block as a separate JSONL line, all with
+    // stop_reason: null (meaning "more blocks coming"). We don't filter on
+    // stop_reason — instead we filter on actual content quality.
+    if message_type == MessageType::Assistant {
+        if let Some(content) = json
+            .get("message")
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.as_array())
+        {
+            let only_whitespace_text = !content.is_empty()
+                && content.iter().all(|block| {
+                    block.get("type").and_then(|t| t.as_str()) == Some("text")
+                        && block
+                            .get("text")
+                            .and_then(|t| t.as_str())
+                            .map_or(true, |s| s.trim().is_empty())
+                });
+            if only_whitespace_text {
+                return None;
+            }
+        }
+    }
+
+    let (role, content, compact_type) = match message_type {
         MessageType::User => {
             let content = extract_message_content(json);
-            (Some("user".to_string()), content)
+            (Some("user".to_string()), content, None)
         }
         MessageType::Assistant => {
             let content = extract_message_content(json);
-            (Some("assistant".to_string()), content)
+            (Some("assistant".to_string()), content, None)
         }
         MessageType::Summary => {
             let summary = json
                 .get("summary")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            (None, summary)
+            let ct = detect_compact_type(json, summary.as_deref());
+            (None, summary, ct)
         }
         MessageType::System => {
             let content = extract_message_content(json);
-            (Some("system".to_string()), content)
+            (Some("system".to_string()), content, None)
         }
-        MessageType::FileHistorySnapshot => (None, None),
-        _ => (None, None),
+        MessageType::FileHistorySnapshot => (None, None, None),
+        _ => (None, None, None),
     };
 
     let (tool_name, tool_input, tool_result) = match message_type {
@@ -216,6 +243,7 @@ fn finalize_parsed_message(
         lines_added,
         lines_removed,
         files_changed,
+        compact_type,
     })
 }
 
@@ -487,6 +515,45 @@ fn extract_session_id_from_agent_file(file_path: &Path) -> Option<String> {
     json.get("sessionId")?.as_str().map(|s| s.to_string())
 }
 
+/// Detect the git repo for a project path and return its database ID.
+///
+/// Runs `git -C <path> remote get-url origin` to find the remote URL,
+/// then upserts the repo into the database and returns the ID.
+/// Returns None if the path doesn't exist, isn't a git repo, or has no remote.
+async fn detect_repo_for_path(db: &DatabaseConnection, project_path: &str) -> Option<String> {
+    let path = Path::new(project_path);
+    if !path.exists() {
+        return None;
+    }
+
+    // Run git to get the remote URL
+    let output = std::process::Command::new("git")
+        .args(["-C", project_path, "remote", "get-url", "origin"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let remote = String::from_utf8(output.stdout).ok()?.trim().to_string();
+    if remote.is_empty() {
+        return None;
+    }
+
+    // Derive repo name from remote URL
+    let name = remote
+        .rsplit('/')
+        .next()
+        .unwrap_or(&remote)
+        .trim_end_matches(".git")
+        .to_string();
+
+    // Upsert repo and return its ID
+    let repo = crud::repos::upsert(db, remote, name, None).await.ok()?;
+    Some(repo.id)
+}
+
 /// Extract project slug from file path.
 fn extract_project_slug(file_path: &Path) -> Option<String> {
     let components: Vec<_> = file_path.components().collect();
@@ -503,29 +570,103 @@ fn extract_project_slug(file_path: &Path) -> Option<String> {
 }
 
 /// Decode project path from slug.
+///
+/// Claude Code encodes project paths by replacing `/` and `.` with `-`.
+/// The challenge is that directory names may also contain `-`, so a naive
+/// "replace all `-` with `/`" breaks paths like `/foo/bar/han-1` which
+/// becomes `/foo/bar/han/1` (wrong).
+///
+/// Strategy: greedily build the path from left to right, testing each
+/// candidate directory against the filesystem. When a segment doesn't
+/// exist as a directory, try merging it with the previous segment using
+/// a hyphen (i.e., the `-` was literal, not a path separator).
 fn decode_project_path(slug: &str) -> String {
-    let naive_path = slug.replace('-', "/");
-    if Path::new(&naive_path).exists() {
-        return naive_path;
+    // Split slug into segments on `-`
+    let segments: Vec<&str> = slug.split('-').collect();
+    if segments.is_empty() {
+        return slug.to_string();
     }
 
-    let domain_patterns = [
-        ("/github/com/", "/github.com/"),
-        ("/gitlab/com/", "/gitlab.com/"),
-        ("/bitbucket/org/", "/bitbucket.org/"),
+    // Known domain patterns: `github-com` → `github.com`
+    let domain_dots = [
+        ("github", "com"),
+        ("gitlab", "com"),
+        ("bitbucket", "org"),
     ];
 
-    let mut candidate = naive_path;
-    for (from, to) in domain_patterns {
-        if candidate.contains(from) {
-            let fixed = candidate.replace(from, to);
-            if Path::new(&fixed).exists() {
-                return fixed;
-            }
-            candidate = fixed;
-        }
+    let mut path = String::new();
+    let mut i = 0;
+
+    // Skip leading empty segment from slugs starting with `-`
+    if segments[0].is_empty() {
+        path.push('/');
+        i = 1;
     }
-    candidate
+
+    while i < segments.len() {
+        let seg = segments[i];
+
+        // Check for domain patterns (e.g., "github" + "com" → "github.com")
+        if i + 1 < segments.len() {
+            let next = segments[i + 1];
+            let is_domain = domain_dots.iter().any(|(a, b)| *a == seg && *b == next);
+            if is_domain {
+                let domain = format!("{seg}.{next}");
+                let candidate = if path.ends_with('/') {
+                    format!("{path}{domain}")
+                } else {
+                    format!("{path}/{domain}")
+                };
+                if Path::new(&candidate).is_dir() {
+                    path = candidate;
+                    i += 2;
+                    continue;
+                }
+            }
+        }
+
+        // Try adding as a new path segment (/-separated)
+        let as_dir = if path.ends_with('/') || path.is_empty() {
+            format!("{path}{seg}")
+        } else {
+            format!("{path}/{seg}")
+        };
+
+        // Try merging with previous segment via hyphen (literal `-`)
+        let as_merged = if !path.ends_with('/') && !path.is_empty() {
+            format!("{path}-{seg}")
+        } else {
+            String::new()
+        };
+
+        if i == segments.len() - 1 {
+            // Last segment: prefer whichever path exists
+            if !as_merged.is_empty() && Path::new(&as_merged).exists() {
+                path = as_merged;
+            } else if Path::new(&as_dir).exists() {
+                path = as_dir;
+            } else if !as_merged.is_empty() && !Path::new(&as_dir).exists() {
+                // Neither exists — try merged (could be a worktree suffix)
+                path = as_merged;
+            } else {
+                path = as_dir;
+            }
+        } else {
+            // Not last: prefer whichever resolves to an existing directory
+            if Path::new(&as_dir).is_dir() {
+                path = as_dir;
+            } else if !as_merged.is_empty() && Path::new(&as_merged).is_dir() {
+                path = as_merged;
+            } else {
+                // Neither exists yet — default to dir separator
+                path = as_dir;
+            }
+        }
+
+        i += 1;
+    }
+
+    path
 }
 
 // ============================================================================
@@ -644,34 +785,32 @@ fn is_file_modification_tool(tool_name: &str) -> bool {
     matches!(tool_name, "Write" | "Edit" | "NotebookEdit")
 }
 
-fn detect_compact_type(raw_json: &str, content: Option<&str>) -> Option<String> {
-    if let Ok(json) = serde_json::from_str::<Value>(raw_json) {
-        if let Some(msg_type) = json.get("type").and_then(|t| t.as_str()) {
-            if msg_type == "auto_compact" || msg_type == "compact" {
-                return Some(msg_type.to_string());
-            }
+fn detect_compact_type(json: &Value, content: Option<&str>) -> Option<String> {
+    if let Some(msg_type) = json.get("type").and_then(|t| t.as_str()) {
+        if msg_type == "auto_compact" || msg_type == "compact" {
+            return Some(msg_type.to_string());
         }
-        if json
-            .get("is_compact")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false)
-        {
-            return Some("compact".to_string());
-        }
-        if json
-            .get("isCompact")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false)
-        {
-            return Some("compact".to_string());
-        }
-        if json
-            .get("auto_compacted")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false)
-        {
-            return Some("auto_compact".to_string());
-        }
+    }
+    if json
+        .get("is_compact")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return Some("compact".to_string());
+    }
+    if json
+        .get("isCompact")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return Some("compact".to_string());
+    }
+    if json
+        .get("auto_compacted")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return Some("auto_compact".to_string());
     }
     if let Some(text) = content {
         if text.contains("This session is being continued from a previous conversation") {
@@ -788,6 +927,73 @@ fn md5_hash(input: &str) -> u64 {
     hasher.finish()
 }
 
+/// Extract tool_result content blocks from a user message's raw JSON
+/// and append them to the tool_call_results batch for indexing.
+fn extract_tool_call_results(
+    raw_json: &str,
+    session_id: &str,
+    message_id: &str,
+    batch: &mut Vec<han_db::entities::tool_call_results::ActiveModel>,
+) {
+    let Ok(json) = serde_json::from_str::<Value>(raw_json) else { return };
+    let Some(content) = json
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_array())
+    else {
+        return;
+    };
+
+    for block in content {
+        if block.get("type").and_then(|t| t.as_str()) != Some("tool_result") {
+            continue;
+        }
+        let Some(tool_call_id) = block.get("tool_use_id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+
+        let is_error = block.get("is_error").and_then(|e| e.as_bool()).unwrap_or(false);
+        let text_content = extract_tool_result_text(block);
+        let has_image = block
+            .get("content")
+            .and_then(|c| c.as_array())
+            .map(|arr| arr.iter().any(|c| c.get("type").and_then(|t| t.as_str()) == Some("image")))
+            .unwrap_or(false);
+
+        batch.push(han_db::entities::tool_call_results::ActiveModel {
+            tool_call_id: Set(tool_call_id.to_string()),
+            session_id: Set(session_id.to_string()),
+            message_id: Set(message_id.to_string()),
+            content: Set(text_content),
+            is_error: Set(is_error),
+            has_image: Set(has_image),
+        });
+    }
+}
+
+/// Extract text content from a tool_result block's content field.
+fn extract_tool_result_text(block: &Value) -> String {
+    if let Some(content) = block.get("content") {
+        if let Some(s) = content.as_str() {
+            return s.to_string();
+        }
+        if let Some(arr) = content.as_array() {
+            return arr
+                .iter()
+                .filter_map(|c| {
+                    if c.get("type").and_then(|t| t.as_str()) == Some("text") {
+                        c.get("text").and_then(|t| t.as_str()).map(|s| s.to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+        }
+    }
+    String::new()
+}
+
 async fn extract_and_save_task_create(
     db: &DatabaseConnection,
     session_id: &str,
@@ -795,6 +1001,7 @@ async fn extract_and_save_task_create(
     tool_input: &str,
     timestamp: &str,
     line_number: i32,
+    task_create_ids: &mut Vec<String>,
 ) {
     let input: Value = match serde_json::from_str(tool_input) {
         Ok(v) => v,
@@ -813,6 +1020,9 @@ async fn extract_and_save_task_create(
         .and_then(|a| a.as_str())
         .map(|s| s.to_string());
     let task_id = format!("{:x}", md5_hash(&format!("{}{}", session_id, subject)));
+
+    // Track sequential position → hash ID for TaskUpdate resolution
+    task_create_ids.push(task_id.clone());
 
     let _ = crud::native_tasks::create(
         db,
@@ -835,15 +1045,32 @@ async fn extract_and_save_task_update(
     tool_input: &str,
     timestamp: &str,
     line_number: i32,
+    task_create_ids: &[String],
 ) {
     let input: Value = match serde_json::from_str(tool_input) {
         Ok(v) => v,
         Err(_) => return,
     };
-    let task_id = match input.get("taskId").and_then(|t| t.as_str()) {
+    let raw_task_id = match input.get("taskId").and_then(|t| t.as_str()) {
         Some(id) => id.to_string(),
         None => return,
     };
+
+    // Claude Code assigns sequential IDs ("1", "2", ...) to tasks.
+    // Our indexer stores tasks with hash-based IDs (md5 of session_id + subject).
+    // Use the in-memory task_create_ids vec which tracks every TaskCreate in order,
+    // including duplicates. This correctly maps sequential ID N to the hash ID
+    // of the Nth TaskCreate call.
+    let task_id = if let Ok(seq_num) = raw_task_id.parse::<usize>() {
+        if seq_num >= 1 && seq_num <= task_create_ids.len() {
+            task_create_ids[seq_num - 1].clone()
+        } else {
+            raw_task_id
+        }
+    } else {
+        raw_task_id
+    };
+
     let status = input
         .get("status")
         .and_then(|s| s.as_str())
@@ -895,6 +1122,73 @@ async fn extract_and_save_task_update(
         line_number,
     )
     .await;
+}
+
+/// Extract PR info from a Bash tool result that might contain `gh pr create` output.
+/// Returns (pr_number, pr_url) if a GitHub PR URL is found.
+fn extract_pr_from_bash_result(tool_result: &str) -> Option<(i32, String)> {
+    // Match GitHub PR URLs like https://github.com/owner/repo/pull/123
+    let re_pattern = "https://github\\.com/[^/]+/[^/]+/pull/(\\d+)";
+    let re = regex::Regex::new(re_pattern).ok()?;
+    let caps = re.captures(tool_result)?;
+    let pr_number: i32 = caps.get(1)?.as_str().parse().ok()?;
+    let pr_url = caps.get(0)?.as_str().to_string();
+    Some((pr_number, pr_url))
+}
+
+/// Extract team name from a TeamCreate tool input.
+fn extract_team_name_from_input(tool_input: &str) -> Option<String> {
+    let input: Value = serde_json::from_str(tool_input).ok()?;
+    // Try common field names for team name
+    input
+        .get("team_name")
+        .or_else(|| input.get("teamName"))
+        .or_else(|| input.get("name"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
+/// Determine whether a user message qualifies for sentiment analysis.
+/// Excludes: isMeta messages, tool-result-only messages, and commands with no args.
+fn should_compute_sentiment(raw_json: &str) -> bool {
+    let json: Value = match serde_json::from_str(raw_json) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+
+    // Exclude isMeta messages (system-injected, not real human input)
+    if json.get("isMeta").and_then(|v| v.as_bool()).unwrap_or(false) {
+        return false;
+    }
+
+    // Exclude tool-result-only messages (all content blocks are tool_result)
+    if let Some(content) = json
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_array())
+    {
+        if !content.is_empty()
+            && content
+                .iter()
+                .all(|b| b.get("type").and_then(|t| t.as_str()) == Some("tool_result"))
+        {
+            return false;
+        }
+    }
+
+    // For command messages, only analyze if they have args (real user input)
+    if json
+        .get("isCommand")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        let args = json.get("args").and_then(|v| v.as_str()).unwrap_or("");
+        if args.is_empty() {
+            return false;
+        }
+    }
+
+    true
 }
 
 fn compute_sentiment(
@@ -1010,16 +1304,20 @@ pub async fn index_session_file(
     let project_slug = extract_project_slug(path);
     let project_id = if let Some(slug) = &project_slug {
         let decoded_path = decode_project_path(slug);
-        let project_name = path
-            .parent()
-            .and_then(|p| p.file_name())
+        // Derive human-readable name from the decoded filesystem path
+        // e.g. "/Volumes/dev/src/github.com/thebushidocollective/han" → "han"
+        let project_name = Path::new(&decoded_path)
+            .file_name()
             .and_then(|n| n.to_str())
             .map(|s| s.to_string())
             .unwrap_or_else(|| slug.clone());
 
+        // Detect git repo from project path
+        let repo_id = detect_repo_for_path(db, &decoded_path).await;
+
         let project = crud::projects::upsert(
             db,
-            None, // repo_id - skip git detection for now
+            repo_id,
             slug.clone(),
             decoded_path,
             None,
@@ -1060,58 +1358,49 @@ pub async fn index_session_file(
         0
     };
 
-    // Pass 1: Read all lines, build uuid→timestamp map
-    let batch_size = 1000u32;
-    let mut offset = start_line;
+    // Pass 1: Read all new lines in a single pass (file is mmapped, so this is efficient).
+    // Using u32::MAX as limit reads from start_line to EOF in one mmap + one byte scan,
+    // eliminating the repeated file opens and byte scans of the old batched loop.
     let mut intermediate_lines: Vec<IntermediateParsedLine> = Vec::new();
     let mut uuid_to_timestamp: HashMap<String, String> = HashMap::new();
     let mut max_line = last_line;
     let mut session_slug: Option<String> = None;
 
-    loop {
-        let result = jsonl_read_page(path, offset, batch_size)?;
-        if result.lines.is_empty() {
-            break;
-        }
-        for line in &result.lines {
-            if let Some(parsed) = parse_jsonl_line_intermediate(line) {
-                if let Some(ref ts) = parsed.direct_timestamp {
-                    uuid_to_timestamp.insert(parsed.uuid.clone(), ts.clone());
-                }
-                if parsed.message_type == MessageType::FileHistorySnapshot {
-                    if let Some(ts) = parsed
-                        .json
-                        .get("snapshot")
-                        .and_then(|s| s.get("timestamp"))
-                        .and_then(|t| t.as_str())
-                    {
-                        uuid_to_timestamp.insert(parsed.uuid.clone(), ts.to_string());
-                    }
-                }
-                if session_slug.is_none() {
-                    if let Some(slug) = parsed.json.get("slug").and_then(|s| s.as_str()) {
-                        session_slug = Some(slug.to_string());
-                    }
-                }
-                if line.line_number as i32 > max_line {
-                    max_line = line.line_number as i32;
-                }
-                intermediate_lines.push(parsed);
+    let result = jsonl_read_page(path, start_line, u32::MAX)?;
+    for line in &result.lines {
+        if let Some(parsed) = parse_jsonl_line_intermediate(line) {
+            if let Some(ref ts) = parsed.direct_timestamp {
+                uuid_to_timestamp.insert(parsed.uuid.clone(), ts.clone());
             }
-        }
-        offset = result.next_offset;
-        if !result.has_more {
-            break;
+            if parsed.message_type == MessageType::FileHistorySnapshot {
+                if let Some(ts) = parsed
+                    .json
+                    .get("snapshot")
+                    .and_then(|s| s.get("timestamp"))
+                    .and_then(|t| t.as_str())
+                {
+                    uuid_to_timestamp.insert(parsed.uuid.clone(), ts.to_string());
+                }
+            }
+            if session_slug.is_none() {
+                if let Some(slug) = parsed.json.get("slug").and_then(|s| s.as_str()) {
+                    session_slug = Some(slug.to_string());
+                }
+            }
+            if line.line_number as i32 > max_line {
+                max_line = line.line_number as i32;
+            }
+            intermediate_lines.push(parsed);
         }
     }
-
-    // Build task timeline for sentiment task association
-    let task_timeline = build_task_timeline(db).await;
 
     // Pass 2: Finalize messages and insert in batches
     let mut total_indexed = 0u32;
     let mut messages_batch: Vec<messages::ActiveModel> = Vec::new();
+    let mut tool_call_results_batch: Vec<han_db::entities::tool_call_results::ActiveModel> = Vec::new();
     let mut last_known_timestamp: Option<String> = None;
+    // Track sequential TaskCreate positions for TaskUpdate ID resolution
+    let mut task_create_ids: Vec<String> = Vec::new();
 
     for parsed in intermediate_lines {
         let line_number = parsed.line_number;
@@ -1157,6 +1446,7 @@ pub async fn index_session_file(
                             ti,
                             &message_timestamp,
                             line_number,
+                            &mut task_create_ids,
                         )
                         .await;
                     }
@@ -1168,8 +1458,24 @@ pub async fn index_session_file(
                             ti,
                             &message_timestamp,
                             line_number,
+                            &task_create_ids,
                         )
                         .await;
+                    }
+                    // Detect TeamCreate tool calls for team_name
+                    if tn == "TeamCreate" {
+                        if let Some(team_name) = extract_team_name_from_input(ti) {
+                            let _ = crud::sessions::update_team_name(db, &session_id, &team_name).await;
+                        }
+                    }
+                }
+            }
+
+            // Detect PR creation from Bash tool results
+            if finalized.message_type == MessageType::ToolResult {
+                if let Some(ref result) = finalized.tool_result {
+                    if let Some((pr_number, pr_url)) = extract_pr_from_bash_result(result) {
+                        let _ = crud::sessions::update_pr_info(db, &session_id, pr_number, &pr_url).await;
                     }
                 }
             }
@@ -1220,6 +1526,7 @@ pub async fn index_session_file(
                                                 &input.to_string(),
                                                 &message_timestamp,
                                                 line_number,
+                                                &mut task_create_ids,
                                             )
                                             .await;
                                         }
@@ -1233,9 +1540,49 @@ pub async fn index_session_file(
                                                 &input.to_string(),
                                                 &message_timestamp,
                                                 line_number,
+                                                &task_create_ids,
                                             )
                                             .await;
                                         }
+                                    }
+                                    // Detect TeamCreate for team_name
+                                    if tool_name == "TeamCreate" {
+                                        if let Some(input) = item.get("input") {
+                                            if let Some(team_name) = extract_team_name_from_input(&input.to_string()) {
+                                                let _ = crud::sessions::update_team_name(db, &session_id, &team_name).await;
+                                            }
+                                        }
+                                    }
+                                    // Index every tool_use as a separate message row
+                                    {
+                                        let tool_use_id = item
+                                            .get("id")
+                                            .and_then(|v| v.as_str())
+                                            .map(|s| s.to_string())
+                                            .unwrap_or_else(|| Uuid::new_v4().to_string());
+                                        let tool_input_str = item
+                                            .get("input")
+                                            .map(|v| v.to_string());
+                                        messages_batch.push(to_active_model(
+                                            tool_use_id,
+                                            &session_id,
+                                            finalized.agent_id.clone(),
+                                            Some(message_id.clone()),
+                                            "tool_use",
+                                            Some("assistant".to_string()),
+                                            None,
+                                            Some(tool_name.to_string()),
+                                            tool_input_str,
+                                            None,
+                                            Some(finalized.raw_json.clone()),
+                                            finalized.timestamp.clone(),
+                                            line_number,
+                                            source_file_name.clone(),
+                                            source_file_type.clone(),
+                                            None, None, None, None,
+                                            None, None, None, None,
+                                            None, None, None,
+                                        ));
                                     }
                                 }
                             }
@@ -1246,8 +1593,7 @@ pub async fn index_session_file(
 
             // Process summary/compact messages
             if finalized.message_type == MessageType::Summary {
-                let compact_type =
-                    detect_compact_type(&finalized.raw_json, finalized.content.as_deref());
+                let compact_type = finalized.compact_type.clone();
                 if let Some(ct) = compact_type {
                     let _ = crud::session_compacts::upsert(
                         db,
@@ -1290,11 +1636,19 @@ pub async fn index_session_file(
                         .await;
                     }
                 }
+
+                // Extract tool_result content blocks for the tool_call_results index
+                extract_tool_call_results(
+                    &finalized.raw_json,
+                    &session_id,
+                    &message_id,
+                    &mut tool_call_results_batch,
+                );
             }
 
-            // Compute sentiment for user messages
+            // Compute sentiment for real human user messages only
             let (sentiment_score, sentiment_level, frustration_score, frustration_level) =
-                if is_user_message {
+                if is_user_message && should_compute_sentiment(&finalized.raw_json) {
                     if let Some(ref content) = message_content {
                         compute_sentiment(content)
                     } else {
@@ -1333,21 +1687,8 @@ pub async fn index_session_file(
                 finalized.files_changed,
             ));
 
-            // Generate sentiment analysis event for user messages
-            if is_user_message {
-                if let Some(content) = &message_content {
-                    if let Some(sentiment_event) = generate_sentiment_event(
-                        &message_id,
-                        content,
-                        &message_timestamp,
-                        &session_id,
-                        &task_timeline,
-                        line_number,
-                    ) {
-                        messages_batch.push(sentiment_event);
-                    }
-                }
-            }
+            // NOTE: Separate sentiment_analysis events are no longer generated.
+            // Sentiment data is stored as columns on user message rows directly.
 
             // Batch insert every 100 messages
             if messages_batch.len() >= 100 {
@@ -1362,6 +1703,11 @@ pub async fn index_session_file(
     if !messages_batch.is_empty() {
         let count = crud::messages::insert_batch(db, std::mem::take(&mut messages_batch)).await?;
         total_indexed += count as u32;
+    }
+
+    // Insert tool call results index
+    if !tool_call_results_batch.is_empty() {
+        let _ = crud::tool_call_results::insert_batch(db, std::mem::take(&mut tool_call_results_batch)).await;
     }
 
     // =========================================================================
@@ -1471,13 +1817,13 @@ async fn update_aggregates(db: &DatabaseConnection, session_id: &str) {
     let _ = db.execute(Statement::from_sql_and_values(
         DbBackend::Sqlite,
         "INSERT OR REPLACE INTO daily_aggregates (date, session_count, message_count, input_tokens, output_tokens, cache_read_tokens, lines_added, lines_removed, files_changed) \
-         SELECT DATE(m.timestamp), COUNT(DISTINCT m.session_id), COUNT(*), \
+         SELECT DATE(m.timestamp, 'localtime'), COUNT(DISTINCT m.session_id), COUNT(*), \
                 COALESCE(SUM(m.input_tokens), 0), COALESCE(SUM(m.output_tokens), 0), \
                 COALESCE(SUM(m.cache_read_tokens), 0), COALESCE(SUM(m.lines_added), 0), \
                 COALESCE(SUM(m.lines_removed), 0), COALESCE(SUM(m.files_changed), 0) \
          FROM messages m \
-         WHERE DATE(m.timestamp) IN (SELECT DISTINCT DATE(timestamp) FROM messages WHERE session_id = ?) \
-         GROUP BY DATE(m.timestamp)",
+         WHERE DATE(m.timestamp, 'localtime') IN (SELECT DISTINCT DATE(timestamp, 'localtime') FROM messages WHERE session_id = ?) \
+         GROUP BY DATE(m.timestamp, 'localtime')",
         vec![session_id.into()],
     )).await;
 
@@ -1485,13 +1831,13 @@ async fn update_aggregates(db: &DatabaseConnection, session_id: &str) {
     let _ = db.execute(Statement::from_sql_and_values(
         DbBackend::Sqlite,
         "INSERT OR REPLACE INTO hourly_aggregates (hour, session_count, message_count, input_tokens, output_tokens, cache_read_tokens) \
-         SELECT CAST(strftime('%H', m.timestamp) AS INTEGER), COUNT(DISTINCT m.session_id), COUNT(*), \
+         SELECT CAST(strftime('%H', m.timestamp, 'localtime') AS INTEGER), COUNT(DISTINCT m.session_id), COUNT(*), \
                 COALESCE(SUM(m.input_tokens), 0), COALESCE(SUM(m.output_tokens), 0), \
                 COALESCE(SUM(m.cache_read_tokens), 0) \
          FROM messages m \
-         WHERE CAST(strftime('%H', m.timestamp) AS INTEGER) IN \
-               (SELECT DISTINCT CAST(strftime('%H', timestamp) AS INTEGER) FROM messages WHERE session_id = ?) \
-         GROUP BY CAST(strftime('%H', m.timestamp) AS INTEGER)",
+         WHERE CAST(strftime('%H', m.timestamp, 'localtime') AS INTEGER) IN \
+               (SELECT DISTINCT CAST(strftime('%H', timestamp, 'localtime') AS INTEGER) FROM messages WHERE session_id = ?) \
+         GROUP BY CAST(strftime('%H', m.timestamp, 'localtime') AS INTEGER)",
         vec![session_id.into()],
     )).await;
 
@@ -1512,6 +1858,9 @@ async fn update_aggregates(db: &DatabaseConnection, session_id: &str) {
 }
 
 /// Generate a sentiment analysis event message for a user message.
+/// NOTE: No longer called — sentiment data is stored inline on user message rows.
+/// Kept as dead code in case we need to regenerate events later.
+#[allow(dead_code)]
 fn generate_sentiment_event(
     message_id: &str,
     message_content: &str,
@@ -1771,12 +2120,14 @@ pub async fn index_project_directory(
         let result =
             index_session_file(db, &path.to_string_lossy(), source_config_dir).await?;
         results.push(result);
+        tokio::task::yield_now().await;
     }
 
     for path in &agent_files {
         let result =
             index_session_file(db, &path.to_string_lossy(), source_config_dir).await?;
         results.push(result);
+        tokio::task::yield_now().await;
     }
 
     Ok(results)
@@ -1887,6 +2238,7 @@ pub async fn full_scan_and_index(db: &DatabaseConnection) -> ProcessorResult<Vec
                         tracing::warn!("Failed to index project {:?}: {}", path, e);
                     }
                 }
+                tokio::task::yield_now().await;
             }
         }
     }
@@ -2036,26 +2388,31 @@ mod tests {
 
     #[test]
     fn test_detect_compact_type() {
+        let json: Value = serde_json::from_str(r#"{"type":"auto_compact"}"#).unwrap();
         assert_eq!(
-            detect_compact_type(r#"{"type":"auto_compact"}"#, None),
+            detect_compact_type(&json, None),
             Some("auto_compact".to_string())
         );
+        let json: Value = serde_json::from_str(r#"{"type":"compact"}"#).unwrap();
         assert_eq!(
-            detect_compact_type(r#"{"type":"compact"}"#, None),
+            detect_compact_type(&json, None),
             Some("compact".to_string())
         );
+        let json: Value = serde_json::from_str(r#"{"isCompact":true}"#).unwrap();
         assert_eq!(
-            detect_compact_type(r#"{"isCompact":true}"#, None),
+            detect_compact_type(&json, None),
             Some("compact".to_string())
         );
+        let json: Value = serde_json::from_str(r#"{}"#).unwrap();
         assert_eq!(
             detect_compact_type(
-                r#"{}"#,
+                &json,
                 Some("This session is being continued from a previous conversation")
             ),
             Some("continuation".to_string())
         );
-        assert_eq!(detect_compact_type(r#"{}"#, None), None);
+        let json: Value = serde_json::from_str(r#"{}"#).unwrap();
+        assert_eq!(detect_compact_type(&json, None), None);
     }
 
     #[test]

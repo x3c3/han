@@ -126,7 +126,7 @@ function requireAdmin(context: UserPermissionContext): AdminRole {
   if (!isAdmin) {
     throw new Error('Admin role required for this operation');
   }
-  return role!;
+  return role as AdminRole;
 }
 
 /**

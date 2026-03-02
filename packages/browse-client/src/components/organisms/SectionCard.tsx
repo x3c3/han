@@ -7,7 +7,14 @@
 
 import type React from "react";
 import type { CSSProperties } from "react";
-import { Card, Heading, HStack, Link, Text, VStack } from "../atoms/index.ts";
+import {
+	Card,
+	Heading,
+	HStack,
+	Pressable,
+	Text,
+	VStack,
+} from "../atoms/index.ts";
 
 interface SectionCardProps {
 	title: string;
@@ -30,11 +37,11 @@ export function SectionCard({
 						{title}
 					</Heading>
 					{onViewAll && (
-						<Link onClick={onViewAll}>
+						<Pressable onPress={onViewAll}>
 							<Text color="secondary" size="sm">
 								View All
 							</Text>
-						</Link>
+						</Pressable>
 					)}
 				</HStack>
 				{children}

@@ -71,14 +71,14 @@ export function MessageDetailPage() {
 			<Box style={{ padding: spacing.lg }}>
 				<VStack gap="md" align="stretch">
 					<Pressable
-						onPress={() => navigate("/")}
+						onPress={() => navigate(-1)}
 						style={{
 							flexDirection: "row",
 							alignItems: "center",
 							gap: spacing.xs,
 						}}
 					>
-						<Text color="accent">Back to Dashboard</Text>
+						<Text color="accent">Back</Text>
 					</Pressable>
 
 					<Heading size="lg">Message Detail</Heading>

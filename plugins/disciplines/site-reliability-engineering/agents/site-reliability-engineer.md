@@ -5,6 +5,12 @@ description: |
   monitoring, incident response, SLOs, error budgets, or building reliable
   distributed systems.
 memory: project
+isolation: worktree
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/../../core/hooks/worktree-merge-prompt.sh"
 ---
 
 # Site Reliability Engineer

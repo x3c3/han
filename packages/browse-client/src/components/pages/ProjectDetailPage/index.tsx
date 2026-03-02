@@ -17,7 +17,7 @@ import { HStack } from "@/components/atoms/HStack.tsx";
 import { Spinner } from "@/components/atoms/Spinner.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
-import { formatRelativeTime } from "../Shared/utils.ts";
+import { formatRelativeTime } from "@/components/helpers/formatters.ts";
 import type { ProjectDetailPageQuery as ProjectDetailPageQueryType } from "./__generated__/ProjectDetailPageQuery.graphql.ts";
 import { NavCard, PluginItem, StatCard, WorktreeItem } from "./components.ts";
 

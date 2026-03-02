@@ -7,7 +7,9 @@
 //! queries `type` as a shared field before using inline fragments on concrete types.
 
 use async_graphql::*;
+use async_graphql::dataloader::DataLoader;
 
+use crate::loaders::ToolResultByParentIdLoader;
 use super::enums::{ContentBlockType, ToolCategory};
 
 /// Content block interface - shared `type` field across all block types.
@@ -84,8 +86,29 @@ impl ToolUseBlock {
     async fn session_id(&self) -> Option<&str> { self.session_id.as_deref() }
     async fn agent_task_id(&self) -> Option<&str> { self.agent_task_id.as_deref() }
 
-    /// Tool result resolved inline (stub - will be populated via DataLoader).
-    async fn result(&self) -> Option<ToolResultBlock> { None }
+    /// Tool result resolved inline via DataLoader.
+    /// Looks up pre-indexed data from `tool_call_results` table — simple PK lookup.
+    async fn result(&self, ctx: &Context<'_>) -> Result<Option<ToolResultBlock>> {
+        let loader = ctx.data::<DataLoader<ToolResultByParentIdLoader>>()?;
+        let model = loader.load_one(self.tool_call_id.clone()).await?;
+        Ok(model.map(|m| {
+            let is_long = m.content.len() > 500;
+            let preview = if is_long {
+                format!("{}...", &m.content[..500])
+            } else {
+                m.content.clone()
+            };
+            ToolResultBlock {
+                block_type: ContentBlockType::ToolResult,
+                tool_call_id: m.tool_call_id,
+                content: m.content,
+                is_error: m.is_error,
+                is_long,
+                preview,
+                has_image: m.has_image,
+            }
+        }))
+    }
 
     /// Agent task reference (stub for backwards compatibility).
     async fn agent_task(&self) -> Option<AgentTask> { None }

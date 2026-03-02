@@ -433,18 +433,18 @@ export function DashboardContent({
 				</HStack>
 			</HStack>
 
-			{/* Stats grid - 5 columns */}
+			{/* Stats grid - auto-fit columns */}
 			<Box
 				style={{
 					display: "grid",
-					gridTemplateColumns: "repeat(5, 1fr)",
+					gridTemplateColumns: `repeat(${metrics.calibrationScore != null ? 5 : 4}, 1fr)`,
 					gap: theme.spacing.lg,
 				}}
 			>
 				{isProjectView ? (
 					<StatCard
 						label="Sessions"
-						value={sessions.length}
+						value={activity.totalSessions}
 						onClick={() => navigate(`/repos/${repoId}/sessions`)}
 					/>
 				) : (
@@ -465,15 +465,13 @@ export function DashboardContent({
 					value={`${Math.round((metrics.successRate ?? 0) * 100)}%`}
 					subValue={`${Math.round((metrics.averageConfidence ?? 0) * 100)}% confidence`}
 				/>
-				<StatCard
-					label="Calibration"
-					value={
-						metrics.calibrationScore
-							? `${Math.round(metrics.calibrationScore * 100)}%`
-							: "—"
-					}
-					subValue="Prediction accuracy"
-				/>
+				{metrics.calibrationScore != null && (
+					<StatCard
+						label="Calibration"
+						value={`${Math.round(metrics.calibrationScore * 100)}%`}
+						subValue="Prediction accuracy"
+					/>
+				)}
 				<StatCard
 					label={isProjectView ? "Project Plugins" : "User Plugins"}
 					value={

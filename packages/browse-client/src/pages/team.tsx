@@ -3,8 +3,8 @@
  *
  * Aggregate team metrics and activity visualization.
  */
-import TeamDashboardPage from '@/components/pages/TeamDashboardPage';
+import TeamDashboardPage from "@/components/pages/TeamDashboardPage";
 
 export default function Page() {
-  return <TeamDashboardPage />;
+	return <TeamDashboardPage />;
 }

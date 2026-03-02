@@ -286,6 +286,7 @@ function viteRnwCompatPlugin() {
 
 export default defineConfig({
 	root: projectRoot,
+	appType: "spa",
 	plugins: [
 		react(),
 		viteRelayPlugin(),

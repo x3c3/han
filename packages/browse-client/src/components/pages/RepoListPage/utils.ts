@@ -3,48 +3,23 @@
  */
 
 /**
- * Convert a repo ID to a git URL format
- * e.g., "github-com-TheBushidoCollective-han" -> "github.com/TheBushidoCollective/han"
+ * Format a git remote URL for display.
+ * e.g., "git@github.com:TheBushidoCollective/han.git" -> "github.com/TheBushidoCollective/han"
+ *        "https://github.com/org/repo.git" -> "github.com/org/repo"
  */
-export function formatRepoUrl(repoId: string): string {
-	// Handle github-com prefix
-	if (repoId.startsWith("github-com-")) {
-		const rest = repoId.slice("github-com-".length);
-		// Split by dash, first part is org, rest is repo name
-		const parts = rest.split("-");
-		if (parts.length >= 2) {
-			const org = parts[0];
-			const repo = parts.slice(1).join("-");
-			return `github.com/${org}/${repo}`;
-		}
-		return `github.com/${rest}`;
+export function formatRepoUrl(remote: string): string {
+	let url = remote;
+	// Strip trailing .git
+	url = url.replace(/\.git$/, "");
+	// Handle SSH format: git@host:path
+	const sshMatch = url.match(/^git@([^:]+):(.+)$/);
+	if (sshMatch) {
+		return `${sshMatch[1]}/${sshMatch[2]}`;
 	}
-
-	// Handle gitlab-com prefix
-	if (repoId.startsWith("gitlab-com-")) {
-		const rest = repoId.slice("gitlab-com-".length);
-		const parts = rest.split("-");
-		if (parts.length >= 2) {
-			const org = parts[0];
-			const repo = parts.slice(1).join("-");
-			return `gitlab.com/${org}/${repo}`;
-		}
-		return `gitlab.com/${rest}`;
+	// Handle HTTPS format: https://host/path
+	const httpsMatch = url.match(/^https?:\/\/(.+)$/);
+	if (httpsMatch) {
+		return httpsMatch[1];
 	}
-
-	// Handle bitbucket-org prefix
-	if (repoId.startsWith("bitbucket-org-")) {
-		const rest = repoId.slice("bitbucket-org-".length);
-		const parts = rest.split("-");
-		if (parts.length >= 2) {
-			const org = parts[0];
-			const repo = parts.slice(1).join("-");
-			return `bitbucket.org/${org}/${repo}`;
-		}
-		return `bitbucket.org/${rest}`;
-	}
-
-	// Fallback: replace first dash with dot, second dash with slash
-	// This handles generic patterns like "host-org-repo"
-	return repoId.replace(/-/, ".").replace(/-/, "/");
+	return url;
 }

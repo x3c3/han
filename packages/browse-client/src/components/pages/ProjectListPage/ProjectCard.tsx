@@ -15,8 +15,11 @@ import { HStack } from "@/components/atoms/HStack.tsx";
 import { Link } from "@/components/atoms/Link.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
+import {
+	formatRelativeTime,
+	pluralize,
+} from "@/components/helpers/formatters.ts";
 import { formatRepoUrl } from "../RepoListPage/utils.ts";
-import { formatRelativeTime } from "../Shared/utils.ts";
 import type { Project } from "./types.ts";
 import { countSubdirs } from "./utils.ts";
 
@@ -56,14 +59,19 @@ export function ProjectCard({ project }: ProjectCardProps): React.ReactElement {
 					<HStack justify="space-between" align="flex-start" gap="sm">
 						<VStack gap="xs" style={{ flex: 1, minWidth: 0 }}>
 							<Heading size="sm">{project.name}</Heading>
-							<Text
-								size="xs"
-								color="muted"
-								truncate
-								style={{ fontFamily: "monospace" }}
-							>
-								{formatRepoUrl(project.repoId)}
-							</Text>
+							{/* Only show repo URL when repoId is a real git remote, not a UUID */}
+							{project.repoId &&
+								(project.repoId.includes("/") ||
+									project.repoId.includes(".")) && (
+									<Text
+										size="xs"
+										color="muted"
+										truncate
+										style={{ fontFamily: "monospace" }}
+									>
+										{formatRepoUrl(project.repoId)}
+									</Text>
+								)}
 						</VStack>
 						<Text size="xs" color="secondary">
 							{formatRelativeTime(project.lastActivity)}
@@ -72,7 +80,9 @@ export function ProjectCard({ project }: ProjectCardProps): React.ReactElement {
 
 					{/* Stats badges */}
 					<HStack gap="sm" wrap style={{ marginTop: "auto" }}>
-						<Badge variant="default">{project.totalSessions} sessions</Badge>
+						<Badge variant="default">
+							{pluralize(project.totalSessions, "session")}
+						</Badge>
 						{subdirCount > 0 && (
 							<Badge variant="success">{subdirCount} subdirs</Badge>
 						)}
@@ -107,7 +117,7 @@ export function ProjectCard({ project }: ProjectCardProps): React.ReactElement {
 													{wt.name}
 												</Text>
 												<Text size="xs" color="secondary">
-													{wt.sessionCount} sessions
+													{pluralize(wt.sessionCount, "session")}
 												</Text>
 											</HStack>
 											{wt.subdirs && wt.subdirs.length > 0 && (
@@ -128,7 +138,7 @@ export function ProjectCard({ project }: ProjectCardProps): React.ReactElement {
 																{subdir.relativePath}
 															</Text>
 															<Text size="xs" color="muted">
-																{subdir.sessionCount} sessions
+																{pluralize(subdir.sessionCount, "session")}
 															</Text>
 														</HStack>
 													))}

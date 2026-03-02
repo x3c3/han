@@ -12,7 +12,10 @@ import { Heading } from "@/components/atoms/Heading.tsx";
 import { HStack } from "@/components/atoms/HStack.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
-import { formatRelativeTime } from "../Shared/utils.ts";
+import {
+	formatRelativeTime,
+	pluralize,
+} from "@/components/helpers/formatters.ts";
 import type { Repo } from "./types.ts";
 import { formatRepoUrl } from "./utils.ts";
 
@@ -41,7 +44,7 @@ export function RepoCard({ repo }: RepoCardProps): React.ReactElement {
 						<VStack gap="xs" style={{ flex: 1, minWidth: 0 }}>
 							<Heading size="sm">{repo.name}</Heading>
 							<Text size="xs" color="muted" truncate>
-								{formatRepoUrl(repo.repoId)}
+								{formatRepoUrl(repo.path)}
 							</Text>
 						</VStack>
 						<Text size="xs" color="secondary">
@@ -51,7 +54,9 @@ export function RepoCard({ repo }: RepoCardProps): React.ReactElement {
 
 					{/* Stats badges */}
 					<HStack gap="sm" wrap style={{ marginTop: "auto" }}>
-						<Badge variant="default">{repo.totalSessions} sessions</Badge>
+						<Badge variant="default">
+							{pluralize(repo.totalSessions, "session")}
+						</Badge>
 					</HStack>
 				</VStack>
 			</Card>

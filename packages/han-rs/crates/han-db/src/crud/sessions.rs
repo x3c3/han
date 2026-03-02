@@ -24,6 +24,9 @@ pub async fn upsert(
         transcript_path: Set(transcript_path),
         source_config_dir: Set(source_config_dir),
         last_indexed_line: Set(Some(0)),
+        pr_number: Set(None),
+        pr_url: Set(None),
+        team_name: Set(None),
     })
     .on_conflict(
         sea_query::OnConflict::column(sessions::Column::Id)
@@ -101,6 +104,38 @@ pub async fn list(
 pub async fn update_last_indexed_line(db: &DatabaseConnection, session_id: &str, line_number: i32) -> DbResult<bool> {
     let res = sessions::Entity::update_many()
         .col_expr(sessions::Column::LastIndexedLine, Expr::value(line_number))
+        .filter(sessions::Column::Id.eq(session_id))
+        .exec(db)
+        .await
+        .map_err(DbError::Database)?;
+
+    Ok(res.rows_affected > 0)
+}
+
+pub async fn update_pr_info(
+    db: &DatabaseConnection,
+    session_id: &str,
+    pr_number: i32,
+    pr_url: &str,
+) -> DbResult<bool> {
+    let res = sessions::Entity::update_many()
+        .col_expr(sessions::Column::PrNumber, Expr::value(pr_number))
+        .col_expr(sessions::Column::PrUrl, Expr::value(pr_url))
+        .filter(sessions::Column::Id.eq(session_id))
+        .exec(db)
+        .await
+        .map_err(DbError::Database)?;
+
+    Ok(res.rows_affected > 0)
+}
+
+pub async fn update_team_name(
+    db: &DatabaseConnection,
+    session_id: &str,
+    team_name: &str,
+) -> DbResult<bool> {
+    let res = sessions::Entity::update_many()
+        .col_expr(sessions::Column::TeamName, Expr::value(team_name))
         .filter(sessions::Column::Id.eq(session_id))
         .exec(db)
         .await

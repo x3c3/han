@@ -546,9 +546,9 @@ describe('Layer 4: Transcripts (conversation history)', () => {
         if (
           error instanceof Error &&
           (error.message.includes('Native module not available') ||
-           error.message.includes('Unable to connect') ||
-           error.message.includes('connection refused') ||
-           error.message.includes('is not a function'))
+            error.message.includes('Unable to connect') ||
+            error.message.includes('connection refused') ||
+            error.message.includes('is not a function'))
         ) {
           // Skip test if coordinator not running or native module unavailable
           expect(true).toBe(true);
@@ -574,9 +574,9 @@ describe('Layer 4: Transcripts (conversation history)', () => {
         if (
           error instanceof Error &&
           (error.message.includes('Native module not available') ||
-           error.message.includes('Unable to connect') ||
-           error.message.includes('connection refused') ||
-           error.message.includes('is not a function'))
+            error.message.includes('Unable to connect') ||
+            error.message.includes('connection refused') ||
+            error.message.includes('is not a function'))
         ) {
           // Skip test if coordinator not running or native module unavailable
           expect(true).toBe(true);

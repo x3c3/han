@@ -7,11 +7,11 @@
 
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { getGitRemoteUrl } from '../bun-utils.ts';
 import {
   getClaudeConfigDir,
   getHanDataDir,
 } from '../config/claude-settings.ts';
-import { getGitRemoteUrl } from '../bun-utils.ts';
 
 /**
  * Override for memory root (used in tests)

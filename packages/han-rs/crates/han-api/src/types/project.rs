@@ -1,54 +1,47 @@
 //! Project GraphQL type.
 
 use async_graphql::*;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter};
 
 use crate::node::encode_global_id;
+use han_graphql_derive::GraphQLEntity;
+
+/// Transform: nonzero Option<i32> → bool.
+fn nonzero_to_bool(v: Option<i32>) -> bool {
+    v.unwrap_or(0) != 0
+}
 
 /// Project data for GraphQL resolution.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, SimpleObject, GraphQLEntity)]
+#[graphql(complex, name = "Project")]
+#[graphql_entity(
+    model = "han_db::entities::projects::Model",
+    entity = "han_db::entities::projects::Entity",
+    columns = "han_db::entities::projects::Column",
+    type_name = "Project",
+)]
 pub struct Project {
+    #[graphql(skip)]
+    #[graphql_entity(skip, source_field = "id")]
     pub raw_id: String,
+
     pub slug: String,
     pub path: String,
     pub name: String,
     pub repo_id: Option<String>,
     pub relative_path: Option<String>,
+
+    #[graphql_entity(transform = "nonzero_to_bool", source_field = "is_worktree")]
     pub is_worktree: bool,
+
     pub created_at: String,
     pub updated_at: String,
 }
 
-#[Object]
+#[ComplexObject]
 impl Project {
-    /// Project global ID.
-    pub async fn id(&self) -> ID {
-        encode_global_id("Project", &self.raw_id)
-    }
-
-    /// Project slug.
-    async fn slug(&self) -> &str { &self.slug }
-
-    /// Full path.
-    async fn path(&self) -> &str { &self.path }
-
-    /// Project name.
-    async fn name(&self) -> &str { &self.name }
-
-    /// Repo ID (if git project).
-    async fn repo_id(&self) -> Option<&str> { self.repo_id.as_deref() }
-
-    /// Relative path within repo.
-    async fn relative_path(&self) -> Option<&str> { self.relative_path.as_deref() }
-
-    /// Whether this is a worktree.
-    async fn is_worktree(&self) -> bool { self.is_worktree }
-
-    /// Created timestamp.
-    async fn created_at(&self) -> &str { &self.created_at }
-
-    /// Updated timestamp.
-    async fn updated_at(&self) -> &str { &self.updated_at }
+    /// Global ID (required by Node interface).
+    pub async fn id(&self) -> ID { encode_global_id("Project", &self.raw_id) }
 
     // Backwards-compatible fields for browse-client
     /// Alias for raw_id.
@@ -59,11 +52,10 @@ impl Project {
         let db = ctx.data::<DatabaseConnection>()?;
         let count = han_db::entities::sessions::Entity::find()
             .filter(han_db::entities::sessions::Column::ProjectId.eq(&self.raw_id))
-            .all(db)
+            .count(db)
             .await
-            .map(|v| v.len() as i32)
             .map_err(|e| Error::new(e.to_string()))?;
-        Ok(Some(count))
+        Ok(Some(count as i32))
     }
 
     /// Session count.
@@ -79,22 +71,6 @@ impl Project {
     async fn subdirs(&self) -> Option<Vec<Project>> { Some(vec![]) }
     /// Installed plugins (stub).
     async fn plugins(&self) -> Option<Vec<crate::types::plugin::Plugin>> { Some(vec![]) }
-}
-
-impl From<han_db::entities::projects::Model> for Project {
-    fn from(m: han_db::entities::projects::Model) -> Self {
-        Self {
-            raw_id: m.id,
-            slug: m.slug,
-            path: m.path,
-            name: m.name,
-            repo_id: m.repo_id,
-            relative_path: m.relative_path,
-            is_worktree: m.is_worktree.unwrap_or(0) != 0,
-            created_at: m.created_at,
-            updated_at: m.updated_at,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -165,5 +141,53 @@ mod tests {
         let p = Project::from(m);
         assert!(p.repo_id.is_none());
         assert!(p.relative_path.is_none());
+    }
+
+    #[test]
+    fn filter_default_is_empty() {
+        let f = ProjectFilter::default();
+        assert!(f.slug.is_none());
+        assert!(f.name.is_none());
+        assert!(f.and.is_none());
+        assert!(f.or.is_none());
+        assert!(f.not.is_none());
+    }
+
+    #[test]
+    fn order_by_default_is_empty() {
+        let o = ProjectOrderBy::default();
+        assert!(o.slug.is_none());
+        assert!(o.name.is_none());
+    }
+
+    #[test]
+    fn filter_to_condition_no_panic() {
+        let f = ProjectFilter {
+            slug: Some(crate::filters::types::StringFilter {
+                eq: Some("test".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
+    }
+
+    #[test]
+    fn filter_logical_combinators() {
+        let f = ProjectFilter {
+            and: Some(vec![
+                ProjectFilter {
+                    name: Some(crate::filters::types::StringFilter {
+                        contains: Some("test".into()),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+            ]),
+            or: Some(vec![ProjectFilter::default()]),
+            not: Some(Box::new(ProjectFilter::default())),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
     }
 }

@@ -15,11 +15,11 @@ import { HStack } from "@/components/atoms/HStack.tsx";
 import { Pressable } from "@/components/atoms/Pressable.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
-import { SessionRow } from "@/components/molecules/SessionRow.tsx";
 import {
 	formatCount,
 	formatWholeNumber,
 } from "@/components/helpers/formatters.ts";
+import { SessionRow } from "@/components/molecules/SessionRow.tsx";
 
 // =============================================================================
 // Interfaces
@@ -615,7 +615,13 @@ function CostDetailView({
 					/>
 					<CostMetric
 						label={isSubscription ? "API-Equivalent / Task" : "Cost / Task"}
-						value={formatCost(data.costPerCompletedTask)}
+						value={
+							data.costPerCompletedTask === 0
+								? "N/A"
+								: data.costPerCompletedTask >= 1000
+									? ">$999"
+									: formatCost(data.costPerCompletedTask)
+						}
 					/>
 				</HStack>
 				<HStack gap="sm" style={{ width: "100%" }}>
@@ -968,7 +974,7 @@ export function CostAnalysisCard({
 				maxSubscriptionCostUsd: costAnalysis.maxSubscriptionCostUsd,
 				costUtilizationPercent: activeBreakdown.costUtilizationPercent,
 				costPerSession: activeBreakdown.costPerSession,
-				costPerCompletedTask: 0,
+				costPerCompletedTask: activeBreakdown.costPerSession,
 				cacheHitRate: activeBreakdown.cacheHitRate,
 				potentialSavingsUsd: activeBreakdown.potentialSavingsUsd,
 				dailyCostTrend: activeBreakdown.dailyCostTrend,

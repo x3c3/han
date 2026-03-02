@@ -7,7 +7,6 @@ import {
   getMergedSettings,
 } from '../config/claude-settings.ts';
 import { getMergedHanConfig } from '../config/han-settings.ts';
-import { isCoordinatorRunning } from '../grpc/data-access.ts';
 
 interface DiagnosticResult {
   name: string;

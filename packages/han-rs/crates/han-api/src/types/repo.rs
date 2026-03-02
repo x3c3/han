@@ -1,14 +1,25 @@
 //! Repo (git repository) GraphQL type.
 
 use async_graphql::*;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect};
 
 use crate::node::encode_global_id;
+use han_graphql_derive::GraphQLEntity;
 
 /// Repo data for GraphQL resolution.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, SimpleObject, GraphQLEntity)]
+#[graphql(complex, name = "Repo")]
+#[graphql_entity(
+    model = "han_db::entities::repos::Model",
+    entity = "han_db::entities::repos::Entity",
+    columns = "han_db::entities::repos::Column",
+    type_name = "Repo",
+)]
 pub struct Repo {
+    #[graphql(skip)]
+    #[graphql_entity(skip, source_field = "id")]
     pub raw_id: String,
+
     pub remote: String,
     pub name: String,
     pub default_branch: Option<String>,
@@ -16,27 +27,12 @@ pub struct Repo {
     pub updated_at: String,
 }
 
-#[Object]
+#[ComplexObject]
 impl Repo {
-    /// Repo global ID.
+    /// Repo global ID (required by Node interface).
     pub async fn id(&self) -> ID {
         encode_global_id("Repo", &self.raw_id)
     }
-
-    /// Git remote URL.
-    async fn remote(&self) -> &str { &self.remote }
-
-    /// Repository name.
-    async fn name(&self) -> &str { &self.name }
-
-    /// Default branch.
-    async fn default_branch(&self) -> Option<&str> { self.default_branch.as_deref() }
-
-    /// Created timestamp.
-    async fn created_at(&self) -> &str { &self.created_at }
-
-    /// Updated timestamp.
-    async fn updated_at(&self) -> &str { &self.updated_at }
 
     // Backwards-compatible fields for browse-client
     /// Alias for raw_id.
@@ -47,15 +43,14 @@ impl Repo {
     /// Total sessions count across all projects in this repo.
     async fn total_sessions(&self, ctx: &Context<'_>) -> Result<Option<i32>> {
         let db = ctx.data::<DatabaseConnection>()?;
-        // Get project IDs for this repo, then count sessions
         let project_ids: Vec<String> = han_db::entities::projects::Entity::find()
             .filter(han_db::entities::projects::Column::RepoId.eq(&self.raw_id))
+            .select_only()
+            .column(han_db::entities::projects::Column::Id)
+            .into_tuple::<String>()
             .all(db)
             .await
-            .map_err(|e| Error::new(e.to_string()))?
-            .into_iter()
-            .map(|p| p.id)
-            .collect();
+            .map_err(|e| Error::new(e.to_string()))?;
 
         if project_ids.is_empty() {
             return Ok(Some(0));
@@ -63,11 +58,10 @@ impl Repo {
 
         let count = han_db::entities::sessions::Entity::find()
             .filter(han_db::entities::sessions::Column::ProjectId.is_in(project_ids))
-            .all(db)
+            .count(db)
             .await
-            .map(|v| v.len() as i32)
             .map_err(|e| Error::new(e.to_string()))?;
-        Ok(Some(count))
+        Ok(Some(count as i32))
     }
 
     /// Last activity timestamp.
@@ -82,19 +76,6 @@ impl Repo {
             .await
             .map_err(|e| Error::new(e.to_string()))?;
         Ok(Some(models.into_iter().map(crate::types::project::Project::from).collect()))
-    }
-}
-
-impl From<han_db::entities::repos::Model> for Repo {
-    fn from(m: han_db::entities::repos::Model) -> Self {
-        Self {
-            raw_id: m.id,
-            remote: m.remote,
-            name: m.name,
-            default_branch: m.default_branch,
-            created_at: m.created_at,
-            updated_at: m.updated_at,
-        }
     }
 }
 
@@ -133,5 +114,34 @@ mod tests {
             updated_at: "".into(),
         };
         assert!(Repo::from(m).default_branch.is_none());
+    }
+
+    #[test]
+    fn filter_default_is_empty() {
+        let f = RepoFilter::default();
+        assert!(f.remote.is_none());
+        assert!(f.name.is_none());
+        assert!(f.and.is_none());
+        assert!(f.or.is_none());
+        assert!(f.not.is_none());
+    }
+
+    #[test]
+    fn order_by_default_is_empty() {
+        let o = RepoOrderBy::default();
+        assert!(o.remote.is_none());
+        assert!(o.name.is_none());
+    }
+
+    #[test]
+    fn filter_to_condition_no_panic() {
+        let f = RepoFilter {
+            name: Some(crate::filters::types::StringFilter {
+                eq: Some("my-repo".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
     }
 }

@@ -2,6 +2,12 @@
 name: technical-writer
 description: Use when creating API documentation, user guides, tutorials, or developer documentation. Expert at transforming complex technical concepts into clear, accessible documentation.
 memory: project
+isolation: worktree
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/../../core/hooks/worktree-merge-prompt.sh"
 ---
 
 # Technical Writer Agent

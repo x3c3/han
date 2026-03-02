@@ -12,17 +12,17 @@ import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
-  messages as dbMessages,
-  projects as dbProjects,
-  sessions as dbSessions,
-  type Message,
-} from '../grpc/data-access.ts';
-import {
   getGitCommonDir,
   getGitRemoteUrl,
   getGitRoot,
   gitWorktreeList,
 } from '../bun-utils.ts';
+import {
+  messages as dbMessages,
+  projects as dbProjects,
+  sessions as dbSessions,
+  type Message,
+} from '../grpc/data-access.ts';
 
 /**
  * Check if a path is within a system temp folder
@@ -606,7 +606,7 @@ function getWorktreeInfo(projectPath: string): WorktreeInfoResult | undefined {
  */
 async function getSessionMessages(
   sessionId: string,
-  agentIdFilter?: string | null
+  _agentIdFilter?: string | null
 ): Promise<SessionMessage[]> {
   const msgs = await dbMessages.list({ sessionId });
   return msgs.map((msg: Message) => ({
@@ -668,7 +668,7 @@ export async function getSessionMessagesPaginated(
   sessionId: string,
   offset: number,
   limit: number,
-  agentIdFilter?: string | null
+  _agentIdFilter?: string | null
 ): Promise<{
   messages: SessionMessage[];
   totalCount: number;

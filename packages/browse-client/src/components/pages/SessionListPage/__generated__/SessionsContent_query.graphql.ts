@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a7e43b704a7fb5b073ade31d1646f45f>>
+ * @generated SignedSource<<d6bbfd96a2c23c3e99edf2e8f6288190>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -54,24 +54,14 @@ return {
       "name": "after"
     },
     {
+      "defaultValue": null,
+      "kind": "LocalArgument",
+      "name": "filter"
+    },
+    {
       "defaultValue": 50,
       "kind": "LocalArgument",
       "name": "first"
-    },
-    {
-      "defaultValue": null,
-      "kind": "LocalArgument",
-      "name": "projectId"
-    },
-    {
-      "defaultValue": null,
-      "kind": "LocalArgument",
-      "name": "userId"
-    },
-    {
-      "defaultValue": null,
-      "kind": "LocalArgument",
-      "name": "worktreeName"
     }
   ],
   "kind": "Fragment",
@@ -104,18 +94,8 @@ return {
       "args": [
         {
           "kind": "Variable",
-          "name": "projectId",
-          "variableName": "projectId"
-        },
-        {
-          "kind": "Variable",
-          "name": "userId",
-          "variableName": "userId"
-        },
-        {
-          "kind": "Variable",
-          "name": "worktreeName",
-          "variableName": "worktreeName"
+          "name": "filter",
+          "variableName": "filter"
         }
       ],
       "concreteType": "SessionConnection",
@@ -273,6 +253,6 @@ return {
 };
 })();
 
-(node as any).hash = "421589093331250115eacff340eb2ee7";
+(node as any).hash = "3e292ee2b022eed472b2b60006746fc6";
 
 export default node;

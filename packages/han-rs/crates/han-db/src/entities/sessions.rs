@@ -14,6 +14,9 @@ pub struct Model {
     pub transcript_path: Option<String>,
     pub source_config_dir: Option<String>,
     pub last_indexed_line: Option<i32>,
+    pub pr_number: Option<i32>,
+    pub pr_url: Option<String>,
+    pub team_name: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

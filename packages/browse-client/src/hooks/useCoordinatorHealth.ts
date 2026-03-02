@@ -1,20 +1,33 @@
 /**
  * Coordinator Health Hook
  *
- * Polls the coordinator's GraphQL endpoint to determine connectivity.
+ * Polls the coordinator's /health endpoint to determine connectivity.
+ * Uses a lightweight GET request instead of a GraphQL POST for speed.
  * Returns connection status for use by ConnectionGate.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getGraphQLEndpoints } from "../config/urls.ts";
+import { getCoordinatorPort } from "../config/port.ts";
 
 interface CoordinatorHealthState {
 	isConnected: boolean;
 	isChecking: boolean;
 }
 
-const POLL_INTERVAL_DISCONNECTED = 3000;
+const POLL_INTERVAL_DISCONNECTED = 2000;
 const POLL_INTERVAL_CONNECTED = 15000;
+/** Timeout for health check fetch — prevents hanging on TLS negotiation */
+const HEALTH_CHECK_TIMEOUT_MS = 3000;
+
+/**
+ * Build the health endpoint URL.
+ * Uses the same coordinator host/port as GraphQL but hits GET /health
+ * which is much cheaper (no GraphQL parsing, no DB access).
+ */
+function getHealthUrl(): string {
+	const port = getCoordinatorPort();
+	return `https://coordinator.local.han.guru:${port}/health`;
+}
 
 export function useCoordinatorHealth(): CoordinatorHealthState {
 	const [isConnected, setIsConnected] = useState(false);
@@ -28,16 +41,21 @@ export function useCoordinatorHealth(): CoordinatorHealthState {
 		const controller = new AbortController();
 		abortRef.current = controller;
 
+		// Auto-abort after timeout to prevent hanging on TLS
+		const timeoutId = setTimeout(
+			() => controller.abort(),
+			HEALTH_CHECK_TIMEOUT_MS,
+		);
+
 		setIsChecking(true);
 
 		try {
-			const endpoints = getGraphQLEndpoints();
-			const response = await fetch(endpoints.http, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ query: "{ __typename }" }),
+			const response = await fetch(getHealthUrl(), {
+				method: "GET",
 				signal: controller.signal,
 			});
+
+			clearTimeout(timeoutId);
 
 			if (!controller.signal.aborted) {
 				const connected = response.ok;
@@ -46,6 +64,7 @@ export function useCoordinatorHealth(): CoordinatorHealthState {
 				return connected;
 			}
 		} catch {
+			clearTimeout(timeoutId);
 			if (!controller.signal.aborted) {
 				setIsConnected(false);
 				setIsChecking(false);

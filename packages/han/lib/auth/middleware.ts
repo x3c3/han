@@ -10,6 +10,7 @@ interface GraphQLContext {
   request: Request;
   [key: string]: unknown;
 }
+
 import { verifyAccessToken } from './jwt.ts';
 import {
   checkRateLimit,

@@ -20,8 +20,8 @@ import {
 import { getPluginNameFromRoot } from '../lib/shared/index.ts';
 
 // Check if native module is available for tests that require it
-const SKIP_NATIVE = process.env.SKIP_NATIVE === "true";
-const testWithNative = SKIP_NATIVE ? test.skip : test;
+const SKIP_NATIVE = process.env.SKIP_NATIVE === 'true';
+const _testWithNative = SKIP_NATIVE ? test.skip : test;
 
 let testDir: string;
 let pluginDir: string;

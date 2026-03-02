@@ -8,8 +8,10 @@
 export { ConfidenceBadge } from "./ConfidenceBadge.tsx";
 export { ErrorBoundary } from "./ErrorBoundary.tsx";
 export { FeatureBadge } from "./FeatureBadge.tsx";
+export { OutcomeBadge } from "./OutcomeBadge.tsx";
 export { SessionRow } from "./SessionRow.tsx";
 export { StatItem } from "./StatItem.tsx";
 export { StatusIndicator } from "./StatusIndicator.tsx";
 export { StatusItem } from "./StatusItem.tsx";
 export { TabButton } from "./TabButton.tsx";
+export { TaskTypeBadge } from "./TaskTypeBadge.tsx";

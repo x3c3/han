@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0ba5a73f60eed6fceb296e28ad1dbe96>>
+ * @generated SignedSource<<b904b22d8226f38efc6624a80992c2f8>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -10,11 +10,58 @@
 
 import { ConcreteRequest } from 'relay-runtime';
 import { FragmentRefs } from "relay-runtime";
+export type SessionFilter = {
+  _and?: ReadonlyArray<SessionFilter> | null | undefined;
+  _not?: SessionFilter | null | undefined;
+  _or?: ReadonlyArray<SessionFilter> | null | undefined;
+  id?: StringFilter | null | undefined;
+  prNumber?: IntFilter | null | undefined;
+  project?: ProjectFilter | null | undefined;
+  projectId?: StringFilter | null | undefined;
+  slug?: StringFilter | null | undefined;
+  status?: StringFilter | null | undefined;
+  teamName?: StringFilter | null | undefined;
+};
+export type StringFilter = {
+  _contains?: string | null | undefined;
+  _endsWith?: string | null | undefined;
+  _eq?: string | null | undefined;
+  _in?: ReadonlyArray<string> | null | undefined;
+  _isNull?: boolean | null | undefined;
+  _ne?: string | null | undefined;
+  _notIn?: ReadonlyArray<string> | null | undefined;
+  _startsWith?: string | null | undefined;
+};
+export type IntFilter = {
+  _eq?: number | null | undefined;
+  _gt?: number | null | undefined;
+  _gte?: number | null | undefined;
+  _in?: ReadonlyArray<number> | null | undefined;
+  _isNull?: boolean | null | undefined;
+  _lt?: number | null | undefined;
+  _lte?: number | null | undefined;
+  _ne?: number | null | undefined;
+};
+export type ProjectFilter = {
+  _and?: ReadonlyArray<ProjectFilter> | null | undefined;
+  _not?: ProjectFilter | null | undefined;
+  _or?: ReadonlyArray<ProjectFilter> | null | undefined;
+  createdAt?: StringFilter | null | undefined;
+  isWorktree?: BoolFilter | null | undefined;
+  name?: StringFilter | null | undefined;
+  path?: StringFilter | null | undefined;
+  relativePath?: StringFilter | null | undefined;
+  repoId?: StringFilter | null | undefined;
+  slug?: StringFilter | null | undefined;
+  updatedAt?: StringFilter | null | undefined;
+};
+export type BoolFilter = {
+  _eq?: boolean | null | undefined;
+  _isNull?: boolean | null | undefined;
+};
 export type SessionListPageQuery$variables = {
+  filter?: SessionFilter | null | undefined;
   first?: number | null | undefined;
-  projectId?: string | null | undefined;
-  userId?: string | null | undefined;
-  worktreeName?: string | null | undefined;
 };
 export type SessionListPageQuery$data = {
   readonly " $fragmentSpreads": FragmentRefs<"SessionsContent_query">;
@@ -28,67 +75,47 @@ const node: ConcreteRequest = (function(){
 var v0 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "first"
+  "name": "filter"
 },
 v1 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "projectId"
+  "name": "first"
 },
-v2 = {
-  "defaultValue": null,
-  "kind": "LocalArgument",
-  "name": "userId"
-},
-v3 = {
-  "defaultValue": null,
-  "kind": "LocalArgument",
-  "name": "worktreeName"
-},
-v4 = [
+v2 = [
+  {
+    "kind": "Variable",
+    "name": "filter",
+    "variableName": "filter"
+  },
   {
     "kind": "Variable",
     "name": "first",
     "variableName": "first"
-  },
-  {
-    "kind": "Variable",
-    "name": "projectId",
-    "variableName": "projectId"
-  },
-  {
-    "kind": "Variable",
-    "name": "userId",
-    "variableName": "userId"
-  },
-  {
-    "kind": "Variable",
-    "name": "worktreeName",
-    "variableName": "worktreeName"
   }
 ],
-v5 = {
+v3 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "id",
   "storageKey": null
 },
-v6 = {
+v4 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "name",
   "storageKey": null
 },
-v7 = {
+v5 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "status",
   "storageKey": null
 },
-v8 = {
+v6 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
@@ -99,16 +126,14 @@ return {
   "fragment": {
     "argumentDefinitions": [
       (v0/*: any*/),
-      (v1/*: any*/),
-      (v2/*: any*/),
-      (v3/*: any*/)
+      (v1/*: any*/)
     ],
     "kind": "Fragment",
     "metadata": null,
     "name": "SessionListPageQuery",
     "selections": [
       {
-        "args": (v4/*: any*/),
+        "args": (v2/*: any*/),
         "kind": "FragmentSpread",
         "name": "SessionsContent_query"
       }
@@ -119,17 +144,15 @@ return {
   "kind": "Request",
   "operation": {
     "argumentDefinitions": [
-      (v0/*: any*/),
       (v1/*: any*/),
-      (v3/*: any*/),
-      (v2/*: any*/)
+      (v0/*: any*/)
     ],
     "kind": "Operation",
     "name": "SessionListPageQuery",
     "selections": [
       {
         "alias": null,
-        "args": (v4/*: any*/),
+        "args": (v2/*: any*/),
         "concreteType": "SessionConnection",
         "kind": "LinkedField",
         "name": "sessions",
@@ -151,7 +174,7 @@ return {
                 "name": "node",
                 "plural": false,
                 "selections": [
-                  (v5/*: any*/),
+                  (v3/*: any*/),
                   {
                     "alias": null,
                     "args": null,
@@ -201,7 +224,7 @@ return {
                     "name": "gitBranch",
                     "storageKey": null
                   },
-                  (v6/*: any*/),
+                  (v4/*: any*/),
                   {
                     "alias": null,
                     "args": null,
@@ -231,8 +254,8 @@ return {
                     "name": "owner",
                     "plural": false,
                     "selections": [
-                      (v5/*: any*/),
-                      (v6/*: any*/),
+                      (v3/*: any*/),
+                      (v4/*: any*/),
                       {
                         "alias": null,
                         "args": null,
@@ -272,8 +295,8 @@ return {
                         "name": "activeForm",
                         "storageKey": null
                       },
-                      (v7/*: any*/),
-                      (v5/*: any*/)
+                      (v5/*: any*/),
+                      (v3/*: any*/)
                     ],
                     "storageKey": null
                   },
@@ -285,7 +308,7 @@ return {
                     "name": "activeTasks",
                     "plural": false,
                     "selections": [
-                      (v8/*: any*/),
+                      (v6/*: any*/),
                       {
                         "alias": null,
                         "args": null,
@@ -302,7 +325,7 @@ return {
                             "name": "node",
                             "plural": false,
                             "selections": [
-                              (v5/*: any*/),
+                              (v3/*: any*/),
                               {
                                 "alias": null,
                                 "args": null,
@@ -324,7 +347,7 @@ return {
                                 "name": "type",
                                 "storageKey": null
                               },
-                              (v7/*: any*/)
+                              (v5/*: any*/)
                             ],
                             "storageKey": null
                           }
@@ -371,6 +394,27 @@ return {
                         "storageKey": null
                       }
                     ],
+                    "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "prNumber",
+                    "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "prUrl",
+                    "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "kind": "ScalarField",
+                    "name": "teamName",
                     "storageKey": null
                   },
                   {
@@ -446,7 +490,7 @@ return {
             ],
             "storageKey": null
           },
-          (v8/*: any*/),
+          (v6/*: any*/),
           {
             "kind": "ClientExtension",
             "selections": [
@@ -464,11 +508,9 @@ return {
       },
       {
         "alias": null,
-        "args": (v4/*: any*/),
+        "args": (v2/*: any*/),
         "filters": [
-          "projectId",
-          "worktreeName",
-          "userId"
+          "filter"
         ],
         "handle": "connection",
         "key": "SessionsContent_sessions",
@@ -478,16 +520,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "37b66117a4c98814240b33b138dedd5c",
+    "cacheID": "6fd036b9a22c526c3edc716dde887d93",
     "id": null,
     "metadata": {},
     "name": "SessionListPageQuery",
     "operationKind": "query",
-    "text": "query SessionListPageQuery(\n  $first: Int\n  $projectId: String\n  $worktreeName: String\n  $userId: String\n) {\n  ...SessionsContent_query_hTAo9\n}\n\nfragment SessionListItem_session on Session {\n  id\n  sessionId\n  name\n  projectName\n  projectSlug\n  projectId\n  worktreeName\n  summary\n  messageCount\n  startedAt\n  updatedAt\n  owner {\n    id\n    name\n    email\n    avatarUrl\n  }\n  currentTodo {\n    content\n    activeForm\n    status\n    id\n  }\n  activeTasks {\n    totalCount\n    edges {\n      node {\n        id\n        taskId\n        description\n        type\n        status\n      }\n    }\n  }\n  todoCounts {\n    total\n    pending\n    inProgress\n    completed\n  }\n  turnCount\n  compactionCount\n  estimatedCostUsd\n  duration\n}\n\nfragment SessionsContent_query_hTAo9 on Query {\n  sessions(first: $first, projectId: $projectId, worktreeName: $worktreeName, userId: $userId) {\n    edges {\n      node {\n        id\n        sessionId\n        projectName\n        worktreeName\n        summary\n        updatedAt\n        startedAt\n        gitBranch\n        ...SessionListItem_session\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    totalCount\n  }\n}\n"
+    "text": "query SessionListPageQuery(\n  $first: Int\n  $filter: SessionFilter\n) {\n  ...SessionsContent_query_1qzYLD\n}\n\nfragment SessionListItem_session on Session {\n  id\n  sessionId\n  name\n  projectName\n  projectSlug\n  projectId\n  worktreeName\n  summary\n  messageCount\n  startedAt\n  updatedAt\n  owner {\n    id\n    name\n    email\n    avatarUrl\n  }\n  currentTodo {\n    content\n    activeForm\n    status\n    id\n  }\n  activeTasks {\n    totalCount\n    edges {\n      node {\n        id\n        taskId\n        description\n        type\n        status\n      }\n    }\n  }\n  todoCounts {\n    total\n    pending\n    inProgress\n    completed\n  }\n  gitBranch\n  prNumber\n  prUrl\n  teamName\n  turnCount\n  compactionCount\n  estimatedCostUsd\n  duration\n}\n\nfragment SessionsContent_query_1qzYLD on Query {\n  sessions(first: $first, filter: $filter) {\n    edges {\n      node {\n        id\n        sessionId\n        projectName\n        worktreeName\n        summary\n        updatedAt\n        startedAt\n        gitBranch\n        ...SessionListItem_session\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    totalCount\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "72fe2bb5a9d66499f256d3079621caf3";
+(node as any).hash = "ce9ca65c3de5531cf7bdf0ac300668db";
 
 export default node;

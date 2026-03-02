@@ -1,0 +1,14 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "devDependencies": {
+        "relay-compiler": "^19.0.0",
+      },
+    },
+  },
+  "packages": {
+    "relay-compiler": ["relay-compiler@19.0.0", "", { "bin": { "relay-compiler": "cli.js" } }, "sha512-DwyNWPUkzdggT3oBuNTS18bL6KCU3Sg/oSW/q+pqOQNHLo+RUZOWAx44ALy5XoBrsXjQVBr0EiNqJ4A8G1skOw=="],
+  }
+}

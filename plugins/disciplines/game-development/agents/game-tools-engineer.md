@@ -4,6 +4,12 @@ description: |
   Use when building game development tools, editors, asset pipelines, build systems, and
   workflow automation. Expert in tooling that multiplies team productivity.
 memory: project
+isolation: worktree
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/../../core/hooks/worktree-merge-prompt.sh"
 ---
 
 # Game Tools Engineer

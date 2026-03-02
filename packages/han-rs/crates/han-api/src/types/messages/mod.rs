@@ -10,9 +10,11 @@
 //! within a Message context.
 
 use async_graphql::*;
+use async_graphql::dataloader::DataLoader;
 use han_db::entities::messages;
 
 use crate::connection::PageInfo;
+use crate::loaders::{HookResultByRunIdLoader, ToolResultByCallIdLoader};
 use crate::node::{encode_global_id, encode_msg_cursor};
 use crate::types::content_blocks::{ContentBlock, parse_content_blocks};
 use crate::types::sentiment::SentimentAnalysis;
@@ -36,6 +38,10 @@ pub struct MessageData {
     pub tool_name: Option<String>,
     pub content: Option<String>,
     pub role: Option<String>,
+    pub sentiment_score: Option<f64>,
+    pub sentiment_level: Option<String>,
+    pub frustration_score: Option<f64>,
+    pub frustration_level: Option<String>,
 }
 
 impl MessageData {
@@ -54,6 +60,10 @@ impl MessageData {
             tool_name: model.tool_name.clone(),
             content: model.content.clone(),
             role: model.role.clone(),
+            sentiment_score: model.sentiment_score,
+            sentiment_level: model.sentiment_level.clone(),
+            frustration_score: model.frustration_score,
+            frustration_level: model.frustration_level.clone(),
         }
     }
 
@@ -81,6 +91,21 @@ impl MessageData {
 
     fn content_text(&self) -> Option<String> {
         self.content.clone()
+    }
+
+    fn sentiment(&self) -> Option<SentimentAnalysis> {
+        if self.sentiment_score.is_some() || self.sentiment_level.is_some() {
+            Some(SentimentAnalysis {
+                raw_id: self.id.clone(),
+                sentiment_score: self.sentiment_score,
+                sentiment_level: self.sentiment_level.clone(),
+                frustration_score: self.frustration_score,
+                frustration_level: self.frustration_level.clone(),
+                signals: None,
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -178,7 +203,7 @@ impl RegularUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { None }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { self.data.sentiment() }
 }
 
 /// A command user message (/command invocations).
@@ -234,7 +259,7 @@ impl InterruptUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { None }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { self.data.sentiment() }
 }
 
 /// A meta user message (system-injected, not shown to user).
@@ -260,7 +285,7 @@ impl MetaUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { None }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { self.data.sentiment() }
 }
 
 /// A user message that is actually a tool result container.
@@ -519,11 +544,19 @@ impl HookRunMessage {
     async fn directory(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "directory") }
     async fn hook_run_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook_run_id").or_else(|| Some(self.data.id.clone())) }
     async fn cached(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "cached") }
-    /// Hook result (resolved via DataLoader in the future).
-    async fn result(&self) -> Option<HookResult> { None }
+    /// Hook result resolved inline via DataLoader (line adjacency + hook name matching).
+    async fn result(&self, ctx: &Context<'_>) -> Result<Option<HookResult>> {
+        let hook_name = parse_data_field(&self.data.raw_json, "hook")
+            .unwrap_or_default();
+        // Composite key: "session_id:hook_name:line_number"
+        let key = format!("{}:{}:{}", self.data.session_id, hook_name, self.data.line_number);
+        let loader = ctx.data::<DataLoader<HookResultByRunIdLoader>>()?;
+        let model = loader.load_one(key).await?;
+        Ok(model.map(|m| HookResult::from_model(&m)))
+    }
 }
 
-/// Hook result stub type for HookRunMessage.result.
+/// Hook result data type for HookRunMessage.result.
 #[derive(Debug, Clone, SimpleObject)]
 pub struct HookResult {
     pub id: Option<String>,
@@ -534,6 +567,21 @@ pub struct HookResult {
     pub duration_ms: Option<i32>,
     pub exit_code: Option<i32>,
     pub cached: Option<bool>,
+}
+
+impl HookResult {
+    pub fn from_model(m: &messages::Model) -> Self {
+        Self {
+            id: Some(m.id.clone()),
+            success: parse_data_field_bool(&m.raw_json, "success"),
+            result: m.content.clone(),
+            output: parse_data_field(&m.raw_json, "output"),
+            error: parse_data_field(&m.raw_json, "error"),
+            duration_ms: parse_data_field_int(&m.raw_json, "duration_ms"),
+            exit_code: parse_data_field_int(&m.raw_json, "exit_code"),
+            cached: parse_data_field_bool(&m.raw_json, "cached"),
+        }
+    }
 }
 
 /// A hook result message.
@@ -755,11 +803,17 @@ impl McpToolCallMessage {
         }
         None
     }
-    /// Tool result (resolved via DataLoader in the future).
-    async fn result(&self) -> Option<McpToolResult> { None }
+    /// Tool result resolved inline via DataLoader.
+    async fn result(&self, ctx: &Context<'_>) -> Result<Option<McpToolResult>> {
+        let call_id = parse_data_field(&self.data.raw_json, "call_id");
+        let Some(call_id) = call_id else { return Ok(None) };
+        let loader = ctx.data::<DataLoader<ToolResultByCallIdLoader>>()?;
+        let model = loader.load_one(call_id).await?;
+        Ok(model.map(|m| McpToolResult::from_model(&m)))
+    }
 }
 
-/// MCP tool result stub.
+/// MCP tool result data.
 #[derive(Debug, Clone, SimpleObject)]
 pub struct McpToolResult {
     pub id: Option<String>,
@@ -768,6 +822,19 @@ pub struct McpToolResult {
     pub output: Option<String>,
     pub error: Option<String>,
     pub duration_ms: Option<i32>,
+}
+
+impl McpToolResult {
+    pub fn from_model(m: &messages::Model) -> Self {
+        Self {
+            id: Some(m.id.clone()),
+            success: parse_data_field_bool(&m.raw_json, "success"),
+            result: m.content.clone(),
+            output: parse_data_field(&m.raw_json, "output"),
+            error: parse_data_field(&m.raw_json, "error"),
+            duration_ms: parse_data_field_int(&m.raw_json, "duration_ms"),
+        }
+    }
 }
 
 /// An MCP tool result message.
@@ -824,11 +891,17 @@ impl ExposedToolCallMessage {
         }
         None
     }
-    /// Tool result (resolved via DataLoader in the future).
-    async fn result(&self) -> Option<ExposedToolResult> { None }
+    /// Tool result resolved inline via DataLoader.
+    async fn result(&self, ctx: &Context<'_>) -> Result<Option<ExposedToolResult>> {
+        let call_id = parse_data_field(&self.data.raw_json, "call_id");
+        let Some(call_id) = call_id else { return Ok(None) };
+        let loader = ctx.data::<DataLoader<ToolResultByCallIdLoader>>()?;
+        let model = loader.load_one(call_id).await?;
+        Ok(model.map(|m| ExposedToolResult::from_model(&m)))
+    }
 }
 
-/// Exposed tool result stub.
+/// Exposed tool result data.
 #[derive(Debug, Clone, SimpleObject)]
 pub struct ExposedToolResult {
     pub id: Option<String>,
@@ -837,6 +910,19 @@ pub struct ExposedToolResult {
     pub output: Option<String>,
     pub error: Option<String>,
     pub duration_ms: Option<i32>,
+}
+
+impl ExposedToolResult {
+    pub fn from_model(m: &messages::Model) -> Self {
+        Self {
+            id: Some(m.id.clone()),
+            success: parse_data_field_bool(&m.raw_json, "success"),
+            result: m.content.clone(),
+            output: parse_data_field(&m.raw_json, "output"),
+            error: parse_data_field(&m.raw_json, "error"),
+            duration_ms: parse_data_field_int(&m.raw_json, "duration_ms"),
+        }
+    }
 }
 
 /// An exposed tool result message.
@@ -1178,6 +1264,37 @@ fn parse_data_field_f64(raw_json: &Option<String>, field: &str) -> Option<f64> {
     parsed.get("data").and_then(|d| d.get(field)).and_then(|v| v.as_f64())
 }
 
+// -- Auto-generated filters via EntityFilter derive --
+
+/// Source struct for MessageFilter/MessageOrderBy generation.
+#[derive(han_graphql_derive::EntityFilter)]
+#[entity_filter(
+    entity = "han_db::entities::messages::Entity",
+    columns = "han_db::entities::messages::Column",
+)]
+struct MessageFilterSource {
+    id: String,
+    session_id: String,
+    agent_id: Option<String>,
+    parent_id: Option<String>,
+    message_type: String,
+    role: Option<String>,
+    tool_name: Option<String>,
+    timestamp: String,
+    line_number: i32,
+    sentiment_score: Option<f64>,
+    sentiment_level: Option<String>,
+    frustration_score: Option<f64>,
+    frustration_level: Option<String>,
+    input_tokens: Option<i32>,
+    output_tokens: Option<i32>,
+    cache_read_tokens: Option<i32>,
+    cache_creation_tokens: Option<i32>,
+    lines_added: Option<i32>,
+    lines_removed: Option<i32>,
+    files_changed: Option<i32>,
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -1200,6 +1317,10 @@ mod tests {
             tool_name: tool_name.map(|s| s.into()),
             content: Some("test content".into()),
             role: None,
+            sentiment_score: None,
+            sentiment_level: None,
+            frustration_score: None,
+            frustration_level: None,
         }
     }
 
@@ -1317,6 +1438,67 @@ mod tests {
         assert_eq!(conn.edges.len(), 2);
         assert_eq!(conn.total_count, 5);
         assert!(conn.page_info.has_next_page);
+    }
+
+    #[test]
+    fn message_filter_default_is_empty() {
+        let f = MessageFilter::default();
+        assert!(f.message_type.is_none());
+        assert!(f.tool_name.is_none());
+        assert!(f.session_id.is_none());
+        assert!(f.and.is_none());
+        assert!(f.or.is_none());
+        assert!(f.not.is_none());
+    }
+
+    #[test]
+    fn message_order_by_default_is_empty() {
+        let o = MessageOrderBy::default();
+        assert!(o.timestamp.is_none());
+        assert!(o.line_number.is_none());
+    }
+
+    #[test]
+    fn message_filter_to_condition_no_panic() {
+        let f = MessageFilter {
+            message_type: Some(crate::filters::types::StringFilter {
+                ne: Some("han_event".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
+    }
+
+    #[test]
+    fn message_filter_tool_name_in_list() {
+        let f = MessageFilter {
+            tool_name: Some(crate::filters::types::StringFilter {
+                in_list: Some(vec!["Bash".into(), "Edit".into()]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
+    }
+
+    #[test]
+    fn message_filter_combined_with_not() {
+        let f = MessageFilter {
+            not: Some(Box::new(MessageFilter {
+                message_type: Some(crate::filters::types::StringFilter {
+                    eq: Some("han_event".into()),
+                    ..Default::default()
+                }),
+                tool_name: Some(crate::filters::types::StringFilter {
+                    in_list: Some(vec!["hook_result".into(), "mcp_tool_result".into()]),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
     }
 }
 

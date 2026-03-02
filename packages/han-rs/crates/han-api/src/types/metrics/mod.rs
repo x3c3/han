@@ -136,6 +136,27 @@ pub struct TaskOutcomeCount {
     pub count: Option<i32>,
 }
 
+// -- Auto-generated filters via EntityFilter derive --
+
+/// Source struct for TaskFilter/TaskOrderBy generation.
+#[derive(han_graphql_derive::EntityFilter)]
+#[entity_filter(
+    entity = "han_db::entities::tasks::Entity",
+    columns = "han_db::entities::tasks::Column",
+)]
+struct TaskFilterSource {
+    id: String,
+    session_id: Option<String>,
+    task_id: String,
+    description: String,
+    task_type: String,
+    outcome: Option<String>,
+    confidence: Option<f64>,
+    tests_added: Option<i32>,
+    started_at: String,
+    completed_at: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -382,5 +403,40 @@ mod tests {
             count: Some(2),
         };
         assert_eq!(oc.count, Some(2));
+    }
+
+    #[test]
+    fn task_filter_default_is_empty() {
+        let f = TaskFilter::default();
+        assert!(f.task_type.is_none());
+        assert!(f.outcome.is_none());
+        assert!(f.confidence.is_none());
+        assert!(f.and.is_none());
+        assert!(f.or.is_none());
+        assert!(f.not.is_none());
+    }
+
+    #[test]
+    fn task_order_by_default_is_empty() {
+        let o = TaskOrderBy::default();
+        assert!(o.task_type.is_none());
+        assert!(o.started_at.is_none());
+        assert!(o.confidence.is_none());
+    }
+
+    #[test]
+    fn task_filter_to_condition_no_panic() {
+        let f = TaskFilter {
+            task_type: Some(crate::filters::types::StringFilter {
+                eq: Some("bugfix".into()),
+                ..Default::default()
+            }),
+            confidence: Some(crate::filters::types::FloatFilter {
+                gte: Some(0.8),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
     }
 }

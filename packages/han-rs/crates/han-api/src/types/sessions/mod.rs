@@ -43,6 +43,9 @@ pub struct SessionData {
     pub worktree_name: Option<String>,
     pub source_config_dir: Option<String>,
     pub status: Option<String>,
+    pub pr_number: Option<i32>,
+    pub pr_url: Option<String>,
+    pub team_name: Option<String>,
 }
 
 /// Session GraphQL type.
@@ -142,6 +145,21 @@ impl SessionData {
         self.status.as_deref()
     }
 
+    /// PR number if a pull request was created during this session.
+    async fn pr_number(&self) -> Option<i32> {
+        self.pr_number
+    }
+
+    /// PR URL if a pull request was created during this session.
+    async fn pr_url(&self) -> Option<&str> {
+        self.pr_url.as_deref()
+    }
+
+    /// Team name if this session involved team collaboration.
+    async fn team_name(&self) -> Option<&str> {
+        self.team_name.as_deref()
+    }
+
     /// Which CLAUDE_CONFIG_DIR this session originated from.
     async fn source_config_dir(&self) -> Option<&str> {
         self.source_config_dir.as_deref()
@@ -158,6 +176,8 @@ impl SessionData {
         after: Option<String>,
         last: Option<i32>,
         before: Option<String>,
+        filter: Option<crate::types::messages::MessageFilter>,
+        order_by: Option<crate::types::messages::MessageOrderBy>,
     ) -> Result<MessageConnection> {
         let db = ctx.data::<DatabaseConnection>()?;
 
@@ -171,20 +191,27 @@ impl SessionData {
             .add(messages::Column::MessageType.eq("summary"))
             .add(messages::Column::MessageType.eq("han_event"));
 
+        // Build base condition with session, content, and optional user filter
+        let mut base_condition = Condition::all()
+            .add(messages::Column::SessionId.eq(&self.session_id))
+            .add(content_filter.clone());
+
+        if let Some(ref f) = filter {
+            base_condition = base_condition.add(f.to_condition());
+        }
+
         // Total count of matching messages (for UI display)
         let total_count = messages::Entity::find()
-            .filter(messages::Column::SessionId.eq(&self.session_id))
-            .filter(content_filter.clone())
+            .filter(base_condition.clone())
             .count(db)
             .await
             .map_err(|e| Error::new(e.to_string()))? as i32;
 
         let limit = first.or(last).unwrap_or(50) as usize;
 
-        // Build query with content filter
+        // Build query with combined filters
         let mut query = messages::Entity::find()
-            .filter(messages::Column::SessionId.eq(&self.session_id))
-            .filter(content_filter);
+            .filter(base_condition);
 
         // Apply cursor-based keyset filtering for `after` cursor.
         // Messages are ordered (timestamp DESC, id ASC), so "after" means
@@ -218,10 +245,12 @@ impl SessionData {
             }
         }
 
-        // Deterministic ordering: timestamp DESC, id ASC
+        // Deterministic ordering: custom or default (timestamp DESC, id ASC)
         // For `last` without `after`, fetch from the oldest end (reversed order)
         let reverse_fetch = last.is_some() && after.is_none();
-        if reverse_fetch {
+        if let Some(ref o) = order_by {
+            query = o.apply(query);
+        } else if reverse_fetch {
             query = query
                 .order_by_asc(messages::Column::Timestamp)
                 .order_by_desc(messages::Column::Id);
@@ -284,15 +313,24 @@ impl SessionData {
     }
 
     /// Native tasks (Claude Code's built-in task system).
-    async fn native_tasks(&self, ctx: &Context<'_>) -> Result<Vec<NativeTask>> {
+    async fn native_tasks(
+        &self,
+        ctx: &Context<'_>,
+        filter: Option<crate::types::native_task::NativeTaskFilter>,
+        order_by: Option<crate::types::native_task::NativeTaskOrderBy>,
+    ) -> Result<Vec<NativeTask>> {
         let db = ctx.data::<DatabaseConnection>()?;
-        let tasks = han_db::entities::native_tasks::Entity::find()
-            .filter(han_db::entities::native_tasks::Column::SessionId.eq(&self.session_id))
-            .order_by_asc(han_db::entities::native_tasks::Column::CreatedAt)
-            .all(db)
-            .await
-            .map_err(|e| Error::new(e.to_string()))?;
-
+        let mut query = han_db::entities::native_tasks::Entity::find()
+            .filter(han_db::entities::native_tasks::Column::SessionId.eq(&self.session_id));
+        if let Some(ref f) = filter {
+            query = query.filter(f.to_condition());
+        }
+        if let Some(ref o) = order_by {
+            query = o.apply(query);
+        } else {
+            query = query.order_by_asc(han_db::entities::native_tasks::Column::CreatedAt);
+        }
+        let tasks = query.all(db).await.map_err(|e| Error::new(e.to_string()))?;
         Ok(tasks.into_iter().map(NativeTask::from).collect())
     }
 
@@ -326,14 +364,21 @@ impl SessionData {
         _after: Option<String>,
         _last: Option<i32>,
         _before: Option<String>,
+        filter: Option<crate::types::metrics::TaskFilter>,
+        order_by: Option<crate::types::metrics::TaskOrderBy>,
     ) -> Result<Option<TaskConnection>> {
         let db = ctx.data::<DatabaseConnection>()?;
-        let models = han_db::entities::tasks::Entity::find()
-            .filter(han_db::entities::tasks::Column::SessionId.eq(&self.session_id))
-            .order_by_asc(han_db::entities::tasks::Column::StartedAt)
-            .all(db)
-            .await
-            .map_err(|e| Error::new(e.to_string()))?;
+        let mut query = han_db::entities::tasks::Entity::find()
+            .filter(han_db::entities::tasks::Column::SessionId.eq(&self.session_id));
+        if let Some(ref f) = filter {
+            query = query.filter(f.to_condition());
+        }
+        if let Some(ref o) = order_by {
+            query = o.apply(query);
+        } else {
+            query = query.order_by_asc(han_db::entities::tasks::Column::StartedAt);
+        }
+        let models = query.all(db).await.map_err(|e| Error::new(e.to_string()))?;
 
         let total_count = models.len() as i32;
         let limit = first.unwrap_or(total_count) as usize;
@@ -512,14 +557,21 @@ impl SessionData {
         _after: Option<String>,
         _last: Option<i32>,
         _before: Option<String>,
+        filter: Option<crate::types::hook_execution::HookExecutionFilter>,
+        order_by: Option<crate::types::hook_execution::HookExecutionOrderBy>,
     ) -> Result<Option<HookExecutionConnection>> {
         let db = ctx.data::<DatabaseConnection>()?;
-        let models = han_db::entities::hook_executions::Entity::find()
-            .filter(han_db::entities::hook_executions::Column::SessionId.eq(&self.session_id))
-            .order_by_desc(han_db::entities::hook_executions::Column::ExecutedAt)
-            .all(db)
-            .await
-            .map_err(|e| Error::new(e.to_string()))?;
+        let mut query = han_db::entities::hook_executions::Entity::find()
+            .filter(han_db::entities::hook_executions::Column::SessionId.eq(&self.session_id));
+        if let Some(ref f) = filter {
+            query = query.filter(f.to_condition());
+        }
+        if let Some(ref o) = order_by {
+            query = o.apply(query);
+        } else {
+            query = query.order_by_desc(han_db::entities::hook_executions::Column::ExecutedAt);
+        }
+        let models = query.all(db).await.map_err(|e| Error::new(e.to_string()))?;
 
         let total_count = models.len() as i32;
         let limit = first.unwrap_or(total_count) as usize;
@@ -718,6 +770,37 @@ pub struct SessionConnection {
     pub total_count: i32,
 }
 
+// -- Session filters (macro-generated with association support) --
+
+/// Source struct for auto-generating `SessionFilter` and `SessionOrderBy`.
+///
+/// Uses the `EntityFilter` derive macro with association support.
+/// The `project` field is an association marker that generates a nested
+/// `ProjectFilter` field and translates to:
+/// `session.project_id IN (SELECT id FROM projects WHERE <project_cond>)`
+#[derive(han_graphql_derive::EntityFilter)]
+#[entity_filter(
+    entity = "han_db::entities::sessions::Entity",
+    columns = "han_db::entities::sessions::Column",
+)]
+pub struct SessionFilterSource {
+    pub id: String,
+    pub project_id: Option<String>,
+    pub status: Option<String>,
+    pub slug: Option<String>,
+    pub pr_number: Option<i32>,
+    pub team_name: Option<String>,
+
+    /// Association: filter sessions by their related project's fields.
+    #[entity_filter(assoc(
+        filter = "crate::types::project::ProjectFilter",
+        local_column = "ProjectId",
+        foreign_entity = "han_db::entities::projects::Entity",
+        foreign_column = "han_db::entities::projects::Column::Id",
+    ))]
+    pub project: (),
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -740,6 +823,9 @@ mod tests {
             worktree_name: None,
             source_config_dir: None,
             status: Some("active".into()),
+            pr_number: None,
+            pr_url: None,
+            team_name: None,
         }
     }
 
@@ -800,6 +886,71 @@ mod tests {
 
         let conn = build_session_connection(sessions, None, Some(after), None, None);
         assert_eq!(conn.edges.len(), 3); // s2, s3, s4
+    }
+
+    #[test]
+    fn session_filter_default_is_empty() {
+        let f = SessionFilter::default();
+        assert!(f.id.is_none());
+        assert!(f.project_id.is_none());
+        assert!(f.status.is_none());
+        assert!(f.slug.is_none());
+        assert!(f.and.is_none());
+        assert!(f.or.is_none());
+        assert!(f.not.is_none());
+    }
+
+    #[test]
+    fn session_order_by_default_is_empty() {
+        let o = SessionOrderBy::default();
+        assert!(o.id.is_none());
+        assert!(o.status.is_none());
+    }
+
+    #[test]
+    fn session_filter_to_condition_no_panic() {
+        let f = SessionFilter {
+            status: Some(crate::filters::types::StringFilter {
+                eq: Some("active".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
+    }
+
+    #[test]
+    fn session_filter_logical_combinators() {
+        let f = SessionFilter {
+            and: Some(vec![SessionFilter {
+                project_id: Some(crate::filters::types::StringFilter {
+                    eq: Some("proj-1".into()),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]),
+            or: Some(vec![SessionFilter::default()]),
+            not: Some(Box::new(SessionFilter::default())),
+            ..Default::default()
+        };
+        let _cond = f.to_condition();
+    }
+
+    #[test]
+    fn session_filter_project_association_exists() {
+        // Verify the macro-generated filter has the project association field
+        let f = SessionFilter {
+            project: Some(crate::types::project::ProjectFilter {
+                repo_id: Some(crate::filters::types::StringFilter {
+                    eq: Some("repo-1".into()),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        // to_condition() should not panic — it generates an IN subquery
+        let _cond = f.to_condition();
     }
 }
 

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<909f0c2ed83065e62bcad4416fbef62b>>
+ * @generated SignedSource<<4e3e734aecadc63fa017e2e0009c97e5>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -59,6 +59,29 @@ return {
       "name": "after"
     },
     {
+      "defaultValue": {
+        "_or": [
+          {
+            "toolName": {
+              "_isNull": true
+            }
+          },
+          {
+            "toolName": {
+              "_notIn": [
+                "hook_result",
+                "mcp_tool_result",
+                "exposed_tool_result",
+                "sentiment_analysis"
+              ]
+            }
+          }
+        ]
+      },
+      "kind": "LocalArgument",
+      "name": "filter"
+    },
+    {
       "defaultValue": 50,
       "kind": "LocalArgument",
       "name": "first"
@@ -104,7 +127,13 @@ return {
     },
     {
       "alias": "messages",
-      "args": null,
+      "args": [
+        {
+          "kind": "Variable",
+          "name": "filter",
+          "variableName": "filter"
+        }
+      ],
       "concreteType": "MessageConnection",
       "kind": "LinkedField",
       "name": "__SessionMessages_messages_connection",
@@ -220,6 +249,6 @@ return {
 };
 })();
 
-(node as any).hash = "b2f03fbae3fcb25d6b120c5c721d0fdf";
+(node as any).hash = "b42d5e925c3d55c3ebea7d3d02878eb1";
 
 export default node;

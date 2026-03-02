@@ -11,6 +11,7 @@ postgres = ["han-db/postgres"]
 
 [dependencies]
 han-db = { path = "../han-db" }
+han-graphql-derive = { path = "../han-graphql-derive" }
 async-graphql = { version = "7", features = ["dataloader", "chrono", "uuid"] }
 tokio = { version = "1", features = ["sync", "rt"] }
 serde = { version = "1", features = ["derive"] }

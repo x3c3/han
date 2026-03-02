@@ -25,5 +25,5 @@ to their domain.
 ## Installation
 
 ```bash
-han plugin install architecture
+han plugin install system-architecture
 ```

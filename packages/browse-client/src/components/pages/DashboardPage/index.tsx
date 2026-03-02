@@ -18,8 +18,12 @@ import { DashboardContent } from "./DashboardContent.tsx";
  * Relay requires @defer to be on fragment spreads, not inline fragments
  */
 export const DashboardAnalyticsFragment = graphql`
-  fragment DashboardPageAnalytics_query on Query {
-    dashboardAnalytics(days: 30) {
+  fragment DashboardPageAnalytics_query on Query
+    @argumentDefinitions(
+      projectId: { type: "String" }
+      repoId: { type: "String" }
+    ) {
+    dashboardAnalytics(days: 30, projectId: $projectId, repoId: $repoId) {
       subagentUsage {
         subagentType
         count
@@ -168,8 +172,12 @@ export const DashboardAnalyticsFragment = graphql`
  * Relay requires @defer to be on fragment spreads, not inline fragments
  */
 export const DashboardActivityFragment = graphql`
-  fragment DashboardPageActivity_query on Query {
-    activity(days: 730) {
+  fragment DashboardPageActivity_query on Query
+    @argumentDefinitions(
+      projectId: { type: "String" }
+      repoId: { type: "String" }
+    ) {
+    activity(days: 730, projectId: $projectId, repoId: $repoId) {
       dailyActivity {
         date
         sessionCount
@@ -228,14 +236,14 @@ export const DashboardActivityFragment = graphql`
  * Note: projectId filter is used for repo-specific dashboards
  */
 export const DashboardPageQuery = graphql`
-  query DashboardPageQuery($projectId: String, $repoId: String!, $hasRepoId: Boolean!) {
+  query DashboardPageQuery($repoId: String!, $hasRepoId: Boolean!, $sessionFilter: SessionFilter) {
     repo(id: $repoId) @include(if: $hasRepoId) {
       name
     }
     projects(first: 100) {
       id
     }
-    sessions(first: 5, projectId: $projectId)
+    sessions(first: 5, filter: $sessionFilter)
       @connection(key: "DashboardPage_sessions") {
       __id
       edges {
@@ -245,7 +253,7 @@ export const DashboardPageQuery = graphql`
         }
       }
     }
-    metrics(period: WEEK) {
+    metrics(period: WEEK, repoId: $repoId) {
       totalTasks
       completedTasks
       successRate
@@ -269,8 +277,8 @@ export const DashboardPageQuery = graphql`
     # Note: @defer is disabled due to a multipart streaming parser bug where the
     # initial response isn't yielded until the next chunk's delimiter arrives.
     # The 30s TTL cache on both queries makes subsequent loads instant.
-    ...DashboardPageActivity_query
-    ...DashboardPageAnalytics_query
+    ...DashboardPageActivity_query @arguments(repoId: $repoId)
+    ...DashboardPageAnalytics_query @arguments(repoId: $repoId)
   }
 `;
 
@@ -292,9 +300,9 @@ export default function DashboardPage({
 		<PageLoader<DashboardPageQueryType>
 			query={DashboardPageQuery}
 			variables={{
-				projectId: repoId || null,
 				repoId: repoId || "",
 				hasRepoId: !!repoId,
+				sessionFilter: repoId ? { project: { repoId: { _eq: repoId } } } : null,
 			}}
 			loadingMessage="Loading dashboard..."
 		>

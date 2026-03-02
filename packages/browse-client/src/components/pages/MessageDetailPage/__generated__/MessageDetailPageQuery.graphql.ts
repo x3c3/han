@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6177c27e414d98df09e562a051f13f1d>>
+ * @generated SignedSource<<ad0479cf7b03ff9200cbc7595ecf8c2b>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -86,334 +86,323 @@ v8 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "preview",
+  "name": "type",
   "storageKey": null
 },
 v9 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "toolCallId",
+  "name": "preview",
   "storageKey": null
 },
 v10 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "input",
-  "storageKey": null
-},
-v11 = {
-  "alias": null,
-  "args": null,
-  "concreteType": null,
-  "kind": "LinkedField",
-  "name": "contentBlocks",
-  "plural": true,
+  "kind": "InlineFragment",
   "selections": [
-    (v4/*: any*/),
     {
       "alias": null,
       "args": null,
       "kind": "ScalarField",
-      "name": "type",
+      "name": "thinking",
       "storageKey": null
     },
+    (v9/*: any*/),
     {
-      "kind": "InlineFragment",
-      "selections": [
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "thinking",
-          "storageKey": null
-        },
-        (v8/*: any*/),
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "signature",
-          "storageKey": null
-        }
-      ],
-      "type": "ThinkingBlock",
-      "abstractKey": null
-    },
-    {
-      "kind": "InlineFragment",
-      "selections": [
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "text",
-          "storageKey": null
-        }
-      ],
-      "type": "TextBlock",
-      "abstractKey": null
-    },
-    {
-      "kind": "InlineFragment",
-      "selections": [
-        (v9/*: any*/),
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "name",
-          "storageKey": null
-        },
-        (v10/*: any*/),
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "category",
-          "storageKey": null
-        },
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "icon",
-          "storageKey": null
-        },
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "displayName",
-          "storageKey": null
-        },
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "color",
-          "storageKey": null
-        },
-        {
-          "alias": null,
-          "args": null,
-          "concreteType": "ToolResultBlock",
-          "kind": "LinkedField",
-          "name": "result",
-          "plural": false,
-          "selections": [
-            (v9/*: any*/),
-            (v7/*: any*/),
-            {
-              "alias": null,
-              "args": null,
-              "kind": "ScalarField",
-              "name": "isError",
-              "storageKey": null
-            },
-            {
-              "alias": null,
-              "args": null,
-              "kind": "ScalarField",
-              "name": "isLong",
-              "storageKey": null
-            },
-            (v8/*: any*/),
-            {
-              "alias": null,
-              "args": null,
-              "kind": "ScalarField",
-              "name": "hasImage",
-              "storageKey": null
-            }
-          ],
-          "storageKey": null
-        }
-      ],
-      "type": "ToolUseBlock",
-      "abstractKey": null
-    },
-    {
-      "kind": "InlineFragment",
-      "selections": [
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "mediaType",
-          "storageKey": null
-        },
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "dataUrl",
-          "storageKey": null
-        }
-      ],
-      "type": "ImageBlock",
-      "abstractKey": null
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "signature",
+      "storageKey": null
     }
   ],
-  "storageKey": null
+  "type": "ThinkingBlock",
+  "abstractKey": null
+},
+v11 = {
+  "kind": "InlineFragment",
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "text",
+      "storageKey": null
+    }
+  ],
+  "type": "TextBlock",
+  "abstractKey": null
 },
 v12 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "sentimentScore",
+  "name": "toolCallId",
   "storageKey": null
 },
 v13 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "sentimentLevel",
+  "name": "input",
   "storageKey": null
 },
-v14 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "frustrationScore",
-  "storageKey": null
-},
+v14 = [
+  (v12/*: any*/),
+  (v7/*: any*/),
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "isError",
+    "storageKey": null
+  },
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "isLong",
+    "storageKey": null
+  },
+  (v9/*: any*/),
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "hasImage",
+    "storageKey": null
+  }
+],
 v15 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "frustrationLevel",
-  "storageKey": null
+  "kind": "InlineFragment",
+  "selections": [
+    (v12/*: any*/),
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "name",
+      "storageKey": null
+    },
+    (v13/*: any*/),
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "category",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "icon",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "displayName",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "color",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "concreteType": "ToolResultBlock",
+      "kind": "LinkedField",
+      "name": "result",
+      "plural": false,
+      "selections": (v14/*: any*/),
+      "storageKey": null
+    }
+  ],
+  "type": "ToolUseBlock",
+  "abstractKey": null
 },
 v16 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "signals",
-  "storageKey": null
+  "kind": "InlineFragment",
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "mediaType",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "dataUrl",
+      "storageKey": null
+    }
+  ],
+  "type": "ImageBlock",
+  "abstractKey": null
 },
 v17 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "fileCount",
+  "name": "sentimentScore",
   "storageKey": null
 },
 v18 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "plugin",
+  "name": "sentimentLevel",
   "storageKey": null
 },
 v19 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "hook",
+  "name": "frustrationScore",
   "storageKey": null
 },
 v20 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "directory",
+  "name": "frustrationLevel",
   "storageKey": null
 },
 v21 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "cached",
+  "name": "signals",
   "storageKey": null
 },
 v22 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "success",
+  "name": "fileCount",
   "storageKey": null
 },
 v23 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "durationMs",
+  "name": "plugin",
   "storageKey": null
 },
 v24 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "exitCode",
+  "name": "hook",
   "storageKey": null
 },
 v25 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "output",
+  "name": "directory",
   "storageKey": null
 },
 v26 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "error",
+  "name": "cached",
   "storageKey": null
 },
-v27 = [
-  (v6/*: any*/),
-  (v18/*: any*/),
-  (v19/*: any*/),
-  (v20/*: any*/),
-  (v21/*: any*/),
-  (v23/*: any*/),
-  (v24/*: any*/),
-  (v22/*: any*/),
-  (v25/*: any*/),
-  (v26/*: any*/)
-],
+v27 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "success",
+  "storageKey": null
+},
 v28 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "filePath",
+  "name": "durationMs",
   "storageKey": null
 },
 v29 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "tool",
+  "name": "exitCode",
   "storageKey": null
 },
 v30 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "server",
+  "name": "output",
   "storageKey": null
 },
 v31 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
+  "name": "error",
+  "storageKey": null
+},
+v32 = [
+  (v6/*: any*/),
+  (v23/*: any*/),
+  (v24/*: any*/),
+  (v25/*: any*/),
+  (v26/*: any*/),
+  (v28/*: any*/),
+  (v29/*: any*/),
+  (v27/*: any*/),
+  (v30/*: any*/),
+  (v31/*: any*/)
+],
+v33 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "filePath",
+  "storageKey": null
+},
+v34 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "tool",
+  "storageKey": null
+},
+v35 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "server",
+  "storageKey": null
+},
+v36 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
   "name": "prefixedName",
   "storageKey": null
 },
-v32 = {
+v37 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "callId",
   "storageKey": null
 },
-v33 = [
+v38 = [
   (v5/*: any*/),
-  (v22/*: any*/),
-  (v23/*: any*/),
+  (v27/*: any*/),
+  (v28/*: any*/),
   {
     "alias": null,
     "args": null,
@@ -421,7 +410,7 @@ v33 = [
     "name": "result",
     "storageKey": null
   },
-  (v26/*: any*/)
+  (v31/*: any*/)
 ];
 return {
   "fragment": {
@@ -486,7 +475,29 @@ return {
             "selections": [
               (v6/*: any*/),
               (v7/*: any*/),
-              (v11/*: any*/),
+              {
+                "alias": null,
+                "args": null,
+                "concreteType": null,
+                "kind": "LinkedField",
+                "name": "contentBlocks",
+                "plural": true,
+                "selections": [
+                  (v4/*: any*/),
+                  (v8/*: any*/),
+                  (v10/*: any*/),
+                  (v11/*: any*/),
+                  (v15/*: any*/),
+                  {
+                    "kind": "InlineFragment",
+                    "selections": (v14/*: any*/),
+                    "type": "ToolResultBlock",
+                    "abstractKey": null
+                  },
+                  (v16/*: any*/)
+                ],
+                "storageKey": null
+              },
               {
                 "alias": null,
                 "args": null,
@@ -495,11 +506,11 @@ return {
                 "name": "sentimentAnalysis",
                 "plural": false,
                 "selections": [
-                  (v12/*: any*/),
-                  (v13/*: any*/),
-                  (v14/*: any*/),
-                  (v15/*: any*/),
-                  (v16/*: any*/),
+                  (v17/*: any*/),
+                  (v18/*: any*/),
+                  (v19/*: any*/),
+                  (v20/*: any*/),
+                  (v21/*: any*/),
                   (v5/*: any*/)
                 ],
                 "storageKey": null
@@ -527,7 +538,23 @@ return {
             "selections": [
               (v6/*: any*/),
               (v7/*: any*/),
-              (v11/*: any*/),
+              {
+                "alias": null,
+                "args": null,
+                "concreteType": null,
+                "kind": "LinkedField",
+                "name": "contentBlocks",
+                "plural": true,
+                "selections": [
+                  (v4/*: any*/),
+                  (v8/*: any*/),
+                  (v10/*: any*/),
+                  (v11/*: any*/),
+                  (v15/*: any*/),
+                  (v16/*: any*/)
+                ],
+                "storageKey": null
+              },
               {
                 "alias": null,
                 "args": null,
@@ -659,7 +686,7 @@ return {
                 "name": "isSnapshotUpdate",
                 "storageKey": null
               },
-              (v17/*: any*/),
+              (v22/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -675,10 +702,10 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v18/*: any*/),
-              (v19/*: any*/),
-              (v20/*: any*/),
-              (v21/*: any*/),
+              (v23/*: any*/),
+              (v24/*: any*/),
+              (v25/*: any*/),
+              (v26/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -695,11 +722,11 @@ return {
                 "plural": false,
                 "selections": [
                   (v5/*: any*/),
-                  (v22/*: any*/),
-                  (v23/*: any*/),
-                  (v24/*: any*/),
-                  (v25/*: any*/),
-                  (v26/*: any*/)
+                  (v27/*: any*/),
+                  (v28/*: any*/),
+                  (v29/*: any*/),
+                  (v30/*: any*/),
+                  (v31/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -709,7 +736,7 @@ return {
           },
           {
             "kind": "InlineFragment",
-            "selections": (v27/*: any*/),
+            "selections": (v32/*: any*/),
             "type": "HookResultMessage",
             "abstractKey": null
           },
@@ -746,8 +773,8 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v18/*: any*/),
-              (v28/*: any*/),
+              (v23/*: any*/),
+              (v33/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -755,15 +782,15 @@ return {
                 "name": "reason",
                 "storageKey": null
               },
-              (v22/*: any*/),
-              (v23/*: any*/)
+              (v27/*: any*/),
+              (v28/*: any*/)
             ],
             "type": "HookReferenceMessage",
             "abstractKey": null
           },
           {
             "kind": "InlineFragment",
-            "selections": (v27/*: any*/),
+            "selections": (v32/*: any*/),
             "type": "HookValidationMessage",
             "abstractKey": null
           },
@@ -771,10 +798,10 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v18/*: any*/),
-              (v19/*: any*/),
-              (v20/*: any*/),
-              (v17/*: any*/)
+              (v23/*: any*/),
+              (v24/*: any*/),
+              (v25/*: any*/),
+              (v22/*: any*/)
             ],
             "type": "HookValidationCacheMessage",
             "abstractKey": null
@@ -783,7 +810,7 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v18/*: any*/),
+              (v23/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -791,10 +818,10 @@ return {
                 "name": "command",
                 "storageKey": null
               },
-              (v23/*: any*/),
-              (v24/*: any*/),
-              (v22/*: any*/),
-              (v25/*: any*/)
+              (v28/*: any*/),
+              (v29/*: any*/),
+              (v27/*: any*/),
+              (v30/*: any*/)
             ],
             "type": "HookScriptMessage",
             "abstractKey": null
@@ -803,7 +830,7 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v18/*: any*/),
+              (v23/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -811,7 +838,7 @@ return {
                 "name": "datetime",
                 "storageKey": null
               },
-              (v23/*: any*/)
+              (v28/*: any*/)
             ],
             "type": "HookDatetimeMessage",
             "abstractKey": null
@@ -834,7 +861,7 @@ return {
                 "name": "changeToolName",
                 "storageKey": null
               },
-              (v28/*: any*/)
+              (v33/*: any*/)
             ],
             "type": "HookFileChangeMessage",
             "abstractKey": null
@@ -865,11 +892,11 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v29/*: any*/),
-              (v30/*: any*/),
-              (v31/*: any*/),
-              (v10/*: any*/),
-              (v32/*: any*/),
+              (v34/*: any*/),
+              (v35/*: any*/),
+              (v36/*: any*/),
+              (v13/*: any*/),
+              (v37/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -877,7 +904,7 @@ return {
                 "kind": "LinkedField",
                 "name": "result",
                 "plural": false,
-                "selections": (v33/*: any*/),
+                "selections": (v38/*: any*/),
                 "storageKey": null
               }
             ],
@@ -888,13 +915,13 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v29/*: any*/),
+              (v34/*: any*/),
+              (v35/*: any*/),
+              (v36/*: any*/),
+              (v28/*: any*/),
+              (v27/*: any*/),
               (v30/*: any*/),
-              (v31/*: any*/),
-              (v23/*: any*/),
-              (v22/*: any*/),
-              (v25/*: any*/),
-              (v26/*: any*/)
+              (v31/*: any*/)
             ],
             "type": "McpToolResultMessage",
             "abstractKey": null
@@ -903,10 +930,10 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v29/*: any*/),
-              (v31/*: any*/),
-              (v10/*: any*/),
-              (v32/*: any*/),
+              (v34/*: any*/),
+              (v36/*: any*/),
+              (v13/*: any*/),
+              (v37/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -914,7 +941,7 @@ return {
                 "kind": "LinkedField",
                 "name": "result",
                 "plural": false,
-                "selections": (v33/*: any*/),
+                "selections": (v38/*: any*/),
                 "storageKey": null
               }
             ],
@@ -925,12 +952,12 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v29/*: any*/),
-              (v31/*: any*/),
-              (v23/*: any*/),
-              (v22/*: any*/),
-              (v25/*: any*/),
-              (v26/*: any*/)
+              (v34/*: any*/),
+              (v36/*: any*/),
+              (v28/*: any*/),
+              (v27/*: any*/),
+              (v30/*: any*/),
+              (v31/*: any*/)
             ],
             "type": "ExposedToolResultMessage",
             "abstractKey": null
@@ -953,7 +980,7 @@ return {
                 "name": "route",
                 "storageKey": null
               },
-              (v23/*: any*/),
+              (v28/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -1005,11 +1032,11 @@ return {
             "kind": "InlineFragment",
             "selections": [
               (v6/*: any*/),
-              (v12/*: any*/),
-              (v13/*: any*/),
-              (v14/*: any*/),
-              (v15/*: any*/),
-              (v16/*: any*/),
+              (v17/*: any*/),
+              (v18/*: any*/),
+              (v19/*: any*/),
+              (v20/*: any*/),
+              (v21/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -1049,12 +1076,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "254da59ec3f124caf2e0ae304e3b027d",
+    "cacheID": "a2d91c1a3f50380f05742b3c5df173e8",
     "id": null,
     "metadata": {},
     "name": "MessageDetailPageQuery",
     "operationKind": "query",
-    "text": "query MessageDetailPageQuery(\n  $id: String!\n) {\n  message(id: $id) {\n    __typename\n    uuid\n    timestamp\n    ...MessageCards_message\n    id\n  }\n}\n\nfragment AssistantMessageCard_message on AssistantMessage {\n  id\n  timestamp\n  rawJson\n  content\n  contentBlocks {\n    __typename\n    type\n    ... on ThinkingBlock {\n      thinking\n      preview\n      signature\n    }\n    ... on TextBlock {\n      text\n    }\n    ... on ToolUseBlock {\n      toolCallId\n      name\n      input\n      category\n      icon\n      displayName\n      color\n      result {\n        toolCallId\n        content\n        isError\n        isLong\n        preview\n        hasImage\n      }\n    }\n    ... on ImageBlock {\n      mediaType\n      dataUrl\n    }\n  }\n  isToolOnly\n  model\n  hasThinking\n  thinkingCount\n  hasToolUse\n  toolUseCount\n  inputTokens\n  outputTokens\n  cachedTokens\n}\n\nfragment ExposedToolCallMessageCard_message on ExposedToolCallMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  prefixedName\n  input\n  callId\n  result {\n    id\n    success\n    durationMs\n    result\n    error\n  }\n}\n\nfragment ExposedToolResultMessageCard_message on ExposedToolResultMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  prefixedName\n  durationMs\n  success\n  output\n  error\n}\n\nfragment FileHistorySnapshotMessageCard_message on FileHistorySnapshotMessage {\n  id\n  timestamp\n  rawJson\n  messageId\n  isSnapshotUpdate\n  fileCount\n  snapshotTimestamp\n}\n\nfragment HookCheckStateMessageCard_message on HookCheckStateMessage {\n  id\n  timestamp\n  rawJson\n  hookType\n  fingerprint\n  hooksCount\n}\n\nfragment HookDatetimeMessageCard_message on HookDatetimeMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  datetime\n  durationMs\n}\n\nfragment HookFileChangeMessageCard_message on HookFileChangeMessage {\n  id\n  timestamp\n  rawJson\n  recordedSessionId\n  changeToolName\n  filePath\n}\n\nfragment HookReferenceMessageCard_message on HookReferenceMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  filePath\n  reason\n  success\n  durationMs\n}\n\nfragment HookResultMessageCard_message on HookResultMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  cached\n  durationMs\n  exitCode\n  success\n  output\n  error\n}\n\nfragment HookRunMessageCard_message on HookRunMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  cached\n  hookRunId\n  result {\n    id\n    success\n    durationMs\n    exitCode\n    output\n    error\n  }\n}\n\nfragment HookScriptMessageCard_message on HookScriptMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  command\n  durationMs\n  exitCode\n  success\n  output\n}\n\nfragment HookValidationCacheMessageCard_message on HookValidationCacheMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  fileCount\n}\n\nfragment HookValidationMessageCard_message on HookValidationMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  cached\n  durationMs\n  exitCode\n  success\n  output\n  error\n}\n\nfragment McpToolCallMessageCard_message on McpToolCallMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  server\n  prefixedName\n  input\n  callId\n  result {\n    id\n    success\n    durationMs\n    result\n    error\n  }\n}\n\nfragment McpToolResultMessageCard_message on McpToolResultMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  server\n  prefixedName\n  durationMs\n  success\n  output\n  error\n}\n\nfragment MemoryLearnMessageCard_message on MemoryLearnMessage {\n  id\n  timestamp\n  rawJson\n  domain\n  scope\n  paths\n  append\n}\n\nfragment MemoryQueryMessageCard_message on MemoryQueryMessage {\n  id\n  timestamp\n  rawJson\n  question\n  route\n  durationMs\n  resultCount\n}\n\nfragment MessageCards_message on Message {\n  __isMessage: __typename\n  __typename\n  id\n  parentId\n  ...UserMessageCard_message\n  ...AssistantMessageCard_message\n  ...SummaryMessageCard_message\n  ...SystemMessageCard_message\n  ...FileHistorySnapshotMessageCard_message\n  ...HookRunMessageCard_message\n  ...HookResultMessageCard_message\n  ...HookCheckStateMessageCard_message\n  ...HookReferenceMessageCard_message\n  ...HookValidationMessageCard_message\n  ...HookValidationCacheMessageCard_message\n  ...HookScriptMessageCard_message\n  ...HookDatetimeMessageCard_message\n  ...HookFileChangeMessageCard_message\n  ...QueueOperationMessageCard_message\n  ...McpToolCallMessageCard_message\n  ...McpToolResultMessageCard_message\n  ...ExposedToolCallMessageCard_message\n  ...ExposedToolResultMessageCard_message\n  ...MemoryQueryMessageCard_message\n  ...MemoryLearnMessageCard_message\n  ...SentimentAnalysisMessageCard_message\n  ...UnknownEventMessageCard_message\n}\n\nfragment QueueOperationMessageCard_message on QueueOperationMessage {\n  id\n  timestamp\n  rawJson\n  operation\n  queueSessionId\n}\n\nfragment SentimentAnalysisMessageCard_message on SentimentAnalysisMessage {\n  id\n  timestamp\n  rawJson\n  sentimentScore\n  sentimentLevel\n  frustrationScore\n  frustrationLevel\n  signals\n  analyzedMessageId\n}\n\nfragment SummaryMessageCard_message on SummaryMessage {\n  id\n  timestamp\n  rawJson\n  content\n  isCompactSummary\n}\n\nfragment SystemMessageCard_message on SystemMessage {\n  id\n  timestamp\n  rawJson\n  content\n  subtype\n  level\n  isMeta\n}\n\nfragment UnknownEventMessageCard_message on UnknownEventMessage {\n  id\n  timestamp\n  rawJson\n  messageType\n  eventType\n}\n\nfragment UserMessageCard_message on UserMessage {\n  __isUserMessage: __typename\n  __typename\n  id\n  timestamp\n  rawJson\n  content\n  contentBlocks {\n    __typename\n    type\n    ... on ThinkingBlock {\n      thinking\n      preview\n      signature\n    }\n    ... on TextBlock {\n      text\n    }\n    ... on ToolUseBlock {\n      toolCallId\n      name\n      input\n      category\n      icon\n      displayName\n      color\n      result {\n        toolCallId\n        content\n        isError\n        isLong\n        preview\n        hasImage\n      }\n    }\n    ... on ImageBlock {\n      mediaType\n      dataUrl\n    }\n  }\n  sentimentAnalysis {\n    sentimentScore\n    sentimentLevel\n    frustrationScore\n    frustrationLevel\n    signals\n    id\n  }\n  ... on CommandUserMessage {\n    commandName\n  }\n}\n"
+    "text": "query MessageDetailPageQuery(\n  $id: String!\n) {\n  message(id: $id) {\n    __typename\n    uuid\n    timestamp\n    ...MessageCards_message\n    id\n  }\n}\n\nfragment AssistantMessageCard_message on AssistantMessage {\n  id\n  timestamp\n  rawJson\n  content\n  contentBlocks {\n    __typename\n    type\n    ... on ThinkingBlock {\n      thinking\n      preview\n      signature\n    }\n    ... on TextBlock {\n      text\n    }\n    ... on ToolUseBlock {\n      toolCallId\n      name\n      input\n      category\n      icon\n      displayName\n      color\n      result {\n        toolCallId\n        content\n        isError\n        isLong\n        preview\n        hasImage\n      }\n    }\n    ... on ImageBlock {\n      mediaType\n      dataUrl\n    }\n  }\n  isToolOnly\n  model\n  hasThinking\n  thinkingCount\n  hasToolUse\n  toolUseCount\n  inputTokens\n  outputTokens\n  cachedTokens\n}\n\nfragment ExposedToolCallMessageCard_message on ExposedToolCallMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  prefixedName\n  input\n  callId\n  result {\n    id\n    success\n    durationMs\n    result\n    error\n  }\n}\n\nfragment ExposedToolResultMessageCard_message on ExposedToolResultMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  prefixedName\n  durationMs\n  success\n  output\n  error\n}\n\nfragment FileHistorySnapshotMessageCard_message on FileHistorySnapshotMessage {\n  id\n  timestamp\n  rawJson\n  messageId\n  isSnapshotUpdate\n  fileCount\n  snapshotTimestamp\n}\n\nfragment HookCheckStateMessageCard_message on HookCheckStateMessage {\n  id\n  timestamp\n  rawJson\n  hookType\n  fingerprint\n  hooksCount\n}\n\nfragment HookDatetimeMessageCard_message on HookDatetimeMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  datetime\n  durationMs\n}\n\nfragment HookFileChangeMessageCard_message on HookFileChangeMessage {\n  id\n  timestamp\n  rawJson\n  recordedSessionId\n  changeToolName\n  filePath\n}\n\nfragment HookReferenceMessageCard_message on HookReferenceMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  filePath\n  reason\n  success\n  durationMs\n}\n\nfragment HookResultMessageCard_message on HookResultMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  cached\n  durationMs\n  exitCode\n  success\n  output\n  error\n}\n\nfragment HookRunMessageCard_message on HookRunMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  cached\n  hookRunId\n  result {\n    id\n    success\n    durationMs\n    exitCode\n    output\n    error\n  }\n}\n\nfragment HookScriptMessageCard_message on HookScriptMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  command\n  durationMs\n  exitCode\n  success\n  output\n}\n\nfragment HookValidationCacheMessageCard_message on HookValidationCacheMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  fileCount\n}\n\nfragment HookValidationMessageCard_message on HookValidationMessage {\n  id\n  timestamp\n  rawJson\n  plugin\n  hook\n  directory\n  cached\n  durationMs\n  exitCode\n  success\n  output\n  error\n}\n\nfragment McpToolCallMessageCard_message on McpToolCallMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  server\n  prefixedName\n  input\n  callId\n  result {\n    id\n    success\n    durationMs\n    result\n    error\n  }\n}\n\nfragment McpToolResultMessageCard_message on McpToolResultMessage {\n  id\n  timestamp\n  rawJson\n  tool\n  server\n  prefixedName\n  durationMs\n  success\n  output\n  error\n}\n\nfragment MemoryLearnMessageCard_message on MemoryLearnMessage {\n  id\n  timestamp\n  rawJson\n  domain\n  scope\n  paths\n  append\n}\n\nfragment MemoryQueryMessageCard_message on MemoryQueryMessage {\n  id\n  timestamp\n  rawJson\n  question\n  route\n  durationMs\n  resultCount\n}\n\nfragment MessageCards_message on Message {\n  __isMessage: __typename\n  __typename\n  id\n  parentId\n  ...UserMessageCard_message\n  ...AssistantMessageCard_message\n  ...SummaryMessageCard_message\n  ...SystemMessageCard_message\n  ...FileHistorySnapshotMessageCard_message\n  ...HookRunMessageCard_message\n  ...HookResultMessageCard_message\n  ...HookCheckStateMessageCard_message\n  ...HookReferenceMessageCard_message\n  ...HookValidationMessageCard_message\n  ...HookValidationCacheMessageCard_message\n  ...HookScriptMessageCard_message\n  ...HookDatetimeMessageCard_message\n  ...HookFileChangeMessageCard_message\n  ...QueueOperationMessageCard_message\n  ...McpToolCallMessageCard_message\n  ...McpToolResultMessageCard_message\n  ...ExposedToolCallMessageCard_message\n  ...ExposedToolResultMessageCard_message\n  ...MemoryQueryMessageCard_message\n  ...MemoryLearnMessageCard_message\n  ...SentimentAnalysisMessageCard_message\n  ...UnknownEventMessageCard_message\n}\n\nfragment QueueOperationMessageCard_message on QueueOperationMessage {\n  id\n  timestamp\n  rawJson\n  operation\n  queueSessionId\n}\n\nfragment SentimentAnalysisMessageCard_message on SentimentAnalysisMessage {\n  id\n  timestamp\n  rawJson\n  sentimentScore\n  sentimentLevel\n  frustrationScore\n  frustrationLevel\n  signals\n  analyzedMessageId\n}\n\nfragment SummaryMessageCard_message on SummaryMessage {\n  id\n  timestamp\n  rawJson\n  content\n  isCompactSummary\n}\n\nfragment SystemMessageCard_message on SystemMessage {\n  id\n  timestamp\n  rawJson\n  content\n  subtype\n  level\n  isMeta\n}\n\nfragment UnknownEventMessageCard_message on UnknownEventMessage {\n  id\n  timestamp\n  rawJson\n  messageType\n  eventType\n}\n\nfragment UserMessageCard_message on UserMessage {\n  __isUserMessage: __typename\n  __typename\n  id\n  timestamp\n  rawJson\n  content\n  contentBlocks {\n    __typename\n    type\n    ... on ThinkingBlock {\n      thinking\n      preview\n      signature\n    }\n    ... on TextBlock {\n      text\n    }\n    ... on ToolUseBlock {\n      toolCallId\n      name\n      input\n      category\n      icon\n      displayName\n      color\n      result {\n        toolCallId\n        content\n        isError\n        isLong\n        preview\n        hasImage\n      }\n    }\n    ... on ToolResultBlock {\n      toolCallId\n      content\n      isError\n      isLong\n      preview\n      hasImage\n    }\n    ... on ImageBlock {\n      mediaType\n      dataUrl\n    }\n  }\n  sentimentAnalysis {\n    sentimentScore\n    sentimentLevel\n    frustrationScore\n    frustrationLevel\n    signals\n    id\n  }\n  ... on CommandUserMessage {\n    commandName\n  }\n}\n"
   }
 };
 })();

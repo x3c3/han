@@ -272,11 +272,25 @@ export async function getRecentHookExecutions(
       // Parse the execution directly from the content field (which is raw_json)
       try {
         if (!msg.content) continue;
-        const event = JSON.parse(msg.content) as { type?: string; hook_type?: string; hook_name?: string; duration_ms?: number; exit_code?: number; passed?: boolean; output?: string; error?: string; session_id?: string; task_id?: string; timestamp?: string; id?: string; data?: Record<string, unknown> };
+        const event = JSON.parse(msg.content) as {
+          type?: string;
+          hook_type?: string;
+          hook_name?: string;
+          duration_ms?: number;
+          exit_code?: number;
+          passed?: boolean;
+          output?: string;
+          error?: string;
+          session_id?: string;
+          task_id?: string;
+          timestamp?: string;
+          id?: string;
+          data?: Record<string, unknown>;
+        };
         const execution: HookExecution = {
           id: msg.id || `hook-${msg.session_id}-${Date.now()}`,
-          sessionId: (msg.session_id ?? null),
-          taskId: (event.task_id ?? null),
+          sessionId: msg.session_id ?? null,
+          taskId: event.task_id ?? null,
           hookType: event.hook_type || 'unknown',
           hookName: event.hook_name || 'unknown',
           hookSource: null,

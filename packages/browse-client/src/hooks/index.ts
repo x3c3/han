@@ -1,4 +1,4 @@
-export { useMessageGroups, type GroupInfo } from "./useMessageGroups.ts";
+export { type GroupInfo, useMessageGroups } from "./useMessageGroups.ts";
 export { usePagination } from "./usePagination.ts";
 export {
 	type MemoryUpdateEvent,

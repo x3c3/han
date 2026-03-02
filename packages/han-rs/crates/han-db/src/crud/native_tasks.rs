@@ -18,7 +18,7 @@ pub async fn create(
     let id_clone = id.clone();
     let session_id_clone = session_id.clone();
 
-    native_tasks::Entity::insert(native_tasks::ActiveModel {
+    let result = native_tasks::Entity::insert(native_tasks::ActiveModel {
         id: Set(id),
         session_id: Set(session_id),
         message_id: Set(message_id),
@@ -40,8 +40,13 @@ pub async fn create(
             .to_owned(),
     )
     .exec(db)
-    .await
-    .map_err(DbError::Database)?;
+    .await;
+    // SeaORM returns RecordNotInserted when do_nothing skips an existing record
+    match result {
+        Ok(_) => {}
+        Err(DbErr::RecordNotInserted) => {} // Already exists, will fetch below
+        Err(e) => return Err(DbError::Database(e)),
+    }
 
     // Fetch after insert (exec_with_returning doesn't work with on_conflict in SQLite)
     native_tasks::Entity::find()

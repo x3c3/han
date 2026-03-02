@@ -10,7 +10,6 @@ import {
   ensureDispatchHooks,
   fetchMarketplace,
   findClaudeExecutable,
-  getInstalledPlugins,
   getSettingsFilename,
   HAN_MARKETPLACE_REPO,
   type InstallScope,
@@ -140,7 +139,9 @@ function installPluginDirect(
     if (!settings?.extraKnownMarketplaces?.[marketplaceName]) {
       settings.extraKnownMarketplaces = {
         ...settings.extraKnownMarketplaces,
-        [marketplaceName]: { source: { source: 'github', repo: marketplaceRepo } },
+        [marketplaceName]: {
+          source: { source: 'github', repo: marketplaceRepo },
+        },
       };
     }
 
@@ -169,9 +170,19 @@ function doInstallPlugin(
   marketplaceRepo: string
 ): boolean {
   if (useClaudeCli) {
-    return installPluginViaClaude(pluginName, scope, marketplaceName, marketplaceRepo);
+    return installPluginViaClaude(
+      pluginName,
+      scope,
+      marketplaceName,
+      marketplaceRepo
+    );
   }
-  return installPluginDirect(pluginName, scope, marketplaceName, marketplaceRepo);
+  return installPluginDirect(
+    pluginName,
+    scope,
+    marketplaceName,
+    marketplaceRepo
+  );
 }
 
 /**
@@ -224,7 +235,9 @@ export async function installPlugins(
   // For Han marketplace: always include bushido and core as dependencies
   // For external marketplaces: install core + bushido from Han, then external plugins
   const pluginsToInstall = new Set(
-    isExternalMarketplace ? resolvedNames : ['core', 'bushido', ...resolvedNames]
+    isExternalMarketplace
+      ? resolvedNames
+      : ['core', 'bushido', ...resolvedNames]
   );
 
   ensureClaudeDirectory(scope);
@@ -339,7 +352,15 @@ export async function installPlugins(
         continue;
       }
       console.log(`Installing ${pluginKey}...`);
-      if (doInstallPlugin(foundationPlugin, scope, useClaudeCli, 'han', HAN_MARKETPLACE_REPO)) {
+      if (
+        doInstallPlugin(
+          foundationPlugin,
+          scope,
+          useClaudeCli,
+          'han',
+          HAN_MARKETPLACE_REPO
+        )
+      ) {
         installed.push(foundationPlugin);
         recordPluginInstall(foundationPlugin, scope, true);
       } else {
@@ -358,7 +379,15 @@ export async function installPlugins(
       alreadyInstalled.push(pluginName);
     } else {
       console.log(`Installing ${pluginKey}...`);
-      if (doInstallPlugin(pluginName, scope, useClaudeCli, marketplaceName, marketplaceRepo)) {
+      if (
+        doInstallPlugin(
+          pluginName,
+          scope,
+          useClaudeCli,
+          marketplaceName,
+          marketplaceRepo
+        )
+      ) {
         installed.push(pluginName);
         // Record telemetry
         recordPluginInstall(pluginName, scope, true);

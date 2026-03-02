@@ -13,10 +13,9 @@ import { Heading } from "@/components/atoms/Heading.tsx";
 import { HStack } from "@/components/atoms/HStack.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
+import { OutcomeBadge, TaskTypeBadge } from "@/components/molecules";
 import { StatCard } from "@/components/organisms/StatCard.tsx";
 import type { MetricsContentQuery as MetricsContentQueryType } from "./__generated__/MetricsContentQuery.graphql.ts";
-import { OutcomeBadge } from "./OutcomeBadge.tsx";
-import { TaskTypeBadge } from "./TaskTypeBadge.tsx";
 
 type Period = "DAY" | "WEEK" | "MONTH";
 

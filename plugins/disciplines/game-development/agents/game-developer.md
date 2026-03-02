@@ -5,6 +5,12 @@ description: |
   game systems, and player experiences. Expert in game programming, real-time systems, and
   creative problem-solving.
 memory: project
+isolation: worktree
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/../../core/hooks/worktree-merge-prompt.sh"
 ---
 
 # Game Developer

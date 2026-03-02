@@ -5,9 +5,9 @@
  */
 
 export {
-  ModeProvider,
-  useIsHosted,
-  useMode,
-  type AppMode,
-  type ModeContextValue,
-} from './ModeContext.tsx';
+	type AppMode,
+	type ModeContextValue,
+	ModeProvider,
+	useIsHosted,
+	useMode,
+} from "./ModeContext.tsx";

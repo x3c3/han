@@ -107,24 +107,16 @@ impl SessionMessageAddedPayload {
             String::new()
         };
 
-        // Get the latest few messages for this session (newest by line_number)
-        // We fetch a small batch because some may be paired events we need to skip
-        let recent_msgs = messages::Entity::find()
+        // Get the latest message for this session by line_number
+        let msg = messages::Entity::find()
             .filter(messages::Column::SessionId.eq(&self.session_id))
             .order_by_desc(messages::Column::LineNumber)
-            .limit(10)
-            .all(db)
+            .limit(1)
+            .one(db)
             .await
             .map_err(|e| Error::new(e.to_string()))?;
 
-        // Find the first message with content
-        let msg = recent_msgs.iter().find(|m| {
-            m.content.as_ref().map(|c| !c.is_empty()).unwrap_or(false)
-                || m.message_type == "summary"
-                || m.message_type == "han_event"
-        });
-
-        match msg {
+        match msg.as_ref() {
             Some(msg) => {
                 let data = MessageData::from_model(msg, &project_dir);
                 let cursor = encode_msg_cursor(&msg.timestamp, &msg.id);

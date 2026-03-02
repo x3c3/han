@@ -7,14 +7,14 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import { getGitRemoteUrl, globFilesSync } from '../bun-utils.ts';
 import { getClaudeConfigDir } from '../config/claude-settings.ts';
+import type { EventLogger } from '../events/logger.ts';
 import {
   getHookCache,
   sessionFileValidations,
   setHookCache,
 } from '../grpc/data-access.ts';
-import type { EventLogger } from '../events/logger.ts';
-import { getGitRemoteUrl, globFilesSync } from '../bun-utils.ts';
 
 /**
  * Cache manifest structure stored per plugin/hook combination
@@ -238,7 +238,9 @@ function buildGitIgnoreMap(rootDir: string): Map<string, string[]> {
   try {
     // Use Bun.Glob directly with dot: true to find dotfiles like .gitignore
     const gitignoreGlob = new Bun.Glob('**/.gitignore');
-    const gitignoreFiles = [...gitignoreGlob.scanSync({ cwd: rootDir, onlyFiles: true, dot: true })];
+    const gitignoreFiles = [
+      ...gitignoreGlob.scanSync({ cwd: rootDir, onlyFiles: true, dot: true }),
+    ];
     // Also check root .gitignore
     if (existsSync(join(rootDir, '.gitignore'))) {
       gitignoreFiles.push('.gitignore');
@@ -253,9 +255,10 @@ function buildGitIgnoreMap(rootDir: string): Map<string, string[]> {
           .filter((line) => line && !line.startsWith('#'))
           .map((line) => line.replace(/\/$/, '')); // Remove trailing slash
         // Store relative to the directory containing the .gitignore
-        const gitignoreDir = gitignoreRelPath === '.gitignore'
-          ? ''
-          : gitignoreRelPath.replace('/.gitignore', '');
+        const gitignoreDir =
+          gitignoreRelPath === '.gitignore'
+            ? ''
+            : gitignoreRelPath.replace('/.gitignore', '');
         ignoreMap.set(gitignoreDir, patterns);
       } catch {
         // Skip unreadable files
@@ -302,10 +305,13 @@ function getGitIgnoredDirs(rootDir: string): string[] {
  * Check if a relative file path should be ignored based on all gitignore rules
  * Supports nested .gitignore files
  */
-function isGitIgnoredWithMap(filePath: string, ignoreMap: Map<string, string[]>): boolean {
+function isGitIgnoredWithMap(
+  filePath: string,
+  ignoreMap: Map<string, string[]>
+): boolean {
   for (const [dir, patterns] of ignoreMap) {
     // Check if this file is under the gitignore's directory
-    const prefix = dir === '' ? '' : dir + '/';
+    const prefix = dir === '' ? '' : `${dir}/`;
     if (dir !== '' && !filePath.startsWith(prefix)) {
       continue; // This .gitignore doesn't apply to this path
     }
@@ -320,7 +326,7 @@ function isGitIgnoredWithMap(filePath: string, ignoreMap: Map<string, string[]>)
         }
       }
       // Check if path starts with pattern
-      if (relPath.startsWith(pattern + '/') || relPath === pattern) {
+      if (relPath.startsWith(`${pattern}/`) || relPath === pattern) {
         return true;
       }
     }
@@ -341,7 +347,7 @@ function isGitIgnored(filePath: string, ignoredPatterns: string[]): boolean {
       }
     }
     // Check if the path starts with the pattern
-    if (filePath.startsWith(pattern + '/') || filePath === pattern) {
+    if (filePath.startsWith(`${pattern}/`) || filePath === pattern) {
       return true;
     }
   }
@@ -550,7 +556,7 @@ export async function trackFilesAsync(
 
     // Delete stale validation records for files that no longer exist
     // This prevents "ghost" validations from causing infinite re-validation loops
-    const currentFilePaths = Object.keys(manifest);
+    const _currentFilePaths = Object.keys(manifest);
     const directory = canonicalDirectory;
     const deletedCount = await sessionFileValidations.deleteStale(
       options.sessionId ?? ''
@@ -590,8 +596,8 @@ export async function trackFilesAsync(
  * @param pluginRoot - Optional plugin directory to also check for changes
  */
 export async function checkForChangesAsync(
-  pluginName: string,
-  hookName: string,
+  _pluginName: string,
+  _hookName: string,
   rootDir: string,
   patterns: string[],
   _pluginRoot?: string,
@@ -650,11 +656,11 @@ export async function checkForChangesAsync(
   try {
     // Canonicalize directory for consistent lookups
     // (e.g., /Volumes/dev vs /Users/name/dev pointing to same location)
-    let canonicalDirectory: string;
+    let _canonicalDirectory: string;
     try {
-      canonicalDirectory = realpathSync(options.directory ?? rootDir);
+      _canonicalDirectory = realpathSync(options.directory ?? rootDir);
     } catch {
-      canonicalDirectory = options.directory ?? rootDir;
+      _canonicalDirectory = options.directory ?? rootDir;
     }
 
     const validations = await sessionFileValidations.list(
@@ -672,7 +678,9 @@ export async function checkForChangesAsync(
       }
 
       // For pattern-based checks, see if any manifest files were changed in the session
-      const { sessionFileChanges: sfc2 } = await import('../grpc/data-access.ts');
+      const { sessionFileChanges: sfc2 } = await import(
+        '../grpc/data-access.ts'
+      );
       const sessionChanges = await sfc2.list(options.sessionId);
       const sessionChangedPaths = new Set(
         sessionChanges.map((c) => c.file_path)
@@ -732,9 +740,10 @@ export function findDirectoriesWithMarkers(
   const ignoreMap = buildGitIgnoreMap(rootDir);
   for (const pattern of markerPatterns) {
     // Ensure patterns are recursive by prepending **/ if not already a glob pattern
-    const recursivePattern = pattern.includes('/') || pattern.includes('*')
-      ? pattern
-      : `**/${pattern}`;
+    const recursivePattern =
+      pattern.includes('/') || pattern.includes('*')
+        ? pattern
+        : `**/${pattern}`;
     for (const file of globFilesSync(recursivePattern, rootDir)) {
       // Filter out files in gitignore'd directories
       if (!isGitIgnoredWithMap(file, ignoreMap)) {

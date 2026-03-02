@@ -546,6 +546,9 @@ mod tests {
             transcript_path: Some("/path/to/file.jsonl".to_string()),
             source_config_dir: None,
             last_indexed_line: Some(42),
+            pr_number: None,
+            pr_url: None,
+            team_name: None,
         };
 
         let data = model_to_session_data(&model);
@@ -777,6 +780,9 @@ mod tests {
             transcript_path: None,
             source_config_dir: None,
             last_indexed_line: None,
+            pr_number: None,
+            pr_url: None,
+            team_name: None,
         };
 
         let data = model_to_session_data(&model);
@@ -798,6 +804,9 @@ mod tests {
             transcript_path: None,
             source_config_dir: None,
             last_indexed_line: None,
+            pr_number: None,
+            pr_url: None,
+            team_name: None,
         };
 
         let data = model_to_session_data(&model);
@@ -822,6 +831,9 @@ mod tests {
             transcript_path: Some("/home/user/.claude/sessions/full.jsonl".to_string()),
             source_config_dir: Some("/home/user/project".to_string()),
             last_indexed_line: Some(1500),
+            pr_number: None,
+            pr_url: None,
+            team_name: None,
         };
 
         let data = model_to_session_data(&model);

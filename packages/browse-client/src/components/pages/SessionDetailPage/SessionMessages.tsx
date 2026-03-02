@@ -26,6 +26,7 @@ import {
 	useRelayEnvironment,
 	useSubscription,
 } from "react-relay";
+import { useSearchParams } from "react-router-dom";
 import { fetchQuery, type GraphQLSubscriptionConfig } from "relay-runtime";
 import { Box } from "@/components/atoms/Box.tsx";
 import { Button } from "@/components/atoms/Button.tsx";
@@ -36,6 +37,7 @@ import { Spinner } from "@/components/atoms/Spinner.tsx";
 import { SubwayLine } from "@/components/atoms/SubwayLine.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
+import { MessageCard } from "@/components/organisms/MessageCards/index.tsx";
 import { useMessageGroups } from "@/hooks/useMessageGroups.ts";
 import { VirtualList, type VirtualListRef } from "@/lists/index.ts";
 import { colors, spacing } from "@/theme.ts";
@@ -43,7 +45,6 @@ import type { SessionMessages_session$key } from "./__generated__/SessionMessage
 import type { SessionMessagesPaginationQuery } from "./__generated__/SessionMessagesPaginationQuery.graphql.ts";
 import type { SessionMessagesSearchQuery } from "./__generated__/SessionMessagesSearchQuery.graphql.ts";
 import type { SessionMessagesSubscription } from "./__generated__/SessionMessagesSubscription.graphql.ts";
-import { MessageCard } from "./MessageCards/index.tsx";
 
 /** Right-aligned message types (real user input) */
 const RIGHT_ALIGNED_TYPES = new Set([
@@ -52,9 +53,24 @@ const RIGHT_ALIGNED_TYPES = new Set([
 	"InterruptUserMessage",
 ]);
 
-function getMessageAlignment(typename: string): "left" | "right" {
-	return RIGHT_ALIGNED_TYPES.has(typename) ? "right" : "left";
+/** Left-aligned message types (Claude / assistant) */
+const LEFT_ALIGNED_TYPES = new Set(["AssistantMessage"]);
+
+function getMessageAlignment(typename: string): "left" | "center" | "right" {
+	if (RIGHT_ALIGNED_TYPES.has(typename)) return "right";
+	if (LEFT_ALIGNED_TYPES.has(typename)) return "left";
+	return "center";
 }
+
+/**
+ * Message types hidden from timeline (shown inline on parent call cards).
+ *
+ * Most result types are now filtered server-side via MessageFilter on the
+ * messages() connection (see SessionMessagesFragment below). This set only
+ * contains types that require raw_json content inspection and cannot be
+ * filtered by simple column conditions.
+ */
+const HIDDEN_TYPES = new Set(["ToolResultUserMessage"]);
 
 /**
  * Query for server-side message search
@@ -94,10 +110,28 @@ const SessionMessagesFragment = graphql`
   @argumentDefinitions(
     first: { type: "Int", defaultValue: 50 }
     after: { type: "String" }
+    filter: {
+      type: "MessageFilter"
+      defaultValue: {
+        _or: [
+          { toolName: { _isNull: true } }
+          {
+            toolName: {
+              _notIn: [
+                "hook_result"
+                "mcp_tool_result"
+                "exposed_tool_result"
+                "sentiment_analysis"
+              ]
+            }
+          }
+        ]
+      }
+    }
   )
   @refetchable(queryName: "SessionMessagesPaginationQuery") {
     messageCount
-    messages(first: $first, after: $after)
+    messages(first: $first, after: $after, filter: $filter)
       @connection(key: "SessionMessages_messages") {
       __id
       edges {
@@ -172,6 +206,7 @@ export function SessionMessages({
 	});
 	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 	const [isSearching, setIsSearching] = useState(false);
+	const [searchParams, setSearchParams] = useSearchParams();
 	const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 	const searchContainerRef = useRef<HTMLDivElement>(null);
 	const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -263,7 +298,8 @@ export function SessionMessages({
 
 	useSubscription<SessionMessagesSubscription>(subscriptionConfig);
 
-	// Get message nodes from edges, filtering out null/undefined
+	// Get message nodes from edges, filtering out null/undefined and hidden types.
+	// SentimentAnalysisMessage is filtered out because sentiment is shown inline on user cards.
 	// DO NOT reverse - inverted VirtualList handles visual order
 	const messageNodes = useMemo(
 		() =>
@@ -271,7 +307,9 @@ export function SessionMessages({
 				.map((edge) => edge?.node)
 				.filter(
 					(node): node is NonNullable<typeof node> =>
-						node != null && node.id != null,
+						node != null &&
+						node.id != null &&
+						!HIDDEN_TYPES.has(node.__typename),
 				),
 		[data?.messages?.edges],
 	);
@@ -334,6 +372,38 @@ export function SessionMessages({
 		[],
 	);
 
+	// Auto-jump to message from URL params (e.g. ?messageId=abc123)
+	const didAutoJumpRef = useRef(false);
+	useEffect(() => {
+		const targetMessageId = searchParams.get("messageId");
+		if (!targetMessageId || didAutoJumpRef.current) return;
+		if (messageNodes.length === 0) return;
+
+		const index = messageNodes.findIndex(
+			(node) =>
+				node.id === targetMessageId || node.id === `Message:${targetMessageId}`,
+		);
+		if (index === -1) return;
+
+		didAutoJumpRef.current = true;
+		// Delay to allow DOM refs to be set after render
+		requestAnimationFrame(() => {
+			const node = messageNodes[index];
+			jumpToMessage(index, node.id);
+			// Clear highlight after a brief flash
+			setTimeout(() => setHighlightedIndex(null), 2000);
+		});
+		// Remove messageId from URL without navigation
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				next.delete("messageId");
+				return next;
+			},
+			{ replace: true },
+		);
+	}, [messageNodes, searchParams, jumpToMessage, setSearchParams]);
+
 	// Handle search input key events
 	const handleSearchKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -367,7 +437,13 @@ export function SessionMessages({
 			const isHighlighted = highlightedIndex === index;
 			const groupInfo = messageGroups.get(node.id);
 			const alignment = getMessageAlignment(node.__typename);
-			const isRight = alignment === "right";
+
+			const alignSelf =
+				alignment === "right"
+					? "flex-end"
+					: alignment === "center"
+						? "center"
+						: "flex-start";
 
 			return (
 				<Box
@@ -382,8 +458,8 @@ export function SessionMessages({
 				>
 					<HStack
 						style={{
-							alignSelf: isRight ? "flex-end" : "flex-start",
-							maxWidth: "85%",
+							alignSelf,
+							maxWidth: alignment === "center" ? "70%" : "85%",
 							width: "100%",
 						}}
 					>
@@ -405,7 +481,7 @@ export function SessionMessages({
 								borderStyle: "solid",
 							}}
 						>
-							<MessageCard fragmentRef={node} />
+							<MessageCard fragmentRef={node} alignment={alignment} />
 						</Box>
 					</HStack>
 				</Box>
@@ -595,11 +671,7 @@ export function SessionMessages({
 							{isLoadingNext || isPending ? (
 								<Spinner />
 							) : (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={handleLoadOlder}
-								>
+								<Button variant="secondary" size="sm" onClick={handleLoadOlder}>
 									<Text size="sm">Load older messages...</Text>
 								</Button>
 							)}

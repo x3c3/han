@@ -21,12 +21,53 @@ Han hooks into Claude Code's execution at specific points:
 | `SubagentStart` | Subagent spawns | Capture agent checkpoint |
 | `UserPromptSubmit` | Before processing input | Pre-process, inject context |
 | `PreToolUse` | Before tool execution | Validate tool calls |
+| `PermissionRequest` | Permission dialog appears | Audit/auto-approve permissions |
 | `PostToolUse` | After tool execution | Process results |
+| `PostToolUseFailure` | Tool execution fails | Error tracking, recovery |
 | `Stop` | Before response | **Main validation point** |
 | `SubagentStop` | Subagent completes | Validate agent's work |
+| `PreCompact` | Before context compaction | Save state before compaction |
 | `SessionEnd` | Session ends | Cleanup |
+| `Notification` | Notification event | Custom notification handling |
+| `ConfigChange` | Configuration modified | Audit trails, monitoring |
+| `TeammateIdle` | Teammate agent goes idle | Team coordination |
+| `TaskCompleted` | Task marked completed | Task tracking, workflows |
+| `WorktreeCreate` | Git worktree created | Agent isolation tracking |
+| `WorktreeRemove` | Git worktree removed | Cleanup tracking |
 
 Most validation happens at `Stop` and `SubagentStop` - the natural checkpoints after work is done.
+
+### New Hook Events (Claude Code 2.1.33+)
+
+Several hook events have been added for tool failure tracking, permission auditing, team workflows, and operational monitoring:
+
+- **`PermissionRequest`** (~2.1.50+): Fires when a permission dialog appears. Supports matcher on tool name. Input includes `permission_suggestions` array. Can respond with `behavior` field (`allow`/`deny`), `updatedInput`, `updatedPermissions`, `message`, or `interrupt`.
+
+- **`PostToolUseFailure`** (~2.1.50+): Fires when a tool execution fails. Input includes `error` string and `is_interrupt` boolean. Can provide `additionalContext` back to Claude for recovery guidance.
+
+- **`PreCompact`** (~2.1.50+): Fires before context compaction. Supports matcher for `manual` vs `auto` compaction. Useful for saving state or injecting context before the window is compressed.
+
+- **`ConfigChange`** (2.1.49+): Fires when Claude Code configuration is modified. Supports matcher on config source. Useful for audit trails, configuration drift detection, and enforcing settings policies.
+
+- **`TeammateIdle`** (2.1.33+): Fires when a teammate agent goes idle between turns. Enables team coordination, load balancing, and monitoring agent activity in multi-agent sessions.
+
+- **`TaskCompleted`** (2.1.33+): Fires when a task is marked as completed via `TaskUpdate`. Useful for task tracking dashboards, triggering follow-up workflows, and team notifications.
+
+- **`WorktreeCreate`** (2.1.50+): Fires when a worktree is being created. Receives `name` slug in the payload. When configured, replaces default git worktree behavior — the hook must print the created worktree path to stdout. Enables custom VCS support and tracking of parallel workstreams.
+
+- **`WorktreeRemove`** (2.1.50+): Fires when a worktree is being removed. Receives `worktree_path` in the payload. Cannot block removal. Useful for cleanup automation and resource tracking.
+
+### Stop/SubagentStop: `last_assistant_message` Field
+
+Since Claude Code 2.1.47, the `Stop` and `SubagentStop` hook inputs include a `last_assistant_message` field containing the final assistant message text. This allows hooks to inspect what the agent is about to respond with and take action based on the content.
+
+```json
+{
+  "hook_event_name": "Stop",
+  "session_id": "abc123",
+  "last_assistant_message": "I've completed the refactoring of the auth module..."
+}
+```
 
 ## How Hooks Run
 
@@ -92,7 +133,7 @@ Han plugins define hooks for specific validations:
 
 ## Hook Types
 
-Han supports two types of hooks:
+Claude Code supports four hook types as of 2.1.63:
 
 ### Command Hooks
 
@@ -103,6 +144,53 @@ Execute shell commands:
   "type": "command",
   "command": "han hook run biome lint",
   "timeout": 120
+}
+```
+
+### HTTP Hooks (2.1.63+)
+
+POST JSON to a URL and receive JSON back, instead of running a shell command:
+
+```json
+{
+  "type": "http",
+  "url": "http://localhost:8080/hooks/stop",
+  "timeout": 30,
+  "headers": {
+    "Authorization": "Bearer $MY_TOKEN"
+  },
+  "allowedEnvVars": ["MY_TOKEN"]
+}
+```
+
+HTTP hooks send the event's JSON input as the POST body (`Content-Type: application/json`). Response handling:
+
+- **2xx with empty body**: success (like exit code 0)
+- **2xx with plain text**: success, text added as context
+- **2xx with JSON body**: parsed using the same schema as command hooks
+- **Non-2xx / connection failure**: non-blocking error, execution continues
+
+To block a tool call or deny a permission, return a 2xx response with JSON body containing the appropriate `hookSpecificOutput`.
+
+### Prompt Hooks
+
+Return text directly to the agent without executing a command:
+
+```json
+{
+  "type": "prompt",
+  "prompt": "Remember to follow coding standards."
+}
+```
+
+### Agent Hooks
+
+Spawn an agent to handle the hook event:
+
+```json
+{
+  "type": "agent",
+  "prompt": "Review the tool output for security issues. $ARGUMENTS"
 }
 ```
 

@@ -41,8 +41,23 @@ export const SessionDetailPageQuery = graphql`
         startedAt
         updatedAt
         gitBranch
+        prNumber
+        prUrl
+        teamName
         version
         orgId
+        turnCount
+        estimatedCostUsd
+        duration
+        status
+        compactionCount
+        fileChangeCount
+        nativeTasks {
+          id
+        }
+        todoCounts {
+          total
+        }
         owner {
           id
           name
@@ -50,7 +65,9 @@ export const SessionDetailPageQuery = graphql`
           avatarUrl
         }
         ...SessionMessages_session
-        ...SessionSidebar_session
+        ...OverviewTab_session
+        ...TasksTab_session
+        ...FilesTab_session
       }
     }
   }

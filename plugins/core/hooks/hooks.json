@@ -50,71 +50,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "han hook reference hooks/no-time-estimates.md --must-read-first \"no time estimates policy\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook reference hooks/professional-honesty.md --must-read-first \"epistemic rigor and professional honesty\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook reference hooks/ensure-subagent.md --must-read-first \"subagent delegation rules\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook reference hooks/bash-output-capture.md --must-read-first \"bash output capture best practices\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook reference hooks/ensure-skill-use.md --must-read-first \"skill selection and transparency\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook reference hooks/date-handling.md --must-read-first \"date handling best practices\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook reference hooks/prefer-mcp-tools.md --must-read-first \"prefer MCP tools over CLI tools\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook reference hooks/warn-untested-modification.md --must-read-first \"untested code modification safety\"",
-            "timeout": 5
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-references.sh\"",
+            "timeout": 10
           }
         ]
       }
@@ -134,6 +71,105 @@
           {
             "type": "command",
             "command": "han hook reference hooks/no-excuses.md --must-read-first \"no excuses for pre-existing issues\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch ConfigChange",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch TeammateIdle",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch TaskCompleted",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch WorktreeCreate",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch WorktreeRemove",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch PermissionRequest",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch PostToolUseFailure",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch PreCompact",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook dispatch SessionEnd",
             "timeout": 5
           }
         ]

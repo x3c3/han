@@ -21,10 +21,11 @@ import { Box } from "@/components/atoms/Box.tsx";
 import { Heading } from "@/components/atoms/Heading.tsx";
 import { HStack } from "@/components/atoms/HStack.tsx";
 import { Input } from "@/components/atoms/Input.tsx";
-import { Spinner } from "@/components/atoms/Spinner.tsx";
+import { Pressable } from "@/components/atoms/Pressable.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
 import { SessionListItem } from "@/components/organisms/SessionListItem.tsx";
+import { VirtualList } from "@/components/organisms/VirtualList.tsx";
 import type { SessionListPageQuery } from "./__generated__/SessionListPageQuery.graphql.ts";
 import type { SessionsContent_query$key } from "./__generated__/SessionsContent_query.graphql.ts";
 import type { SessionsContentPaginationQuery } from "./__generated__/SessionsContentPaginationQuery.graphql.ts";
@@ -39,17 +40,13 @@ const SessionsConnectionFragment = graphql`
   @argumentDefinitions(
     first: { type: "Int", defaultValue: 50 }
     after: { type: "String" }
-    projectId: { type: "String" }
-    worktreeName: { type: "String" }
-    userId: { type: "String" }
+    filter: { type: "SessionFilter" }
   )
   @refetchable(queryName: "SessionsContentPaginationQuery") {
     sessions(
       first: $first
       after: $after
-      projectId: $projectId
-      worktreeName: $worktreeName
-      userId: $userId
+      filter: $filter
     ) @connection(key: "SessionsContent_sessions") {
       __id
       edges {
@@ -105,6 +102,116 @@ const SessionsContentSubscriptionDef = graphql`
   }
 `;
 
+/**
+ * Branch filter dropdown
+ */
+function BranchDropdown({
+	branches,
+	selected,
+	onSelect,
+}: {
+	branches: string[];
+	selected: string;
+	onSelect: (branch: string) => void;
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+
+	return (
+		<Box style={{ position: "relative" }}>
+			<Pressable onPress={() => setIsOpen(!isOpen)}>
+				<Box
+					style={{
+						padding: theme.spacing.sm,
+						paddingHorizontal: theme.spacing.md,
+						backgroundColor: selected
+							? theme.colors.accent.primary
+							: theme.colors.bg.tertiary,
+						borderRadius: theme.radii.md,
+						borderWidth: 1,
+						borderColor: selected
+							? theme.colors.accent.primary
+							: theme.colors.border.default,
+						minWidth: 130,
+					}}
+				>
+					<HStack justify="space-between" align="center" gap="sm">
+						<Text size="sm" style={selected ? { color: "#ffffff" } : undefined}>
+							{selected || "All branches"}
+						</Text>
+						<Text
+							size="xs"
+							color={selected ? undefined : "muted"}
+							style={selected ? { color: "#ffffff" } : undefined}
+						>
+							{isOpen ? "\u25B2" : "\u25BC"}
+						</Text>
+					</HStack>
+				</Box>
+			</Pressable>
+
+			{isOpen && (
+				<Box
+					style={{
+						position: "absolute",
+						top: "100%",
+						right: 0,
+						marginTop: theme.spacing.xs,
+						backgroundColor: theme.colors.bg.secondary,
+						borderRadius: theme.radii.md,
+						borderWidth: 1,
+						borderColor: theme.colors.border.default,
+						zIndex: 100,
+						maxHeight: 300,
+						minWidth: 200,
+						overflow: "auto",
+					}}
+				>
+					<Pressable
+						onPress={() => {
+							onSelect("");
+							setIsOpen(false);
+						}}
+					>
+						<Box
+							style={{
+								padding: theme.spacing.sm,
+								paddingHorizontal: theme.spacing.md,
+								backgroundColor: !selected
+									? theme.colors.bg.hover
+									: "transparent",
+							}}
+						>
+							<Text size="sm">All branches</Text>
+						</Box>
+					</Pressable>
+					{branches.map((branch) => (
+						<Pressable
+							key={branch}
+							onPress={() => {
+								onSelect(branch);
+								setIsOpen(false);
+							}}
+						>
+							<Box
+								style={{
+									padding: theme.spacing.sm,
+									paddingHorizontal: theme.spacing.md,
+									backgroundColor:
+										selected === branch ? theme.colors.bg.hover : "transparent",
+								}}
+							>
+								<Text size="sm" style={{ fontFamily: theme.fonts.mono }}>
+									{branch}
+								</Text>
+							</Box>
+						</Pressable>
+					))}
+				</Box>
+			)}
+		</Box>
+	);
+}
+
 interface SessionsContentProps {
 	queryRef: PreloadedQuery<SessionListPageQuery>;
 	projectId: string | null;
@@ -117,6 +224,7 @@ export function SessionsContent({
 	worktreeName,
 }: SessionsContentProps): React.ReactElement {
 	const [filter, setFilter] = useState("");
+	const [selectedBranch, setSelectedBranch] = useState<string>("");
 	const [isPending, startTransition] = useTransition();
 
 	// First, read the preloaded query data
@@ -178,19 +286,38 @@ export function SessionsContent({
 		});
 	}, [data.sessions?.edges]);
 
-	// Filter edges by search text
-	const filteredEdges = useMemo(() => {
-		if (!filter) return sortedEdges;
+	// Extract unique branch names from loaded edges
+	const uniqueBranches = useMemo(() => {
+		const branches = new Set<string>();
+		for (const edge of sortedEdges) {
+			if (edge.node.gitBranch) {
+				branches.add(edge.node.gitBranch);
+			}
+		}
+		return Array.from(branches).sort();
+	}, [sortedEdges]);
 
-		const searchLower = filter.toLowerCase();
-		return sortedEdges.filter(
-			(edge) =>
-				edge.node.projectName?.toLowerCase().includes(searchLower) ||
-				edge.node.summary?.toLowerCase().includes(searchLower) ||
-				edge.node.gitBranch?.toLowerCase().includes(searchLower) ||
-				edge.node.sessionId?.toLowerCase().includes(searchLower),
-		);
-	}, [sortedEdges, filter]);
+	// Filter edges by search text and branch
+	const filteredEdges = useMemo(() => {
+		let edges = sortedEdges;
+
+		if (selectedBranch) {
+			edges = edges.filter((edge) => edge.node.gitBranch === selectedBranch);
+		}
+
+		if (filter) {
+			const searchLower = filter.toLowerCase();
+			edges = edges.filter(
+				(edge) =>
+					edge.node.projectName?.toLowerCase().includes(searchLower) ||
+					edge.node.summary?.toLowerCase().includes(searchLower) ||
+					edge.node.gitBranch?.toLowerCase().includes(searchLower) ||
+					edge.node.sessionId?.toLowerCase().includes(searchLower),
+			);
+		}
+
+		return edges;
+	}, [sortedEdges, filter, selectedBranch]);
 
 	// Build page title based on context
 	let pageTitle = "Sessions";
@@ -244,59 +371,52 @@ export function SessionsContent({
 						</>
 					)}
 				</HStack>
-				<Input
-					placeholder="Filter sessions..."
-					value={filter}
-					onChange={setFilter}
-					style={{ width: "250px" }}
-				/>
+				<HStack gap="sm" align="center">
+					{uniqueBranches.length > 0 && (
+						<BranchDropdown
+							branches={uniqueBranches}
+							selected={selectedBranch}
+							onSelect={setSelectedBranch}
+						/>
+					)}
+					<Input
+						placeholder="Filter sessions..."
+						value={filter}
+						onChange={setFilter}
+						style={{ width: "250px" }}
+					/>
+				</HStack>
 			</HStack>
 
-			{/* Scrollable list */}
-			<Box
-				style={{
-					flex: 1,
-					minHeight: 0,
-					overflowY: "auto",
-				}}
-				onScroll={(e) => {
-					const target = e.currentTarget;
-					const nearBottom =
-						target.scrollHeight - target.scrollTop - target.clientHeight < 400;
-					if (nearBottom) {
-						handleEndReached();
-					}
-				}}
-			>
-				{filteredEdges.length === 0 ? (
+			{/* Virtualized session list */}
+			<VirtualList
+				data={filteredEdges}
+				renderItem={(edge) => (
+					<SessionListItem
+						session={edge.node}
+						connectionId={data.sessions?.__id}
+					/>
+				)}
+				keyExtractor={(edge) => edge.node.id}
+				itemHeight={100}
+				onEndReached={handleEndReached}
+				endReachedThreshold={0.5}
+				isLoadingMore={isLoadingNext || isPending}
+				ListEmptyComponent={
 					<VStack
 						align="center"
 						justify="center"
 						style={{ height: "200px", padding: theme.spacing.xl }}
 					>
 						<Text color="secondary">
-							{filter
+							{filter || selectedBranch
 								? "No sessions match your filter."
 								: "No sessions found. Start using Claude Code!"}
 						</Text>
 					</VStack>
-				) : (
-					<>
-						{filteredEdges.map((edge) => (
-							<SessionListItem
-								key={edge.node.id}
-								session={edge.node}
-								connectionId={data.sessions?.__id}
-							/>
-						))}
-						{(isLoadingNext || isPending) && (
-							<HStack justify="center" style={{ padding: theme.spacing.lg }}>
-								<Spinner />
-							</HStack>
-						)}
-					</>
-				)}
-			</Box>
+				}
+				style={{ flex: 1, minHeight: 0 }}
+			/>
 		</VStack>
 	);
 }

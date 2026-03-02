@@ -18,43 +18,54 @@ import { SessionsContent } from "./SessionsContent.tsx";
 export const SessionListPageQuery = graphql`
   query SessionListPageQuery(
     $first: Int
-    $projectId: String
-    $worktreeName: String
-    $userId: String
+    $filter: SessionFilter
   ) {
     ...SessionsContent_query
       @arguments(
         first: $first
-        projectId: $projectId
-        worktreeName: $worktreeName
-        userId: $userId
+        filter: $filter
       )
   }
 `;
 
 /**
  * Session list page component with PageLoader for query preloading
+ *
+ * Supports multiple route contexts:
+ * - /sessions (global)
+ * - /repos/:repoId/sessions (repo-scoped via association filter)
+ * - /projects/:projectId/sessions (project-scoped)
+ * - /repos/:repoId/worktrees/:worktreeName/sessions (worktree-scoped)
  */
 export default function SessionListPage(): React.ReactElement {
-	const { projectId, worktreeName } = useParams<{
+	const { projectId, repoId, worktreeName } = useParams<{
 		projectId?: string;
+		repoId?: string;
 		worktreeName?: string;
 	}>();
+
+	// Build filter using GreenFairy pattern:
+	// - repoId → association filter through project.repoId
+	// - projectId → direct field filter on session.projectId
+	const filter = repoId
+		? { project: { repoId: { _eq: repoId } } }
+		: projectId
+			? { projectId: { _eq: projectId } }
+			: undefined;
 
 	return (
 		<PageLoader<SessionListPageQueryType>
 			query={SessionListPageQuery}
 			variables={{
 				first: 50,
-				projectId: projectId ?? null,
-				worktreeName: worktreeName ?? null,
+				filter: filter ?? null,
 			}}
 			loadingMessage="Loading sessions..."
 		>
 			{(queryRef) => (
 				<SessionsContent
 					queryRef={queryRef}
-					projectId={projectId ?? null}
+					projectId={projectId ?? repoId ?? null}
 					worktreeName={worktreeName ?? null}
 				/>
 			)}

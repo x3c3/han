@@ -175,7 +175,8 @@ function toNativeFileValidation(
     hook_command: validation.hookName ?? '',
     file_hash: validation.fileHash ?? '',
     command_hash: validation.commandHash ?? '',
-    validated_at: validation.validatedAt?.toISOString() ?? new Date().toISOString(),
+    validated_at:
+      validation.validatedAt?.toISOString() ?? new Date().toISOString(),
     is_valid: true, // is_valid defaults to true (hosted schema has no passed field)
   };
 }
@@ -275,9 +276,6 @@ function toInterfaceMembership(
  * Also implements HostedDataSourceWriteOps for multi-tenant CRUD operations.
  */
 export class HostedDataSource implements DataSource, HostedDataSourceWriteOps {
-  private readonly db: DrizzleDb;
-  private readonly tenant: TenantContext;
-
   constructor(db?: DrizzleDb, tenant?: TenantContext) {
     this.db = db ?? getDb();
     this.tenant = tenant ?? getTenantContext();

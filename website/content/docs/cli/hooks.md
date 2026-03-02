@@ -296,10 +296,157 @@ Han supports these Claude Code hook points:
 | `SubagentStart` | Subagent is spawned | Creates agent checkpoint | Capture pre-subagent state |
 | `UserPromptSubmit` | User submits a prompt | N/A | Pre-process user input |
 | `PreToolUse` | Before each tool call | N/A | Validate tool usage |
+| `PermissionRequest` | Permission dialog appears | N/A | Audit/auto-approve permissions |
 | `PostToolUse` | After each tool call | N/A | Post-process tool results |
+| `PostToolUseFailure` | Tool execution fails | N/A | Error tracking, recovery |
 | `Stop` | Agent about to respond | Validates using session checkpoint | Validate all session changes |
 | `SubagentStop` | Subagent completes | Validates using agent checkpoint | Validate subagent changes |
+| `Notification` | Notification event | N/A | Custom notification handling |
+| `PreCompact` | Before context compaction | N/A | Save state before compaction |
 | `SessionEnd` | Session ends | N/A | Cleanup session state |
+| `ConfigChange` | Configuration modified (2.1.49+) | N/A | Audit trails, config monitoring |
+| `TeammateIdle` | Teammate goes idle (2.1.33+) | N/A | Team coordination |
+| `TaskCompleted` | Task completed (2.1.33+) | N/A | Task tracking, workflows |
+| `WorktreeCreate` | Worktree created (2.1.50+) | N/A | Agent isolation tracking, custom VCS |
+| `WorktreeRemove` | Worktree removed (2.1.50+) | N/A | Cleanup automation |
+
+### New Hook Events
+
+#### PermissionRequest (~2.1.50+)
+
+Fired when a permission dialog appears. Supports matcher on tool name. The input includes a `permission_suggestions` array. The hook can respond with `behavior` (`allow`/`deny`), `updatedInput`, `updatedPermissions`, `message`, or `interrupt`:
+
+```json
+{
+  "hook_event_name": "PermissionRequest",
+  "session_id": "abc123",
+  "cwd": "/project/path",
+  "tool_name": "Bash",
+  "permission_suggestions": [...]
+}
+```
+
+Useful for automated permission policies, security auditing, and CI/CD environments.
+
+#### PostToolUseFailure (~2.1.50+)
+
+Fired when a tool execution fails. The input includes `error` string and `is_interrupt` boolean. The hook can return `additionalContext` to help Claude recover:
+
+```json
+{
+  "hook_event_name": "PostToolUseFailure",
+  "session_id": "abc123",
+  "cwd": "/project/path",
+  "tool_name": "Bash",
+  "error": "Command exited with code 1",
+  "is_interrupt": false
+}
+```
+
+Useful for error tracking, automatic recovery suggestions, and operational monitoring.
+
+#### PreCompact (~2.1.50+)
+
+Fired before context compaction. Supports matcher for `manual` vs `auto` compaction:
+
+```json
+{
+  "hook_event_name": "PreCompact",
+  "session_id": "abc123",
+  "cwd": "/project/path"
+}
+```
+
+Useful for saving state, injecting critical context to preserve, or logging compaction events.
+
+#### ConfigChange (2.1.49+)
+
+Fired when Claude Code configuration is modified. The stdin payload includes the changed configuration keys:
+
+```json
+{
+  "hook_event_name": "ConfigChange",
+  "session_id": "abc123",
+  "cwd": "/project/path"
+}
+```
+
+Useful for audit trails, configuration drift detection, and enforcing settings policies across teams.
+
+#### TeammateIdle (2.1.33+)
+
+Fired when a teammate agent goes idle between turns in multi-agent sessions:
+
+```json
+{
+  "hook_event_name": "TeammateIdle",
+  "session_id": "abc123",
+  "cwd": "/project/path"
+}
+```
+
+Enables team coordination, load balancing, and monitoring agent activity.
+
+#### TaskCompleted (2.1.33+)
+
+Fired when a task is marked as completed via `TaskUpdate`:
+
+```json
+{
+  "hook_event_name": "TaskCompleted",
+  "session_id": "abc123",
+  "cwd": "/project/path"
+}
+```
+
+Useful for task tracking dashboards, triggering follow-up workflows, and team notifications.
+
+#### WorktreeCreate (2.1.50+)
+
+Fired when a worktree is being created via `--worktree` flag or `isolation: "worktree"` in an agent definition. When a WorktreeCreate hook is configured, it **replaces the default git worktree behavior**, enabling support for non-git VCS systems (SVN, Perforce, Mercurial, etc.).
+
+The hook receives a `name` slug and **must print the absolute path** to the created worktree directory on stdout. A non-zero exit code blocks worktree creation.
+
+```json
+{
+  "hook_event_name": "WorktreeCreate",
+  "session_id": "abc123",
+  "cwd": "/project/path",
+  "name": "feature-auth"
+}
+```
+
+Only `type: "command"` hooks are supported. No matcher support.
+
+#### WorktreeRemove (2.1.50+)
+
+Fired when a worktree is being removed (session exit or subagent completion). The hook receives the `worktree_path` that was created. WorktreeRemove hooks **cannot block** removal — failures are logged in debug mode only.
+
+```json
+{
+  "hook_event_name": "WorktreeRemove",
+  "session_id": "abc123",
+  "cwd": "/project/path",
+  "worktree_path": "/project/.claude/worktrees/feature-auth"
+}
+```
+
+Only `type: "command"` hooks are supported. No matcher support.
+
+### Stop/SubagentStop: `last_assistant_message` (2.1.47+)
+
+The `Stop` and `SubagentStop` hook inputs now include a `last_assistant_message` field containing the final assistant message text. This allows hooks to inspect what the agent is about to respond with:
+
+```json
+{
+  "hook_event_name": "Stop",
+  "session_id": "abc123",
+  "cwd": "/project/path",
+  "last_assistant_message": "I've completed the refactoring of the auth module..."
+}
+```
+
+This is useful for content-aware validation, sentiment analysis, or logging the agent's final output.
 
 ### Checkpoint Filtering
 
