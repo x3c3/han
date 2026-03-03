@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] - 2026-03-03
+
+### Added
+
+- support Task→Agent tool rename in Claude Code 2.1.63 ([2c9801f0](../../commit/2c9801f0))
+- update CC feature support to 2.1.63, browse UI refactoring, and Rust GraphQL migration ([8caf0ffe](../../commit/8caf0ffe))
+
 ## [1.36.6] - 2026-03-02
 
 ### Added
