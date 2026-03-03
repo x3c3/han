@@ -391,6 +391,7 @@ export function ToolUseBlock({
 				);
 			}
 
+			case "Agent":
 			case "Task": {
 				const description = parsedInput.description as string | undefined;
 				const prompt = parsedInput.prompt as string | undefined;

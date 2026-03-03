@@ -11,7 +11,7 @@ This plugin provides the following specialized agents:
 
 ## Usage
 
-Agents can be invoked using the Task tool with the appropriate subagent_type or through
+Agents can be invoked using the Agent tool with the appropriate subagent_type or through
 natural conversation:
 
 ```text

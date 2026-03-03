@@ -46,13 +46,13 @@ User Request
 ### How to Launch Async Agents
 
 ```text
-Single message with multiple Task calls:
-- Task 1: { run_in_background: true, ... }
-- Task 2: { run_in_background: true, ... }
-- Task 3: { run_in_background: true, ... }
+Single message with multiple Agent calls:
+- Agent 1: { run_in_background: true, ... }
+- Agent 2: { run_in_background: true, ... }
+- Agent 3: { run_in_background: true, ... }
 ```
 
-Then use `AgentOutputTool` to collect results as they complete.
+Then use `TaskOutput` to collect results as they complete.
 
 ### Example: User asks "Review this PR"
 
@@ -115,7 +115,7 @@ Every agent execution returns an `agentId`. Store these for related tasks.
 
 ### Step 1: Check Specialized Agents First
 
-Scan the Task tool's `subagent_type` parameter for specialized agents that match the task:
+Scan the Agent tool's `subagent_type` parameter for specialized agents that match the task:
 
 - **Domain specialists** - Agents specialized in specific domains (accessibility, security, etc.)
 - **Integration specialists** - Agents for external tool integrations
@@ -191,20 +191,20 @@ CONSTRAINTS:
 
 **NEVER launch agents sequentially when they can run in parallel.**
 
-### Single Message, Multiple Tasks
+### Single Message, Multiple Agents
 
 ```text
 In ONE message, launch:
-- Task 1: Security review
-- Task 2: Performance review
-- Task 3: Code quality review
+- Agent 1: Security review
+- Agent 2: Performance review
+- Agent 3: Code quality review
 ```
 
 ### Example: Code Review Request
 
 **CORRECT:**
 
-One message with 4 Task tool calls, all async:
+One message with 4 Agent tool calls, all async:
 
 ```json
 [
@@ -223,7 +223,7 @@ Four separate messages, each launching one agent.
 
 After agents complete:
 
-1. **Collect all outputs** using `AgentOutputTool`
+1. **Collect all outputs** using `TaskOutput`
 2. **De-duplicate** identical findings
 3. **Filter by confidence** (≥80% only)
 4. **Resolve conflicts** (highest confidence wins)
@@ -274,7 +274,7 @@ Ask yourself:
 
 ### How to Find the Right Agent
 
-1. **Scan all `subagent_type` options** in the Task tool
+1. **Scan all `subagent_type` options** in the Agent tool
 2. **Read each description** - they include "Use when..." triggers
 3. **Match your task** to the agent's trigger conditions
 4. **Fall back to general-purpose** only if no specialist matches
@@ -283,7 +283,7 @@ Ask yourself:
 
 - **Launch async**: `run_in_background: true`
 - **Resume agent**: `resume: "agent-id"`
-- **Check output**: `AgentOutputTool` with `agentId`
+- **Check output**: `TaskOutput` with `task_id`
 
 ## Summary
 

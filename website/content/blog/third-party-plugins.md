@@ -84,9 +84,9 @@ depends_on:
 
 This one is Han-only. There's no equivalent in standard Claude Code.
 
-When Claude spawns a subagent via the Task tool, that subagent starts fresh. It doesn't know your project rules, your current workflow state, or what it's supposed to do when it finishes. You have to repeat everything in the prompt.
+When Claude spawns a subagent via the Agent tool (formerly Task), that subagent starts fresh. It doesn't know your project rules, your current workflow state, or what it's supposed to do when it finishes. You have to repeat everything in the prompt.
 
-Han intercepts Task tool calls and automatically injects context:
+Han intercepts Agent tool calls and automatically injects context:
 
 ```xml
 <subagent-context>

@@ -338,7 +338,13 @@ export const TOOL_CATEGORIES: Record<
 		color: "#58a6ff",
 	},
 
-	// Task operations
+	// Agent/Subagent operations (Agent is the new name, Task is legacy)
+	Agent: {
+		category: "task",
+		icon: "🤖",
+		displayName: "Subagent",
+		color: "#d29922",
+	},
 	Task: {
 		category: "task",
 		icon: "🤖",

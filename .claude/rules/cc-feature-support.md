@@ -9,6 +9,7 @@ Han maintains feature parity with Claude Code releases. This file tracks which v
 ## Features Tracked
 
 ### 2.1.63 (Current)
+- **Task tool renamed to Agent** - The `Task` tool (for spawning subagents) is now called `Agent`. PreToolUse/PostToolUse matchers should match both `Agent|Task` for backward compatibility.
 - HTTP hooks (`type: "http"`) - POST JSON to a URL, receive JSON response instead of running shell commands
 - `/simplify` and `/batch` bundled slash commands
 - Project configs and auto memory shared across git worktrees of same repository
@@ -59,7 +60,7 @@ Han maintains feature parity with Claude Code releases. This file tracks which v
 - TeammateIdle hook event (fired when a teammate agent goes idle)
 - TaskCompleted hook event (fired when a task is marked completed)
 - Agent `memory` frontmatter field (`project`, `session`, etc.)
-- `Task(agent_type)` restriction for spawning specific agent types
+- `Agent(agent_type)` restriction for spawning specific agent types (was `Task(agent_type)` before 2.1.63)
 
 ### 2.1.32
 - Agent Teams (TeamCreate, SendMessage, multi-agent coordination)

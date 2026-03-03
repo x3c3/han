@@ -1,10 +1,10 @@
 # Git Worktrees
 
-Agent isolation via git worktrees. When Claude Code spawns subagents (via the Task tool), they all operate in the same working directory by default. This means agents can interfere with each other - one agent's file edits or branch switches can corrupt another agent's work. This plugin solves that by instructing each subagent to create and work in its own isolated git worktree.
+Agent isolation via git worktrees. When Claude Code spawns subagents (via the Agent tool), they all operate in the same working directory by default. This means agents can interfere with each other - one agent's file edits or branch switches can corrupt another agent's work. This plugin solves that by instructing each subagent to create and work in its own isolated git worktree.
 
 ## How It Works
 
-This plugin uses a **PreToolUse** hook on the `Task` tool to inject worktree isolation instructions into every subagent's prompt. When a subagent is spawned:
+This plugin uses a **PreToolUse** hook on the `Agent` tool (and legacy `Task` tool) to inject worktree isolation instructions into every subagent's prompt. When a subagent is spawned:
 
 1. The hook runs `worktree-context.sh` which generates markdown instructions
 2. These instructions are wrapped in `<subagent-context>` tags via `han hook wrap-subagent-context`

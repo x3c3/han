@@ -87,7 +87,7 @@ function readContextFile(filePath: string): string {
 }
 
 /**
- * Wrap context and inject into Task/Skill tool prompts.
+ * Wrap context and inject into Agent/Task/Skill tool prompts.
  *
  * This is a PreToolUse hook helper that:
  * 1. Reads the hook payload from stdin
@@ -97,7 +97,7 @@ function readContextFile(filePath: string): string {
  *
  * Usage in .claude-plugin/hooks.json:
  * {
- *   "matcher": "Task|Skill",
+ *   "matcher": "Agent|Task|Skill",
  *   "hooks": [{
  *     "type": "command",
  *     "command": "han hook wrap-subagent-context --context-command 'bash ${CLAUDE_PLUGIN_ROOT}/hooks/my-context.sh'"
@@ -118,12 +118,13 @@ async function wrapSubagentContext(options: {
     process.exit(0);
   }
 
-  // Process Task and Skill tool calls
+  // Process Agent (formerly Task) and Skill tool calls
   const toolName = payload.tool_name;
-  if (toolName !== 'Task' && toolName !== 'Skill') {
+  const isAgentTool = toolName === 'Agent' || toolName === 'Task'; // Task is legacy name (< CC 2.1.63)
+  if (!isAgentTool && toolName !== 'Skill') {
     if (isDebugMode()) {
       console.error(
-        `[wrap-subagent-context] Not a Task or Skill tool (got: ${toolName}), exiting`
+        `[wrap-subagent-context] Not an Agent, Task, or Skill tool (got: ${toolName}), exiting`
       );
     }
     process.exit(0);
@@ -131,12 +132,12 @@ async function wrapSubagentContext(options: {
 
   const toolInput = payload.tool_input;
 
-  // For Task tool, check prompt; for Skill tool, check args
-  const targetField = toolName === 'Task' ? 'prompt' : 'args';
+  // For Agent/Task tool, check prompt; for Skill tool, check args
+  const targetField = isAgentTool ? 'prompt' : 'args';
   const originalValue = (toolInput?.[targetField] as string) || '';
 
-  // Skip if no value to inject into (for Task)
-  if (!originalValue && toolName === 'Task') {
+  // Skip if no value to inject into (for Agent/Task)
+  if (!originalValue && isAgentTool) {
     if (isDebugMode()) {
       console.error(
         `[wrap-subagent-context] No ${targetField} in tool_input, exiting`
@@ -185,7 +186,7 @@ async function wrapSubagentContext(options: {
   updatedInput[targetField] = modifiedValue;
 
   // Output JSON with updatedInput
-  // IMPORTANT: Do NOT set permissionDecision - it breaks updatedInput for Task tool
+  // IMPORTANT: Do NOT set permissionDecision - it breaks updatedInput for Agent/Task tool
   const output: PreToolUseOutput = {
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
@@ -211,7 +212,7 @@ export function registerWrapSubagentContext(hookCommand: Command): void {
   hookCommand
     .command('wrap-subagent-context')
     .description(
-      'PreToolUse hook helper that injects context into Task and Skill tool prompts.\n\n' +
+      'PreToolUse hook helper that injects context into Agent (formerly Task) and Skill tool prompts.\n\n' +
         'Reads hook payload from stdin, generates context from a command or file,\n' +
         'wraps it in XML tags, and outputs proper JSON with updatedInput.\n\n' +
         'Example usage in hooks.json:\n' +

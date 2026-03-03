@@ -83,7 +83,7 @@ Runs on every user prompt:
 
 #### PreToolUse
 
-Runs before Task and Skill tool invocations:
+Runs before Agent (formerly Task) and Skill tool invocations:
 
 - **inject-subagent-context**: Injects context for subagents and skills
 

@@ -63,6 +63,12 @@ const TOOL_METADATA: Record<
 		description: "Executing terminal command",
 		color: "#7ee787",
 	},
+	Agent: {
+		icon: "🤖",
+		label: "Subagent",
+		description: "Spawning autonomous agent",
+		color: "#d29922",
+	},
 	Task: {
 		icon: "🤖",
 		label: "Subagent",
@@ -183,7 +189,7 @@ function getToolMetadata(toolName: string): {
 /**
  * Format tool content with bolded tool names and enhanced metadata
  * Tool content format: "ToolName: detail" or just "ToolName" per line
- * Task tool calls link to their agent task view
+ * Agent/Task tool calls link to their agent task view
  * Bash tool calls render command in code block (multi-line supported)
  * Read tool shows clickable file path
  * Edit tool shows diff view
@@ -211,8 +217,8 @@ function formatToolContent(
 			const detail = line.slice(colonIndex + 1).trim();
 			const meta = getToolMetadata(toolName);
 
-			// Check if this is a Task tool call - the detail might contain agent ID
-			if (toolName === "Task") {
+			// Check if this is an Agent/Task tool call - the detail might contain agent ID
+			if (toolName === "Agent" || toolName === "Task") {
 				const agentIdMatch = detail.match(
 					/agent[_-]?id[:\s=]*['"]?([a-f0-9-]+)/i,
 				);

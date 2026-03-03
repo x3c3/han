@@ -111,7 +111,7 @@ const hookDescriptions: Record<string, string> = {
 		"Runs immediately after a tool completes successfully. Can validate outputs, log results, or trigger follow-up actions based on tool execution.",
 	Stop: "Runs when the main Claude Code agent has finished responding. Can verify task completion, check quality gates, or ensure documentation requirements are met before the session ends.",
 	SubagentStop:
-		"Runs when a Claude Code subagent (Task tool call) has finished responding. Can validate subagent outputs, enforce quality standards, or trigger additional workflows after delegated tasks complete.",
+		"Runs when a Claude Code subagent (Agent tool call) has finished responding. Can validate subagent outputs, enforce quality standards, or trigger additional workflows after delegated tasks complete.",
 	PreCompact:
 		"Runs before Claude Code is about to run a compact operation. Can preserve important context, mark critical information for retention, or adjust what gets compacted.",
 	Notification:

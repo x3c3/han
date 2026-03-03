@@ -97,7 +97,7 @@ This plugin provides the following agents:
 
 ## Usage
 
-Invoke the agent using the Task tool or by asking Claude to use it for {{KEYWORD}}-related tasks.
+Invoke the agent using the Agent tool or by asking Claude to use it for {{KEYWORD}}-related tasks.
 
 ## License
 

@@ -1602,7 +1602,7 @@ impl QueryRoot {
                      json_extract(tool_input, '$.subagent_type') as subagent_type, \
                      COUNT(*) as count \
                      FROM messages \
-                     WHERE tool_name = 'Task' \
+                     WHERE tool_name IN ('Agent', 'Task') \
                      AND tool_input IS NOT NULL \
                      AND timestamp >= date('now', ? || ' days') \
                      AND {sc} \
@@ -1617,7 +1617,7 @@ impl QueryRoot {
                  json_extract(tool_input, '$.subagent_type') as subagent_type, \
                  COUNT(*) as count \
                  FROM messages \
-                 WHERE tool_name = 'Task' \
+                 WHERE tool_name IN ('Agent', 'Task') \
                  AND tool_input IS NOT NULL \
                  AND timestamp >= date('now', ? || ' days') \
                  GROUP BY subagent_type \

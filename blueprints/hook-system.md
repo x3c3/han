@@ -49,7 +49,7 @@ Claude Code provides these lifecycle events:
 | `Stop` | When Claude stops (before returning to user) | Validation, linting, testing |
 | `PreToolUse` | Before a tool is executed | Permission checks, input modification, context injection |
 | `PostToolUse` | After a tool is executed | Incremental validation, async tasks |
-| `SubagentStart` | When a subagent (Task) starts | Subagent setup |
+| `SubagentStart` | When a subagent (Agent) starts | Subagent setup |
 | `SubagentStop` | When a subagent completes | Subagent validation |
 | `PreCompact` | Before context compaction | Save state before compaction |
 | `Notification` | For notifications | User alerts |
@@ -148,7 +148,7 @@ Filter hooks by tool name using regex-style patterns:
 
 Common patterns:
 - `"Edit|Write"` - File editing operations
-- `"Task|Skill"` - Subagent invocations
+- `"Agent|Task|Skill"` - Subagent invocations (Agent is the new name for Task as of CC 2.1.63)
 - `"Bash"` - Shell commands
 
 ### Async Flag (PostToolUse only)
@@ -273,7 +273,7 @@ Run only for specific tools:
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Task|Skill",
+        "matcher": "Agent|Task|Skill",
         "hooks": [
           {
             "type": "command",
@@ -440,7 +440,7 @@ The core plugin (`plugins/core/`) provides essential infrastructure hooks:
 
 ### PreToolUse Hooks
 
-1. **han hook inject-subagent-context** - Inject context into Task/Skill tools
+1. **han hook inject-subagent-context** - Inject context into Agent/Skill tools (matches both Agent and legacy Task tool names)
 
 ## Validation Plugin Hooks
 

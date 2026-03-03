@@ -99,7 +99,15 @@ describe('extractFilePath', () => {
       expect(extractFilePath(payload)).toBe(null);
     });
 
-    it('returns null for Task tool', () => {
+    it('returns null for Agent tool', () => {
+      const payload = {
+        tool_name: 'Agent',
+        tool_input: { prompt: 'Do something', subagent_type: 'Explore' },
+      };
+      expect(extractFilePath(payload)).toBe(null);
+    });
+
+    it('returns null for legacy Task tool', () => {
       const payload = {
         tool_name: 'Task',
         tool_input: { prompt: 'Do something', subagent_type: 'Explore' },

@@ -169,7 +169,7 @@ pub fn get_tool_metadata(tool_name: &str) -> (ToolCategory, &'static str, String
         "Glob" => (ToolCategory::Search, "search", "Find Files".to_string(), "#8b5cf6"),
         "Grep" => (ToolCategory::Search, "search-code", "Search Code".to_string(), "#8b5cf6"),
         "Bash" => (ToolCategory::Shell, "terminal", "Run Command".to_string(), "#f97316"),
-        "Task" => (ToolCategory::Task, "git-branch", "Spawn Agent".to_string(), "#06b6d4"),
+        "Agent" | "Task" => (ToolCategory::Task, "git-branch", "Spawn Agent".to_string(), "#06b6d4"),
         "TodoWrite" | "TaskCreate" | "TaskUpdate" | "TaskList" | "TaskGet" => {
             (ToolCategory::Task, "check-square", tool_name.to_string(), "#06b6d4")
         }
@@ -483,7 +483,10 @@ mod tests {
         let (cat, _, _, _) = get_tool_metadata("Grep");
         assert!(matches!(cat, ToolCategory::Search));
 
-        let (cat, _, _, _) = get_tool_metadata("Task");
+        let (cat, _, _, _) = get_tool_metadata("Agent");
+        assert!(matches!(cat, ToolCategory::Task));
+
+        let (cat, _, _, _) = get_tool_metadata("Task"); // legacy name
         assert!(matches!(cat, ToolCategory::Task));
 
         let (cat, _, _, _) = get_tool_metadata("WebFetch");

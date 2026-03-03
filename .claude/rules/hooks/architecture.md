@@ -53,7 +53,7 @@ Claude Code provides these hook events (complete as of 2.1.63):
 | `PostToolUse` | After a tool is executed | tool name |
 | `PostToolUseFailure` | When a tool execution fails | tool name |
 | `Notification` | For notifications | notification type |
-| `SubagentStart` | When a subagent (Task) starts | agent type |
+| `SubagentStart` | When a subagent (Agent) starts | agent type |
 | `SubagentStop` | When a subagent completes | agent type |
 | `Stop` | When Claude stops to allow validation | No |
 | `TeammateIdle` | When a teammate goes idle | No |
@@ -139,7 +139,7 @@ The core plugin provides essential session hooks:
 
 - **SessionStart**: Ensures coordinator is running, registers config, outputs context
 - **UserPromptSubmit**: Outputs current datetime, references important rules
-- **PreToolUse** (Task|Skill): Injects subagent context
+- **PreToolUse** (Agent|Task|Skill): Injects subagent context
 
 ## Validation Plugin Hooks
 
