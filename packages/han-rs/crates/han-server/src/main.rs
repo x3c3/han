@@ -51,14 +51,15 @@ async fn main() {
     };
 
     let db = match establish_connection(db_config).await {
-        Ok(db) => db,
+        Ok(db) => {
+            info!("Connected to PostgreSQL");
+            db
+        }
         Err(e) => {
-            error!("Database connection failed: {e}");
-            std::process::exit(1);
+            error!("Database connection failed (starting in degraded mode): {e}");
+            sea_orm::DatabaseConnection::Disconnected
         }
     };
-
-    info!("Connected to PostgreSQL");
 
     // Run migrations (non-fatal — server can still serve healthcheck)
     match han_db::migration::run_migrations(&db).await {
