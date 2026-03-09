@@ -57,7 +57,8 @@
     "rust@han": true,
     "shellcheck@han": true,
     "typescript@han": true,
-    "scratch@han": true
+    "scratch@han": true,
+    "ai-dlc@ai-dlc": true
   },
   "extraKnownMarketplaces": {
     "han": {
