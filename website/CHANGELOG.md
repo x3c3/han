@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - support Task→Agent tool rename in Claude Code 2.1.63 ([2c9801f0](../../commit/2c9801f0))
 - update CC feature support to 2.1.63, browse UI refactoring, and Rust GraphQL migration ([8caf0ffe](../../commit/8caf0ffe))
 
+### Fixed
+
+- resolve biome noArrayIndexKey lint errors in website ([0819d842](../../commit/0819d842))
+
+### Other
+
+- Replace Counter.dev with Plausible analytics ([a4f737d0](../../commit/a4f737d0))
+
+## [1.37.0] - 2026-03-10
+
+### Added
+
+- support Task→Agent tool rename in Claude Code 2.1.63 ([2c9801f0](../../commit/2c9801f0))
+- update CC feature support to 2.1.63, browse UI refactoring, and Rust GraphQL migration ([8caf0ffe](../../commit/8caf0ffe))
+
 ### Other
 
 - Replace Counter.dev with Plausible analytics ([a4f737d0](../../commit/a4f737d0))
